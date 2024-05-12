@@ -2,6 +2,7 @@
 
 import http from 'http';
 import path from "path";
+import dotenv from 'dotenv';
 
 import getApp from './app';
 
@@ -30,8 +31,10 @@ const onListening = (port: string) => () => {
 };
 
 const initApp = () => {
+  dotenv.config();
+
   const appRoot = path.resolve(__dirname);
-  const port = process.env.PORT || '8001';
+  const port = process.env.PORT || '8002';
 
   console.log(`trying to start app on port ${port}`);
   console.log(`app root is ${appRoot}`);
