@@ -1,0 +1,4 @@
+#dotenv file
+.env
+
+docker-compose.yml
