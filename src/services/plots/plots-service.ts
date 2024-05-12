@@ -1,4 +1,4 @@
-import { Plot, PlotRequest } from './types';
+import { Plot, PlotRequest, PlotYear, PlotYearRequest } from './types';
 
 import inMemoryDatasource from './plots-in-memory-datasource';
 
@@ -38,9 +38,49 @@ async function deletePlotById(plotId: string) {
   }
 }
 
+async function upsertPlotYear(plotYearRequest: PlotYearRequest): Promise<PlotYear> {
+  try {
+    return await inMemoryDatasource.upsertPlotYear(plotYearRequest);
+  } catch (err) {
+    // log and wrap error
+    throw err;
+  }
+}
+
+async function getPlotYearById(plotYearId: string): Promise<PlotYear> {
+  try {
+    return await inMemoryDatasource.getPlotYearById(plotYearId);
+  } catch (err) {
+    // log and wrap error
+    throw err;
+  }
+}
+
+async function getPlotYears(): Promise<PlotYear[]> {
+  try {
+    return await inMemoryDatasource.getPlotYears();
+  } catch (err) {
+    // log and wrap error
+    throw err;
+  }
+}
+
+async function deletePlotYearById(plotYearId: string) {
+  try {
+    await inMemoryDatasource.deletePlotYearById(plotYearId);
+  } catch (err) {
+    // log and wrap error
+    throw err;
+  }
+}
+
 export default {
   upsertPlot,
   getPlotById,
   getPlots,
   deletePlotById,
+  upsertPlotYear,
+  getPlotYearById,
+  getPlotYears,
+  deletePlotYearById,
 }

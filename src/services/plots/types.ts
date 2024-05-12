@@ -22,6 +22,22 @@ export interface Plot {
   isActive: boolean,
 }
 
+export interface PlotYearRequest {
+  plotYearId: string | undefined,
+  plotId: string,
+  numRows: number,
+  numColumns: number,
+  year: number,
+}
+
+export interface PlotYearResponse {
+  plotYearId: string,
+  plotId: string,
+  numRows: number,
+  numColumns: number,
+  year: number,
+}
+
 export interface PlotYear {
   plotYearId: string,
   plotId: string,

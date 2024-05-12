@@ -1,6 +1,6 @@
 import { Request } from 'express';
 
-import { PlotRequest, PlotResponse, Plot } from '../services/plots/types';
+import { PlotRequest, PlotResponse, Plot, PlotYearResponse, PlotYearRequest, PlotYear } from '../services/plots/types';
 
 const plots = {
   fromRequest: (req: Request): PlotRequest => ({
@@ -21,7 +21,21 @@ const plots = {
 };
 
 const plotYears = {
+  fromRequest: (req: Request): PlotYearRequest => ({
+    plotYearId: req.body.plotYearId,
+    plotId: req.body.plotId,
+    numRows: req.body.numRows,
+    numColumns: req.body.numColumns,
+    year: req.body.year,
+  }),
 
+  toResponse: (plotYear: PlotYear): PlotYearResponse => ({
+    plotYearId: plotYear.plotYearId,
+    plotId: plotYear.plotId,
+    numRows: plotYear.numRows,
+    numColumns: plotYear.numColumns,
+    year: plotYear.year,
+  }),
 };
 
 export default {

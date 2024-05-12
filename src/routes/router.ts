@@ -13,6 +13,11 @@ const buildRouter = (): Express => {
   router.get('/plots', plotHandlers.getPlots);
   router.delete('/plots/{plotId}', plotHandlers.deletePlotById);
 
+  router.put('/plot-years', plotHandlers.upsertPlotYear);
+  router.get('/plot-years/{plotYearId}', plotHandlers.getPlotYearById);
+  router.get('/plot-years', plotHandlers.getPlotYears);
+  router.delete('/plot-years/{plotId}', plotHandlers.deletePlotYearById);
+
   return router;
 };
 
