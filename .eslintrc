@@ -38,6 +38,7 @@
     "require-await": "off",
     "@typescript-eslint/require-await": "error",
     "no-nested-ternary": "error",
+    "no-useless-catch": "warn",
     "filename-rules/match": [2, "kebab-case"],
     "@typescript-eslint/naming-convention": [
       "error",
