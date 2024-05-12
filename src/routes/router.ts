@@ -2,6 +2,7 @@ import Router, { Express } from 'express';
 
 import getServiceInfo from '../handlers/service-info-handler';
 import plotHandlers from '../handlers/plot-handlers';
+import plantingHandlers from '../handlers/planting-handlers';
 
 const router: Express = Router();
 
@@ -17,6 +18,9 @@ const buildRouter = (): Express => {
   router.get('/plot-years/{plotYearId}', plotHandlers.getPlotYearById);
   router.get('/plot-years', plotHandlers.getPlotYears);
   router.delete('/plot-years/{plotId}', plotHandlers.deletePlotYearById);
+
+  router.put('/planting', plantingHandlers.upsertPlanting);
+
 
   return router;
 };
