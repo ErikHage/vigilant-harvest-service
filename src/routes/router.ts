@@ -24,7 +24,6 @@ const buildRouter = (): Express => {
   router.get('/plantings', plantingHandlers.getPlantings);
   router.delete('/plantings/{plantingId}', plantingHandlers.deletePlantingById);
 
-
   return router;
 };
 
