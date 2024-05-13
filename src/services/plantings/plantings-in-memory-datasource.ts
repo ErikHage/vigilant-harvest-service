@@ -2,7 +2,7 @@ import uuid from 'uuid';
 
 import { Planting, PlantingRequest } from './types';
 
-const plantings = new Map<string, Planting>;
+const plantingsStore = new Map<string, Planting>;
 
 function upsertPlanting(plantingRequest: PlantingRequest): Planting {
   const planting: Planting = {
@@ -12,10 +12,28 @@ function upsertPlanting(plantingRequest: PlantingRequest): Planting {
     coordinates: plantingRequest.coordinates,
   };
 
-  plantings.set(planting.plantingId, planting);
+  plantingsStore.set(planting.plantingId, planting);
   return planting;
+}
+
+function getPlantingById(plantingId: string): Planting {
+  if (plantingsStore.has(plantingId)) {
+    return plantingsStore.get(plantingId)!;
+  }
+  throw new Error(`Planting not found with id: ${plantingId}`);
+}
+
+function getPlantings(): Planting[] {
+  return Array.from(plantingsStore.values())
+}
+
+function deletePlantingById(plantingId: string) {
+  plantingsStore.delete(plantingId);
 }
 
 export default {
   upsertPlanting,
+  getPlantingById,
+  getPlantings,
+  deletePlantingById,
 }

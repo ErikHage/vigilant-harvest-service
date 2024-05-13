@@ -19,7 +19,10 @@ const buildRouter = (): Express => {
   router.get('/plot-years', plotHandlers.getPlotYears);
   router.delete('/plot-years/{plotId}', plotHandlers.deletePlotYearById);
 
-  router.put('/planting', plantingHandlers.upsertPlanting);
+  router.put('/plantings', plantingHandlers.upsertPlanting);
+  router.get('/plantings/{plantingId}', plantingHandlers.getPlantingById);
+  router.get('/plantings', plantingHandlers.getPlantings);
+  router.delete('/plantings/{plantingId}', plantingHandlers.deletePlantingById);
 
 
   return router;
