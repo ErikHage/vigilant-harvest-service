@@ -2,8 +2,6 @@ import { Request, Response } from 'express';
 
 import plantingSerializers from '../serializers/plantings';
 import plantingsService from '../services/plantings/plantings-service';
-import plotsService from '../services/plots/plots-service';
-import plotSerializers from '../serializers/plots';
 
 async function upsertPlanting(request: Request, response: Response) {
   const plantingRequest = plantingSerializers.fromRequest(request);
