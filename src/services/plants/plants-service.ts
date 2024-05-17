@@ -31,7 +31,7 @@ async function getPlants(): Promise<Plant[]> {
 
 async function deletePlantById(plantId: string): Promise<void> {
   try {
-    return await inMemoryDatasource.deletePlantById(plantId);
+    await inMemoryDatasource.deletePlantById(plantId);
   } catch (err) {
     // log and wrap error
     throw err;
