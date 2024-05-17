@@ -4,6 +4,7 @@ import getServiceInfo from '../handlers/service-info-handler';
 import plotHandlers from '../handlers/plot-handlers';
 import plantingHandlers from '../handlers/planting-handlers';
 import plantHandlers from '../handlers/plant-handlers';
+import harvestHandlers from '../handlers/harvest-handlers';
 
 const router: Express = Router();
 
@@ -29,6 +30,11 @@ const buildRouter = (): Express => {
   router.get('/plants/{plantId}', plantHandlers.getPlantById);
   router.get('/plants', plantHandlers.getPlants);
   router.delete('/plants/{plantId}', plantHandlers.deletePlantById);
+
+  router.put('/harvests', harvestHandlers.upsertHarvest);
+  router.get('/harvests/{harvestId}', harvestHandlers.getHarvestById);
+  router.get('/harvests', harvestHandlers.getHarvests);
+  router.delete('/harvests/{harvestId}', harvestHandlers.deleteHarvestById);
 
   return router;
 };

@@ -11,7 +11,7 @@ async function upsertPlant(request: Request, response: Response) {
 
   response
     .status(plantRequest.plantId === undefined ? 201 : 200)
-    .send(plantResponse)
+    .send(plantResponse);
 }
 
 async function getPlantById(request: Request, response: Response) {
