@@ -1,6 +1,7 @@
 import express, { Express } from 'express';
 
 import buildRouter from './routes/router';
+import bodyParser from 'body-parser';
 
 const getApp = (appRoot: string, port: string): Express => {
   const app: Express = express();
@@ -8,8 +9,9 @@ const getApp = (appRoot: string, port: string): Express => {
   app.set('port', port);
 
   app.use(express.urlencoded({ extended: false, }));
+  app.use(bodyParser.json());
 
-  app.use('/', buildRouter());
+  app.use('/v0/api', buildRouter());
 
   return app;
 }

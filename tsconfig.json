@@ -1,7 +1,8 @@
 {
   "compilerOptions": {
     "outDir": "./dist",
-    "target": "es2016",
+    "lib": ["es2022"],
+    "target": "es2022",
     "module": "commonjs",
     "resolveJsonModule": true,
     "esModuleInterop": true,
@@ -9,6 +10,8 @@
     "strict": true,
     "skipLibCheck": true,
     "strictNullChecks": true,
-    "noUncheckedIndexedAccess": true
+    "noUncheckedIndexedAccess": true,
+    "allowJs": true,
+    "allowSyntheticDefaultImports": true
   }
 }
