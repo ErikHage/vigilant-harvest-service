@@ -3,8 +3,7 @@ const allPlantFields = 'plant_id, family, genus, species, friendly_name';
 const upsertPlant: string = `
   INSERT into plants (plant_id, family, genus, species, friendly_name) VALUES (?,?,?,?,?)
   ON DUPLICATE KEY
-  UPDATE plant_id =      VALUES(plant_id),
-         family =        VALUES(family),
+  UPDATE family =        VALUES(family),
          genus =         VALUES(genus),
          species =       VALUES(species),
          friendly_name = VALUES(friendly_name)
