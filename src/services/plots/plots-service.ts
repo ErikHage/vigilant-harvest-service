@@ -1,10 +1,20 @@
+import uuid from 'uuid';
+
 import { Plot, PlotRequest, PlotYear, PlotYearRequest } from './types';
 
-import inMemoryDatasource from './plots-in-memory-datasource';
+import datasource from './plots-mysql-datasource';
 
-async function upsertPlot(plot: PlotRequest): Promise<Plot> {
+async function upsertPlot(plotRequest: PlotRequest): Promise<Plot> {
   try {
-    return await inMemoryDatasource.upsertPlot(plot);
+    const plot: Plot = {
+      plotId: plotRequest.plotId || uuid.v4(),
+      lengthInInches: plotRequest.lengthInInches,
+      widthInInches: plotRequest.widthInInches,
+      plotType: plotRequest.plotType,
+      isActive: plotRequest.isActive || true,
+    };
+
+    return await datasource.upsertPlot(plot);
   } catch (err) {
     // log and wrap error
     throw err;
@@ -13,7 +23,7 @@ async function upsertPlot(plot: PlotRequest): Promise<Plot> {
 
 async function getPlotById(plotId: string): Promise<Plot> {
   try {
-    return await inMemoryDatasource.getPlotById(plotId);
+    return await datasource.getPlotById(plotId);
   } catch (err) {
     // log and wrap error
     throw err;
@@ -22,7 +32,7 @@ async function getPlotById(plotId: string): Promise<Plot> {
 
 async function getPlots(): Promise<Plot[]> {
   try {
-    return await inMemoryDatasource.getPlots();
+    return await datasource.getPlots();
   } catch (err) {
     // log and wrap error
     throw err;
@@ -31,7 +41,7 @@ async function getPlots(): Promise<Plot[]> {
 
 async function deletePlotById(plotId: string) {
   try {
-    await inMemoryDatasource.deletePlotById(plotId);
+    await datasource.deletePlotById(plotId);
   } catch (err) {
     // log and wrap error
     throw err;
@@ -40,7 +50,7 @@ async function deletePlotById(plotId: string) {
 
 async function upsertPlotYear(plotYearRequest: PlotYearRequest): Promise<PlotYear> {
   try {
-    return await inMemoryDatasource.upsertPlotYear(plotYearRequest);
+    return await datasource.upsertPlotYear(plotYearRequest);
   } catch (err) {
     // log and wrap error
     throw err;
@@ -49,7 +59,7 @@ async function upsertPlotYear(plotYearRequest: PlotYearRequest): Promise<PlotYea
 
 async function getPlotYearById(plotYearId: string): Promise<PlotYear> {
   try {
-    return await inMemoryDatasource.getPlotYearById(plotYearId);
+    return await datasource.getPlotYearById(plotYearId);
   } catch (err) {
     // log and wrap error
     throw err;
@@ -58,7 +68,7 @@ async function getPlotYearById(plotYearId: string): Promise<PlotYear> {
 
 async function getPlotYears(): Promise<PlotYear[]> {
   try {
-    return await inMemoryDatasource.getPlotYears();
+    return await datasource.getPlotYears();
   } catch (err) {
     // log and wrap error
     throw err;
@@ -67,7 +77,7 @@ async function getPlotYears(): Promise<PlotYear[]> {
 
 async function deletePlotYearById(plotYearId: string) {
   try {
-    await inMemoryDatasource.deletePlotYearById(plotYearId);
+    await datasource.deletePlotYearById(plotYearId);
   } catch (err) {
     // log and wrap error
     throw err;

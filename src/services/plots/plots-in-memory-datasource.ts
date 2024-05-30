@@ -1,19 +1,11 @@
 import uuid from 'uuid';
 
-import { Plot, PlotRequest, PlotYear, PlotYearRequest } from './types';
+import { Plot, PlotYear, PlotYearRequest } from './types';
 
 const plotsStore = new Map<string, Plot>;
 const plotYearsStore = new Map<string, PlotYear>;
 
-function upsertPlot(plotRequest: PlotRequest): Plot {
-  const plot: Plot = {
-    plotId: plotRequest.plotId || uuid.v4(),
-    lengthInInches: plotRequest.lengthInInches,
-    widthInInches: plotRequest.widthInInches,
-    plotType: plotRequest.plotType,
-    isActive: plotRequest.isActive || true,
-  };
-
+function upsertPlot(plot: Plot): Plot {
   plotsStore.set(plot.plotId, plot);
   return plot;
 }
