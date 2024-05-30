@@ -1,7 +1,8 @@
+import uuid from 'uuid';
+
 import { Plant, PlantRequest } from './types';
 
 import datasource from '../plants/plants-mysql-datasource';
-import uuid from 'uuid';
 
 async function upsertPlant(plantRequest: PlantRequest): Promise<Plant> {
   try {
