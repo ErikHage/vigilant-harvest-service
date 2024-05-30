@@ -8,6 +8,7 @@ export default {
     family: req.body.family,
     genus: req.body.genus,
     species: req.body.species,
+    friendlyName: req.body.friendlyName,
   }),
 
   toResponse: (plant: Plant): PlantResponse => ({
@@ -15,5 +16,6 @@ export default {
     family: plant.family,
     genus: plant.genus,
     species: plant.species,
+    friendlyName: plant.friendlyName,
   }),
 }

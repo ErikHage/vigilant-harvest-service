@@ -10,6 +10,7 @@ function upsertPlant(plantRequest: PlantRequest): Plant {
     family: plantRequest.family,
     genus: plantRequest.genus,
     species: plantRequest.species,
+    friendlyName: plantRequest.friendlyName,
   };
 
   plantStore.set(plant.plantId, plant);

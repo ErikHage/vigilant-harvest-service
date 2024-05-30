@@ -1,10 +1,19 @@
 import { Plant, PlantRequest } from './types';
 
-import inMemoryDatasource from '../plants/plants-in-memory-datasource';
+import datasource from '../plants/plants-mysql-datasource';
+import uuid from 'uuid';
 
 async function upsertPlant(plantRequest: PlantRequest): Promise<Plant> {
   try {
-    return await inMemoryDatasource.upsertPlant(plantRequest);
+    const plant: Plant = {
+      plantId: plantRequest.plantId || uuid.v4(),
+      family: plantRequest.family,
+      genus: plantRequest.genus,
+      species: plantRequest.species,
+      friendlyName: plantRequest.friendlyName,
+    };
+
+    return await datasource.upsertPlant(plant);
   } catch (err) {
     // log and wrap error
     throw err;
@@ -13,7 +22,7 @@ async function upsertPlant(plantRequest: PlantRequest): Promise<Plant> {
 
 async function getPlantById(plantId: string): Promise<Plant> {
   try {
-    return await inMemoryDatasource.getPlantById(plantId);
+    return await datasource.getPlantById(plantId);
   } catch (err) {
     // log and wrap error
     throw err;
@@ -22,7 +31,7 @@ async function getPlantById(plantId: string): Promise<Plant> {
 
 async function getPlants(): Promise<Plant[]> {
   try {
-    return await inMemoryDatasource.getPlants();
+    return await datasource.getPlants();
   } catch (err) {
     // log and wrap error
     throw err;
@@ -31,7 +40,7 @@ async function getPlants(): Promise<Plant[]> {
 
 async function deletePlantById(plantId: string): Promise<void> {
   try {
-    await inMemoryDatasource.deletePlantById(plantId);
+    await datasource.deletePlantById(plantId);
   } catch (err) {
     // log and wrap error
     throw err;

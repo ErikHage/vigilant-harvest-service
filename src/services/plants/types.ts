@@ -1,8 +1,11 @@
+import { RowDataPacket } from 'mysql2';
+
 export interface PlantRequest {
   plantId: string | undefined,
   family: string,
   genus: string,
   species: string,
+  friendlyName: string,
 }
 
 export interface PlantResponse {
@@ -10,6 +13,15 @@ export interface PlantResponse {
   family: string,
   genus: string,
   species: string,
+  friendlyName: string,
+}
+
+export interface PlantRow extends RowDataPacket {
+  plant_id: string,
+  family: string,
+  genus: string,
+  species: string,
+  friendly_name: string,
 }
 
 export interface Plant {
@@ -17,4 +29,5 @@ export interface Plant {
   family: string,
   genus: string,
   species: string,
+  friendlyName: string,
 }
