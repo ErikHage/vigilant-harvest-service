@@ -50,7 +50,15 @@ async function deletePlotById(plotId: string) {
 
 async function upsertPlotYear(plotYearRequest: PlotYearRequest): Promise<PlotYear> {
   try {
-    return await datasource.upsertPlotYear(plotYearRequest);
+    const plotYear: PlotYear = {
+      plotYearId: plotYearRequest.plotYearId || uuid.v4(),
+      plotId: plotYearRequest.plotId,
+      numRows: plotYearRequest.numRows,
+      numColumns: plotYearRequest.numColumns,
+      year: plotYearRequest.year,
+    };
+
+    return await datasource.upsertPlotYear(plotYear);
   } catch (err) {
     // log and wrap error
     throw err;
@@ -75,7 +83,7 @@ async function getPlotYears(): Promise<PlotYear[]> {
   }
 }
 
-async function deletePlotYearById(plotYearId: string) {
+async function deletePlotYearById(plotYearId: string): Promise<void> {
   try {
     await datasource.deletePlotYearById(plotYearId);
   } catch (err) {

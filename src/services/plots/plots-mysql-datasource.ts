@@ -1,18 +1,14 @@
-import uuid from 'uuid';
-
 import { QueryPayload } from '../../database/types';
-import { Plot, PlotRow, PlotYear, PlotYearRequest } from './types';
+import { Plot, PlotRow, PlotYear, PlotYearRow } from './types';
 
 import queries from './queries';
 import db, { RowNotFoundError } from '../../database'
 import rowMapper from './row-mapper';
 
-const plotYearsStore = new Map<string, PlotYear>;
-
 async function upsertPlot(plot: Plot): Promise<Plot> {
   const query: QueryPayload = {
-    sql: queries.upsertPlot,
-    params: rowMapper.insert.toParams(plot),
+    sql: queries.plots.upsert,
+    params: rowMapper.plots.insert.toParams(plot),
   }
 
   await db.execQuery(query);
@@ -20,66 +16,83 @@ async function upsertPlot(plot: Plot): Promise<Plot> {
 }
 
 async function getPlotById(plotId: string): Promise<Plot> {
-  const query = {
-    sql: queries.getById,
+  const query: QueryPayload = {
+    sql: queries.plots.getById,
     params: [ plotId, ],
   };
 
-  const results = await db.execQuery<PlotRow[]>(query);
+  const results: PlotRow[] = await db.execQuery<PlotRow[]>(query);
 
   if (results.length < 1) {
     throw new RowNotFoundError('Plot not found', { plotId, })
   }
 
-  return rowMapper.fromRow(results[0]!);
+  return rowMapper.plots.fromRow(results[0]!);
 }
 
 async function getPlots(): Promise<Plot[]> {
-  const query = {
-    sql: queries.getAll,
+  const query: QueryPayload = {
+    sql: queries.plots.getAll,
     params: [],
   };
 
-  const results = await db.execQuery<PlotRow[]>(query);
+  const results: PlotRow[] = await db.execQuery<PlotRow[]>(query);
 
-  return results.map(rowMapper.fromRow);
+  return results.map(rowMapper.plots.fromRow);
 }
 
 async function deletePlotById(plotId: string): Promise<void> {
-  const query = {
-    sql: queries.deleteById,
+  const query: QueryPayload = {
+    sql: queries.plots.deleteById,
     params: [ plotId, ],
   };
 
   await db.execQuery(query);
 }
 
-function upsertPlotYear(plotYearRequest: PlotYearRequest): PlotYear {
-  const plotYear: PlotYear = {
-    plotYearId: plotYearRequest.plotYearId || uuid.v4(),
-    plotId: plotYearRequest.plotId,
-    numRows: plotYearRequest.numRows,
-    numColumns: plotYearRequest.numColumns,
-    year: plotYearRequest.year,
+async function upsertPlotYear(plotYear: PlotYear): Promise<PlotYear> {
+  const query: QueryPayload = {
+    sql: queries.plotYears.upsert,
+    params: rowMapper.plotYears.insert.toParams(plotYear),
   };
 
-  plotYearsStore.set(plotYear.plotYearId, plotYear);
+  await db.execQuery(query);
   return plotYear;
 }
 
-function getPlotYearById(plotYearId: string): PlotYear {
-  if (plotYearsStore.has(plotYearId)) {
-    return plotYearsStore.get(plotYearId)!;
+async function getPlotYearById(plotYearId: string): Promise<PlotYear> {
+  const query: QueryPayload = {
+    sql: queries.plotYears.getById,
+    params: [ plotYearId, ],
+  };
+
+  const results: PlotYearRow[] = await db.execQuery<PlotYearRow[]>(query);
+
+  if (results.length < 1) {
+    throw new RowNotFoundError('Plot Year not found', { plotYearId, })
   }
-  throw new Error(`Plot year not found with id: ${plotYearId}`);
+
+  return rowMapper.plotYears.fromRow(results[0]!);
 }
 
-function getPlotYears(): PlotYear[] {
-  return Array.from(plotYearsStore.values())
+async function getPlotYears(): Promise<PlotYear[]> {
+  const query: QueryPayload = {
+    sql: queries.plotYears.getAll,
+    params: [],
+  };
+
+  const results: PlotYearRow[] = await db.execQuery<PlotYearRow[]>(query);
+
+  return results.map(rowMapper.plotYears.fromRow);
 }
 
-function deletePlotYearById(plotYearId: string) {
-  plotYearsStore.delete(plotYearId);
+async function deletePlotYearById(plotYearId: string): Promise<void> {
+  const query: QueryPayload = {
+    sql: queries.plotYears.deleteById,
+    params: [ plotYearId, ],
+  };
+
+  await db.execQuery(query);
 }
 
 export default {
