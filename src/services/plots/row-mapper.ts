@@ -1,4 +1,4 @@
-import { Plot, PlotRow, PlotYear, PlotYearRequest, PlotYearRow } from './types';
+import { Plot, PlotRow, PlotYear, PlotYearRow } from './types';
 
 import mysqlUtils from '../../database/mysql-utils';
 

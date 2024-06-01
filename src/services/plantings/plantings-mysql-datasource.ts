@@ -1,4 +1,4 @@
-import { Planting, PlantingRow } from './types';
+import { Planting, PlantingRow, PlotPlantingRow } from './types';
 import { QueryPayload } from '../../database/types';
 
 import queries from './queries';
@@ -12,6 +12,18 @@ async function upsertPlanting(planting: Planting): Promise<Planting> {
       params: rowMapper.plantings.upsert.toParams(planting),
     },
   ];
+
+  queriesToExecute.push({
+    sql: queries.plotPlantings.deleteByPlantingId,
+    params: [ planting.plantingId, ],
+  });
+
+  for (let i = 0; i < planting.coordinates.length; i++) {
+    queriesToExecute.push({
+      sql: queries.plotPlantings.insert,
+      params: rowMapper.plotPlantings.insert.toParams(planting.coordinates[i]!),
+    });
+  }
 
   await db.execTransactionQuery(queriesToExecute);
   return planting;
@@ -29,7 +41,16 @@ async function getPlantingById(plantingId: string): Promise<Planting> {
     throw new RowNotFoundError('Planting not found', { plantingId, })
   }
 
-  return rowMapper.plantings.fromRow(results[0]!);
+  const planting: Planting = rowMapper.plantings.fromRow(results[0]!);
+
+  const coordinates: PlotPlantingRow[] = await db.execQuery<PlotPlantingRow[]>({
+    sql: queries.plotPlantings.getByPlantingId,
+    params: [ planting.plantingId, ],
+  });
+
+  planting.coordinates = coordinates.map(rowMapper.plotPlantings.fromRow);
+
+  return planting;
 }
 
 async function getPlantings(): Promise<Planting[]> {
@@ -44,12 +65,18 @@ async function getPlantings(): Promise<Planting[]> {
 }
 
 async function deletePlantingById(plantingId: string): Promise<void> {
-  const query: QueryPayload = {
-    sql: queries.plantings.deleteById,
-    params: [ plantingId, ],
-  };
+  const queriesToExecute: QueryPayload[] = [
+    {
+      sql: queries.plantings.deleteById,
+      params: [ plantingId, ],
+    },
+    {
+      sql: queries.plotPlantings.deleteByPlantingId,
+      params: [ plantingId, ],
+    },
+  ];
 
-  await db.execQuery(query);
+  await db.execTransactionQuery(queriesToExecute);
 }
 
 export default {
