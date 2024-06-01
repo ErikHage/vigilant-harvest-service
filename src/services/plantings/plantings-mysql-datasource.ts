@@ -6,12 +6,14 @@ import db, { RowNotFoundError } from '../../database'
 import rowMapper from './row-mapper';
 
 async function upsertPlanting(planting: Planting): Promise<Planting> {
-  const query: QueryPayload = {
-    sql: queries.plantings.upsert,
-    params: rowMapper.plantings.upsert.toParams(planting),
-  }
+  const queriesToExecute: QueryPayload[] = [
+    {
+      sql: queries.plantings.upsert,
+      params: rowMapper.plantings.upsert.toParams(planting),
+    },
+  ];
 
-  await db.execQuery(query);
+  await db.execTransactionQuery(queriesToExecute);
   return planting;
 }
 
