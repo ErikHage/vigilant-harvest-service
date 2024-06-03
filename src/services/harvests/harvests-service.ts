@@ -1,39 +1,56 @@
+import { v4 } from 'uuid';
+
 import { Harvest, HarvestRequest } from './types';
 
-import inMemoryDatasource from './harvests-in-memory-datasource';
+import datasource from './harvests-mysql-datasource';
+import { ensureError } from '../../errors';
+import { getLogger } from '../../logging';
+
+const logger = getLogger('harvests-service');
 
 async function upsertHarvest(harvestRequest: HarvestRequest): Promise<Harvest> {
   try {
-    return await inMemoryDatasource.upsertHarvest(harvestRequest);
+    const harvest: Harvest = {
+      harvestId: harvestRequest.harvestId || v4(),
+      plantingId: harvestRequest.plantingId,
+      quantity: harvestRequest.quantity,
+    };
+
+    return await datasource.upsertHarvest(harvest);
   } catch (err) {
-    // log and wrap error
+    const error = ensureError(err);
+    logger.error(error, 'Error upserting harvest');
     throw err;
   }
 }
 
 async function getHarvestById(harvestId: string): Promise<Harvest> {
   try {
-    return await inMemoryDatasource.getHarvestById(harvestId);
+    return await datasource.getHarvestById(harvestId);
   } catch (err) {
-    // log and wrap error
+    const error = ensureError(err);
+    logger.error(error, 'Error getting harvest by id %s', harvestId);
     throw err;
   }
 }
 
+// TODO change to by planting? might also need a by-year.
 async function getHarvests(): Promise<Harvest[]> {
   try {
-    return await inMemoryDatasource.getHarvests();
+    return await datasource.getHarvests();
   } catch (err) {
-    // log and wrap error
+    const error = ensureError(err);
+    logger.error(error, 'Error getting harvests');
     throw err;
   }
 }
 
 async function deleteHarvestById(harvestId: string): Promise<void> {
   try {
-    await inMemoryDatasource.deleteHarvestById(harvestId);
+    await datasource.deleteHarvestById(harvestId);
   } catch (err) {
-    // log and wrap error
+    const error = ensureError(err);
+    logger.error(error, 'Error deleting harvest by id %s', harvestId);
     throw err;
   }
 }

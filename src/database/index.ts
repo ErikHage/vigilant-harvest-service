@@ -4,9 +4,9 @@ import { QueryPayload } from './types';
 
 import mysqlClient from './mysql-connection';
 import { ensureError, FeralError } from '../errors';
-// import { getLogger } from '../logging';
+import { getLogger } from '../logging';
 
-// const logger = getLogger('database-index');
+const logger = getLogger('database-index');
 
 async function execQuery<T extends QueryResult>(queryPayload: QueryPayload): Promise<T> {
   const conn: Connection = await mysqlClient.getConnection();
@@ -15,7 +15,8 @@ async function execQuery<T extends QueryResult>(queryPayload: QueryPayload): Pro
     const result = await conn.query<T>(queryPayload.sql, queryPayload.params);
     return result[0];
   } catch (err) {
-    // logger.error(error, 'Error performing query');
+    const error = ensureError(err);
+    logger.error(error, 'Error performing query');
     throw new MysqlError('Error performing query', { queryPayload, }, ensureError(err));
   } finally {
     await mysqlClient.closeConnection(conn);
@@ -40,8 +41,9 @@ async function execTransactionQuery<T extends QueryResult>(queriesArray: Array<Q
   } catch (err) {
     await conn.rollback();
     const sql: string[] = queriesArray.map(q => q.sql);
+    const error = ensureError(err);
+    logger.error(error, 'Error performing queries');
     throw new MysqlError('Error performing transaction query', { sql, }, ensureError(err));
-    // logger.error(error, 'Error performing queries');
   } finally {
     await mysqlClient.closeConnection(conn);
   }
