@@ -6,3 +6,10 @@ export class BadRequestError extends FeralError {
     this.status = 400;
   }
 }
+
+export class UnauthorizedError extends FeralError {
+  constructor() {
+    super('Unauthorized');
+    this.status = 401;
+  }
+}
