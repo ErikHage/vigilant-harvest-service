@@ -1,4 +1,4 @@
-import uuid from 'uuid';
+import { v4 as uuidV4 } from 'uuid';
 
 import { Planting, PlantingRequest } from './types';
 
@@ -6,7 +6,7 @@ const plantingsStore = new Map<string, Planting>;
 
 function upsertPlanting(plantingRequest: PlantingRequest): Planting {
   const planting: Planting = {
-    plantingId: plantingRequest.plantingId || uuid.v4(),
+    plantingId: plantingRequest.plantingId || uuidV4(),
     plantId: plantingRequest.plantId,
     numPlants: plantingRequest.numPlants,
     coordinates: plantingRequest.coordinates,

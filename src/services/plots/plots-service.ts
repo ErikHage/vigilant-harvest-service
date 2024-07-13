@@ -1,4 +1,4 @@
-import uuid from 'uuid';
+import { v4 as uuidV4 } from 'uuid';
 
 import { Plot, PlotRequest, PlotYear, PlotYearRequest } from './types';
 
@@ -7,7 +7,7 @@ import datasource from './plots-mysql-datasource';
 async function upsertPlot(plotRequest: PlotRequest): Promise<Plot> {
   try {
     const plot: Plot = {
-      plotId: plotRequest.plotId || uuid.v4(),
+      plotId: plotRequest.plotId || uuidV4(),
       lengthInInches: plotRequest.lengthInInches,
       widthInInches: plotRequest.widthInInches,
       plotType: plotRequest.plotType,
@@ -51,7 +51,7 @@ async function deletePlotById(plotId: string) {
 async function upsertPlotYear(plotYearRequest: PlotYearRequest): Promise<PlotYear> {
   try {
     const plotYear: PlotYear = {
-      plotYearId: plotYearRequest.plotYearId || uuid.v4(),
+      plotYearId: plotYearRequest.plotYearId || uuidV4(),
       plotId: plotYearRequest.plotId,
       numRows: plotYearRequest.numRows,
       numColumns: plotYearRequest.numColumns,

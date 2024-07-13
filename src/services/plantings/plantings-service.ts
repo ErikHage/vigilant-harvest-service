@@ -1,12 +1,13 @@
+import { v4 as uuidV4 } from 'uuid';
+
 import { Planting, PlantingRequest } from './types';
 
 import datasource from './plantings-mysql-datasource';
-import uuid from 'uuid';
 
 async function upsertPlanting(plantingRequest: PlantingRequest): Promise<Planting> {
   try {
     const planting: Planting = {
-      plantingId: plantingRequest.plantingId || uuid.v4(),
+      plantingId: plantingRequest.plantingId || uuidV4(),
       plantId: plantingRequest.plantId,
       numPlants: plantingRequest.numPlants,
       coordinates: plantingRequest.coordinates,

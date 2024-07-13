@@ -1,4 +1,4 @@
-import uuid from 'uuid';
+import { v4 as uuidV4 } from 'uuid';
 
 import { Plant, PlantRequest } from './types';
 
@@ -6,7 +6,7 @@ const plantStore = new Map<string, Plant>;
 
 function upsertPlant(plantRequest: PlantRequest): Plant {
   const plant: Plant = {
-    plantId: plantRequest.plantId || uuid.v4(),
+    plantId: plantRequest.plantId || uuidV4(),
     family: plantRequest.family,
     genus: plantRequest.genus,
     species: plantRequest.species,

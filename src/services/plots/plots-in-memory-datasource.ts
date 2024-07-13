@@ -1,4 +1,4 @@
-import uuid from 'uuid';
+import { v4 as uuidV4 } from 'uuid';
 
 import { Plot, PlotYear, PlotYearRequest } from './types';
 
@@ -27,7 +27,7 @@ function deletePlotById(plotId: string) {
 
 function upsertPlotYear(plotYearRequest: PlotYearRequest): PlotYear {
   const plotYear: PlotYear = {
-    plotYearId: plotYearRequest.plotYearId || uuid.v4(),
+    plotYearId: plotYearRequest.plotYearId || uuidV4(),
     plotId: plotYearRequest.plotId,
     numRows: plotYearRequest.numRows,
     numColumns: plotYearRequest.numColumns,

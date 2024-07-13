@@ -1,4 +1,4 @@
-import uuid from 'uuid';
+import { v4 as uuidV4 } from 'uuid';
 
 import { Harvest, HarvestRequest } from './types';
 
@@ -6,7 +6,7 @@ const harvestStore = new Map<string, Harvest>;
 
 function upsertHarvest(harvestRequest: HarvestRequest): Harvest {
   const harvest: Harvest = {
-    harvestId: harvestRequest.harvestId || uuid.v4(),
+    harvestId: harvestRequest.harvestId || uuidV4(),
     plantingId: harvestRequest.plantingId,
     quantity: harvestRequest.quantity,
   };

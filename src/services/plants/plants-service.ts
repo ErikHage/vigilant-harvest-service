@@ -1,4 +1,4 @@
-import uuid from 'uuid';
+import { v4 as uuidV4 } from 'uuid';
 
 import { Plant, PlantRequest } from './types';
 
@@ -7,7 +7,7 @@ import datasource from '../plants/plants-mysql-datasource';
 async function upsertPlant(plantRequest: PlantRequest): Promise<Plant> {
   try {
     const plant: Plant = {
-      plantId: plantRequest.plantId || uuid.v4(),
+      plantId: plantRequest.plantId || uuidV4(),
       family: plantRequest.family,
       genus: plantRequest.genus,
       species: plantRequest.species,
