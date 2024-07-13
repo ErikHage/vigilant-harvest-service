@@ -1,1 +1,12 @@
-/* Replace with your SQL commands */
+CREATE TABLE IF NOT EXISTS plants (
+  plant_id      VARCHAR(36) NOT NULL,
+  friendly_name VARCHAR(255) NOT NULL,
+  species       VARCHAR(255) NOT NULL,
+  genus         VARCHAR(255) NOT NULL,
+  family        VARCHAR(255) NOT NULL,
+  date_created  TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
+
+  PRIMARY KEY ( plant_id ),
+  UNIQUE KEY ( plant_name )
+);
