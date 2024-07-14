@@ -18,10 +18,11 @@ const plots = {
   fromRow: function(row: PlotRow): Plot {
     return {
       plotId: row.plot_id,
+      friendlyName: row.friendly_name,
       lengthInInches: row.length_in_inches,
       widthInInches: row.width_in_inches,
       plotType: row.plot_type,
-      isActive: mysqlUtils.dbIntToBoolean(row.is_active),
+      isActive: row.is_active,
     }
   },
 };
