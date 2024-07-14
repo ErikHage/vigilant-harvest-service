@@ -5,6 +5,7 @@ import { PlotRequest, PlotResponse, Plot, PlotYearResponse, PlotYearRequest, Plo
 const plots = {
   fromRequest: (req: Request): PlotRequest => ({
     plotId: req.body.plotId,
+    friendlyName: req.body.friendlyName,
     lengthInInches: req.body.lengthInInches,
     widthInInches: req.body.widthInInches,
     plotType: req.body.plotType,
@@ -13,6 +14,7 @@ const plots = {
 
   toResponse: (plot: Plot): PlotResponse => ({
     plotId: plot.plotId,
+    friendlyName: plot.friendlyName,
     lengthInInches: plot.lengthInInches,
     widthInInches: plot.widthInInches,
     plotType: plot.plotType,

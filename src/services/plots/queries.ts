@@ -1,12 +1,13 @@
-const allPlotFields = 'plot_id, length_in_inches, width_in_inches, plot_type, is_active';
+const allPlotFields = 'plot_id, friendly_name, length_in_inches, width_in_inches, plot_type, is_active';
 const allPlotYearFields = 'plot_year_id, plot_id, num_rows, num_columns, year';
 
 const plots = {
     upsert: `
-      INSERT into plots (plot_id, length_in_inches, width_in_inches, plot_type, is_active)
-      VALUES (?,?,?,?,?)
+      INSERT into plots (plot_id, friendly_name, length_in_inches, width_in_inches, plot_type, is_active)
+      VALUES (?,?,?,?,?,?)
       ON DUPLICATE KEY
-      UPDATE length_in_inches = VALUES(length_in_inches),
+      UPDATE friendly_name =    VALUES(friendly_name),
+             length_in_inches = VALUES(length_in_inches),
              width_in_inches =  VALUES(width_in_inches),
              plot_type =        VALUES(plot_type),
              is_active =        VALUES(is_active)`,

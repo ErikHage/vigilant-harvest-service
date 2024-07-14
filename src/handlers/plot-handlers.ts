@@ -95,6 +95,7 @@ export default {
   getPlotById,
   getPlots,
   deletePlotById,
+
   upsertPlotYear,
   getPlotYearById,
   getPlotYears,

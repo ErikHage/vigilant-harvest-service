@@ -8,6 +8,7 @@ async function upsertPlot(plotRequest: PlotRequest): Promise<Plot> {
   try {
     const plot: Plot = {
       plotId: plotRequest.plotId || uuidV4(),
+      friendlyName: plotRequest.friendlyName,
       lengthInInches: plotRequest.lengthInInches,
       widthInInches: plotRequest.widthInInches,
       plotType: plotRequest.plotType,

@@ -2,6 +2,7 @@ import { RowDataPacket } from 'mysql2';
 
 export interface PlotRequest {
   plotId: string | undefined,
+  friendlyName: string,
   lengthInInches: number, // int
   widthInInches: number, // int
   plotType: string,
@@ -10,6 +11,7 @@ export interface PlotRequest {
 
 export interface PlotResponse {
   plotId: string,
+  friendlyName: string,
   lengthInInches: number, // int
   widthInInches: number, // int
   plotType: string,
@@ -18,6 +20,7 @@ export interface PlotResponse {
 
 export interface Plot {
   plotId: string,
+  friendlyName: string,
   lengthInInches: number, // int
   widthInInches: number, // int
   plotType: string,
@@ -25,11 +28,12 @@ export interface Plot {
 }
 
 export interface PlotRow extends RowDataPacket {
-  plotId: string,
+  plot_id: string,
+  friendly_name: string,
   length_in_inches: number, // int
   width_in_inches: number, // int
   plot_type: string,
-  isActive: boolean,
+  is_active: boolean,
 }
 
 export interface PlotYearRequest {
