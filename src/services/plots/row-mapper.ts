@@ -7,6 +7,7 @@ const plots = {
     toParams: function(plot: Plot): Array<string | number> {
       return [
         plot.plotId,
+        plot.friendlyName,
         plot.lengthInInches,
         plot.widthInInches,
         plot.plotType,
