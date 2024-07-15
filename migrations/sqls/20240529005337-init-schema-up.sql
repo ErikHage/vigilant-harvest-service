@@ -34,3 +34,17 @@ CREATE TABLE IF NOT EXISTS harvests (
 
   PRIMARY KEY ( harvest_id )
 );
+
+CREATE TABLE IF NOT EXISTS plot_years (
+  plot_year_id  VARCHAR(36) NOT NULL,
+  plot_id       VARCHAR(36) NOT NULL,
+  num_rows      INTEGER NOT NULL,
+  num_columns   INTEGER NOT NULL,
+  plot_year     INTEGER NOT NULL,
+  date_created  TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
+
+  PRIMARY KEY ( plot_year_id ),
+  UNIQUE KEY ( plot_id, plot_year )
+);
+
