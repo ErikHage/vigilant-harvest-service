@@ -24,3 +24,13 @@ CREATE TABLE IF NOT EXISTS plots (
   PRIMARY KEY ( plot_id ),
   UNIQUE KEY ( friendly_name )
 );
+
+CREATE TABLE IF NOT EXISTS harvests (
+  harvest_id       VARCHAR(36) NOT NULL,
+  planting_id      VARCHAR(36) NOT NULL,
+  quantity         INTEGER NOT NULL,
+  date_created     TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  date_modified    TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
+
+  PRIMARY KEY ( harvest_id )
+);
