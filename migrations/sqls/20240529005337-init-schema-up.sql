@@ -48,3 +48,26 @@ CREATE TABLE IF NOT EXISTS plot_years (
   UNIQUE KEY ( plot_id, plot_year )
 );
 
+CREATE TABLE IF NOT EXISTS plantings (
+  planting_id   VARCHAR(36) NOT NULL,
+  plant_id      VARCHAR(36) NOT NULL,
+  num_plants    INTEGER NOT NULL,
+  date_created  TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
+
+  PRIMARY KEY ( planting_id )
+);
+
+CREATE TABLE IF NOT EXISTS plot_plantings (
+  plot_planting_id INTEGER AUTO_INCREMENT NOT NULL,
+  plot_year_id     VARCHAR(36) NOT NULL,
+  planting_id      VARCHAR(36) NOT NULL,
+  x_coordinate     INTEGER NOT NULL,
+  y_coordinate     INTEGER NOT NULL,
+  date_created     TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  date_modified    TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
+
+  PRIMARY KEY ( plot_planting_id ),
+  UNIQUE KEY ( plot_year_id, planting_id, x_coordinate, y_coordinate )
+);
+
