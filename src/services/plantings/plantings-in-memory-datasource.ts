@@ -9,6 +9,7 @@ function upsertPlanting(plantingRequest: PlantingRequest): Planting {
     plantingId: plantingRequest.plantingId || uuidV4(),
     plantId: plantingRequest.plantId,
     numPlants: plantingRequest.numPlants,
+    plantingYear: plantingRequest.plantingYear,
     coordinates: plantingRequest.coordinates,
   };
 

@@ -7,6 +7,7 @@ const plantings = {
         planting.plantingId,
         planting.plantId,
         planting.numPlants,
+        planting.plantingYear,
       ];
     },
   },
@@ -16,6 +17,7 @@ const plantings = {
       plantingId: row.planting_id,
       plantId: row.plant_id,
       numPlants: row.num_plants,
+      plantingYear: row.planting_year,
       coordinates: [],
     };
   },

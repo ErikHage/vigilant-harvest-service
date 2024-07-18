@@ -4,6 +4,7 @@ export interface PlantingRequest {
   plantingId: string | undefined,
   plantId: string,
   numPlants: number, // int
+  plantingYear: number, // int
   coordinates: PlotPlanting[],
 }
 
@@ -11,6 +12,7 @@ export interface PlantingResponse {
   plantingId: string,
   plantId: string,
   numPlants: number, // int
+  plantingYear: number, // int
   coordinates: PlotPlanting[],
 }
 
@@ -18,6 +20,7 @@ export interface Planting {
   plantingId: string,
   plantId: string,
   numPlants: number, // int
+  plantingYear: number, // int
   coordinates: PlotPlanting[],
 }
 
@@ -25,6 +28,7 @@ export interface PlantingRow extends RowDataPacket  {
   planting_id: string,
   plant_id: string,
   num_plants: number, // int
+  plantingY_year: number, // int
 }
 
 export interface PlotPlanting {

@@ -53,6 +53,17 @@ async function getPlantingById(plantingId: string): Promise<Planting> {
   return planting;
 }
 
+async function getPlantingsByYear(plantingYear: number): Promise<Planting[]> {
+  const query: QueryPayload = {
+    sql: queries.plantings.getByYear,
+    params: [ plantingYear, ],
+  };
+
+  const results: PlantingRow[] = await db.execQuery<PlantingRow[]>(query);
+
+  return results.map(rowMapper.plantings.fromRow);
+}
+
 async function getPlantings(): Promise<Planting[]> {
   const query: QueryPayload = {
     sql: queries.plantings.getAll,
@@ -82,6 +93,7 @@ async function deletePlantingById(plantingId: string): Promise<void> {
 export default {
   upsertPlanting,
   getPlantingById,
+  getPlantingsByYear,
   getPlantings,
   deletePlantingById,
 }

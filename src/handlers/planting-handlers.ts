@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 
 import plantingSerializers from '../serializers/plantings';
 import plantingsService from '../services/plantings/plantings-service';
+import { Planting } from '../services/plantings/types';
 
 async function upsertPlanting(request: Request, response: Response) {
   const plantingRequest = plantingSerializers.fromRequest(request);
@@ -28,7 +29,15 @@ async function getPlantingById(request: Request, response: Response) {
 }
 
 async function getPlantings(request: Request, response: Response) {
-  const plantings = await plantingsService.getPlantings();
+  const { plantingYear, } = request.query;
+
+  let plantings: Planting[];
+  if (plantingYear !== undefined) {
+    plantings = await plantingsService.getPlantingsByYear(+plantingYear);
+  } else {
+    plantings = await plantingsService.getPlantings();
+  }
+
   const plantingsResponse = plantings.map(plantingSerializers.toResponse);
 
   response.status(200).send(plantingsResponse);

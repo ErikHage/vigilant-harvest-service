@@ -7,6 +7,7 @@ export default {
     plantingId: req.body.plantingId,
     plantId: req.body.plantId,
     numPlants: req.body.numPlants,
+    plantingYear: req.body.plantingYear,
     coordinates: req.body.coordinates,
   }),
 
@@ -14,6 +15,7 @@ export default {
     plantingId: planting.plantingId,
     plantId: planting.plantId,
     numPlants: planting.numPlants,
+    plantingYear: planting.plantingYear,
     coordinates: planting.coordinates,
   }),
 }

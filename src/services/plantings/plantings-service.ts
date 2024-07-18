@@ -10,6 +10,7 @@ async function upsertPlanting(plantingRequest: PlantingRequest): Promise<Plantin
       plantingId: plantingRequest.plantingId || uuidV4(),
       plantId: plantingRequest.plantId,
       numPlants: plantingRequest.numPlants,
+      plantingYear: plantingRequest.plantingYear,
       coordinates: plantingRequest.coordinates,
     };
 
@@ -23,6 +24,15 @@ async function upsertPlanting(plantingRequest: PlantingRequest): Promise<Plantin
 async function getPlantingById(plantingId: string): Promise<Planting> {
   try {
     return await datasource.getPlantingById(plantingId);
+  } catch (err) {
+    // log and wrap error
+    throw err;
+  }
+}
+
+async function getPlantingsByYear(plantingYear: number): Promise<Planting[]> {
+  try {
+    return await datasource.getPlantingsByYear(plantingYear);
   } catch (err) {
     // log and wrap error
     throw err;
@@ -50,6 +60,7 @@ async function deletePlantingById(plantingId: string): Promise<void> {
 export default {
   upsertPlanting,
   getPlantingById,
+  getPlantingsByYear,
   getPlantings,
   deletePlantingById,
 }

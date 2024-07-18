@@ -1,13 +1,15 @@
-const allPlantingFields: string = 'planting_id, plant_id, num_plants';
+const allPlantingFields: string = 'planting_id, plant_id, num_plants, planting_year ';
 const allPlotPlantingFields: string = 'plot_year_id, planting_id, x_coordinate, y_coordinate';
 
 const plantings = {
   upsert: `
-    INSERT into plantings (planting_id, plant_id, num_plants) VALUES (?,?,?)
+    INSERT into plantings (planting_id, plant_id, num_plants, planting_year) VALUES (?,?,?,?)
     ON DUPLICATE KEY
     UPDATE plant_id =   VALUES(plant_id),
-           num_plants = VALUES(num_plants)`,
+           num_plants = VALUES(num_plants),
+           planting_year = VALUES(planting_year)`,
   getById: `SELECT ${allPlantingFields} FROM plants WHERE plant_id = ?`,
+  getByYear: `SELECT ${allPlantingFields} FROM plants WHERE planting_year = ?`,
   getAll: `SELECT ${allPlantingFields} FROM plants`,
   deleteById: 'DELETE FROM plants WHERE plant_id = ?',
 };
