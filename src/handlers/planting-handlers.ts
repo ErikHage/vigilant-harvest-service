@@ -33,7 +33,8 @@ async function getPlantings(request: Request, response: Response) {
 
   let plantings: Planting[];
   if (plantingYear !== undefined) {
-    plantings = await plantingsService.getPlantingsByYear(+plantingYear);
+    const plantingYearParsed = +plantingYear;
+    plantings = await plantingsService.getPlantingsByYear(plantingYearParsed);
   } else {
     plantings = await plantingsService.getPlantings();
   }
