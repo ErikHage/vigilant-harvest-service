@@ -8,7 +8,7 @@ export default {
     plantId: req.body.plantId,
     numPlants: req.body.numPlants,
     plantingYear: req.body.plantingYear,
-    coordinates: req.body.coordinates,
+    coordinates: req.body.coordinates || [],
   }),
 
   toResponse: (planting: Planting): PlantingResponse => ({
