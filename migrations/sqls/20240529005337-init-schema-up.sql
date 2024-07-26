@@ -25,16 +25,6 @@ CREATE TABLE IF NOT EXISTS plots (
   UNIQUE KEY ( friendly_name )
 );
 
-CREATE TABLE IF NOT EXISTS harvests (
-  harvest_id       VARCHAR(36) NOT NULL,
-  planting_id      VARCHAR(36) NOT NULL,
-  quantity         INTEGER NOT NULL,
-  date_created     TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-  date_modified    TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
-
-  PRIMARY KEY ( harvest_id )
-);
-
 CREATE TABLE IF NOT EXISTS plot_years (
   plot_year_id  VARCHAR(36) NOT NULL,
   plot_id       VARCHAR(36) NOT NULL,
@@ -72,3 +62,12 @@ CREATE TABLE IF NOT EXISTS plot_plantings (
   UNIQUE KEY ( plot_year_id, planting_id, x_coordinate, y_coordinate )
 );
 
+CREATE TABLE IF NOT EXISTS harvests (
+  harvest_id       VARCHAR(36) NOT NULL,
+  planting_id      VARCHAR(36) NOT NULL,
+  quantity         INTEGER NOT NULL,
+  date_created     TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  date_modified    TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
+
+  PRIMARY KEY ( harvest_id )
+);
