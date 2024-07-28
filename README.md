@@ -21,3 +21,13 @@ Instances of Models:
   Planting
 
 some kind of link between Planting and plot
+
+
+How about this? Might only need 4 types for now
+
+Plots
+Plants
+
+Planting -> add plot id to this, many to one plot 
+
+Harvest -> many to one planting
