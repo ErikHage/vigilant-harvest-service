@@ -5,17 +5,17 @@ import { Planting, PlantingRequest, PlantingResponse } from '../services/plantin
 export default {
   fromRequest: (req: Request): PlantingRequest => ({
     plantingId: req.body.plantingId,
+    plotId: req.body.plotId,
     plantId: req.body.plantId,
     numPlants: req.body.numPlants,
     plantingYear: req.body.plantingYear,
-    coordinates: req.body.coordinates || [],
   }),
 
   toResponse: (planting: Planting): PlantingResponse => ({
     plantingId: planting.plantingId,
+    plotId: planting.plotId,
     plantId: planting.plantId,
     numPlants: planting.numPlants,
     plantingYear: planting.plantingYear,
-    coordinates: planting.coordinates,
   }),
 }

@@ -8,10 +8,10 @@ async function upsertPlanting(plantingRequest: PlantingRequest): Promise<Plantin
   try {
     const planting: Planting = {
       plantingId: plantingRequest.plantingId || uuidV4(),
+      plotId: plantingRequest.plotId,
       plantId: plantingRequest.plantId,
       numPlants: plantingRequest.numPlants,
       plantingYear: plantingRequest.plantingYear,
-      coordinates: plantingRequest.coordinates,
     };
 
     return await datasource.upsertPlanting(planting);
