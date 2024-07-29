@@ -36,34 +36,3 @@ export interface PlotRow extends RowDataPacket {
   is_active: boolean,
 }
 
-export interface PlotYearRequest {
-  plotYearId: string | undefined,
-  plotId: string,
-  numRows: number, // int
-  numColumns: number, // int
-  year: number, // int
-}
-
-export interface PlotYearResponse {
-  plotYearId: string,
-  plotId: string,
-  numRows: number, // int
-  numColumns: number, // int
-  year: number, // int
-}
-
-export interface PlotYear {
-  plotYearId: string,
-  plotId: string,
-  numRows: number, // int
-  numColumns: number, // int
-  year: number, // int
-}
-
-export interface PlotYearRow extends RowDataPacket {
-  plot_year_id: string,
-  plot_id: string,
-  num_rows: number, // int
-  num_columns: number, // int
-  year: number, // int
-}

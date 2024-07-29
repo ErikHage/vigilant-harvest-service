@@ -16,11 +16,6 @@ const buildRouter = (): Express => {
   apiRouter.get('/plots', plotHandlers.getPlots);
   apiRouter.delete('/plots/:plotId', plotHandlers.deletePlotById);
 
-  apiRouter.put('/plot-years', plotHandlers.upsertPlotYear);
-  apiRouter.get('/plot-years/:plotYearId', plotHandlers.getPlotYearById);
-  apiRouter.get('/plot-years', plotHandlers.getPlotYears);
-  apiRouter.delete('/plot-years/:plotId', plotHandlers.deletePlotYearById);
-
   apiRouter.put('/plantings', plantingHandlers.upsertPlanting);
   apiRouter.get('/plantings/:plantingId', plantingHandlers.getPlantingById);
   apiRouter.get('/plantings', plantingHandlers.getPlantings);

@@ -1,4 +1,4 @@
-import { Plot, PlotRow, PlotYear, PlotYearRow } from './types';
+import { Plot, PlotRow } from './types';
 
 import mysqlUtils from '../../database/mysql-utils';
 
@@ -28,31 +28,6 @@ const plots = {
   },
 };
 
-const plotYears = {
-  insert: {
-    toParams: function(plotYear: PlotYear): Array<string | number> {
-      return [
-        plotYear.plotYearId,
-        plotYear.plotId,
-        plotYear.numRows,
-        plotYear.numColumns,
-        plotYear.year,
-      ];
-    },
-  },
-
-  fromRow: function(plotYearRow: PlotYearRow): PlotYear {
-    return {
-      plotYearId: plotYearRow.plot_year_id,
-      plotId: plotYearRow.plot_id,
-      numRows: plotYearRow.num_rows,
-      numColumns: plotYearRow.num_columns,
-      year: plotYearRow.year,
-    }
-  },
-};
-
 export default {
   plots,
-  plotYears,
 }
