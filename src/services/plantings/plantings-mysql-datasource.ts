@@ -6,14 +6,12 @@ import db, { RowNotFoundError } from '../../database'
 import rowMapper from './row-mapper';
 
 async function upsertPlanting(planting: Planting): Promise<Planting> {
-  const queriesToExecute: QueryPayload[] = [
-    {
-      sql: queries.plantings.upsert,
-      params: rowMapper.plantings.upsert.toParams(planting),
-    },
-  ];
+  const query: QueryPayload = {
+    sql: queries.plantings.upsert,
+    params: rowMapper.plantings.upsert.toParams(planting),
+  };
 
-  await db.execTransactionQuery(queriesToExecute);
+  await db.execQuery(query);
   return planting;
 }
 
@@ -56,9 +54,9 @@ async function getPlantings(): Promise<Planting[]> {
 
 async function deletePlantingById(plantingId: string): Promise<void> {
   const query: QueryPayload = {
-      sql: queries.plantings.deleteById,
-      params: [ plantingId, ],
-    };
+    sql: queries.plantings.deleteById,
+    params: [ plantingId, ],
+  };
 
   await db.execQuery(query);
 }
