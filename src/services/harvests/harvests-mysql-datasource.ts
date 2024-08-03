@@ -1,4 +1,4 @@
-import { Harvest, HarvestRow } from './types';
+import { Harvest, HarvestRow, HarvestSummary, HarvestSummaryRequest, HarvestSummaryRow } from './types';
 import { QueryPayload } from '../../database/types';
 
 import queries from './queries';
@@ -24,7 +24,7 @@ async function getHarvestById(harvestId: string): Promise<Harvest> {
   const results = await db.execQuery<HarvestRow[]>(query);
 
   if (results.length < 1) {
-    throw new RowNotFoundError('Harvest not found', { harvestId, })
+    throw new RowNotFoundError('Harvest not found', { harvestId, });
   }
 
   return rowMapper.fromRow(results[0]!);
@@ -41,6 +41,17 @@ async function getHarvests(): Promise<Harvest[]> {
   return results.map(rowMapper.fromRow);
 }
 
+async function getHarvestSummary(request: HarvestSummaryRequest): Promise<HarvestSummary[]> {
+  const query = {
+    sql: queries.getHarvestSummary,
+    params: rowMapper.summary.toParams(request),
+  };
+
+  const results = await db.execQuery<HarvestSummaryRow[]>(query);
+
+  return results.map(rowMapper.summary.fromRow);
+}
+
 async function deleteHarvestById(harvestId: string): Promise<void> {
   const query = {
     sql: queries.deleteById,
@@ -54,5 +65,6 @@ export default {
   upsertHarvest,
   getHarvestById,
   getHarvests,
+  getHarvestSummary,
   deleteHarvestById,
 }
