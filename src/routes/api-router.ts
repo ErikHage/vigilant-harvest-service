@@ -28,10 +28,8 @@ const buildRouter = (): Express => {
   apiRouter.get('/plants', plantHandlers.getPlants);
   apiRouter.delete('/plants/:plantId', plantHandlers.deletePlantById);
 
-  apiRouter.put('/harvests', harvestHandlers.upsertHarvest);
-  apiRouter.get('/harvests', harvestHandlers.getHarvests);
+  apiRouter.put('/harvests', harvestHandlers.insertHarvests);
   apiRouter.get('/harvests/summary', harvestHandlers.getHarvestSummary);
-  apiRouter.get('/harvests/:harvestId', harvestHandlers.getHarvestById);
   apiRouter.delete('/harvests/:harvestId', harvestHandlers.deleteHarvestById);
 
   return apiRouter;

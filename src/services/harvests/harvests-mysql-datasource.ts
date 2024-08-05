@@ -1,44 +1,23 @@
-import { Harvest, HarvestRow, HarvestSummary, HarvestSummaryRequest, HarvestSummaryRow } from './types';
+import { Harvest, HarvestSummary, HarvestSummaryRequest, HarvestSummaryRow } from './types';
 import { QueryPayload } from '../../database/types';
 
 import queries from './queries';
-import db, { RowNotFoundError } from '../../database'
+import db from '../../database'
 import rowMapper from './row-mapper';
 
-async function upsertHarvest(harvest: Harvest): Promise<Harvest> {
-  const query: QueryPayload = {
-    sql: queries.upsertHarvest,
-    params: rowMapper.upsert.toParams(harvest),
-  };
+async function insertHarvests(harvests: Harvest[]): Promise<Harvest[]> {
+  const queriesToRun: QueryPayload[] = [];
 
-  await db.execQuery(query);
-  return harvest;
-}
+  harvests.forEach(harvest => {
+    queriesToRun.push({
+      sql: queries.insertHarvest,
+      params: rowMapper.insert.toParams(harvest),
+    });
+  });
 
-async function getHarvestById(harvestId: string): Promise<Harvest> {
-  const query = {
-    sql: queries.getById,
-    params: [ harvestId, ],
-  };
+  await db.execTransactionQuery(queriesToRun);
 
-  const results = await db.execQuery<HarvestRow[]>(query);
-
-  if (results.length < 1) {
-    throw new RowNotFoundError('Harvest not found', { harvestId, });
-  }
-
-  return rowMapper.fromRow(results[0]!);
-}
-
-async function getHarvests(): Promise<Harvest[]> {
-  const query = {
-    sql: queries.getAll,
-    params: [],
-  };
-
-  const results = await db.execQuery<HarvestRow[]>(query);
-
-  return results.map(rowMapper.fromRow);
+  return harvests;
 }
 
 async function getHarvestSummary(request: HarvestSummaryRequest): Promise<HarvestSummary[]> {
@@ -62,9 +41,7 @@ async function deleteHarvestById(harvestId: string): Promise<void> {
 }
 
 export default {
-  upsertHarvest,
-  getHarvestById,
-  getHarvests,
+  insertHarvests,
   getHarvestSummary,
   deleteHarvestById,
 }

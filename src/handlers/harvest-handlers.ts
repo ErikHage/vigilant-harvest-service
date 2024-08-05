@@ -2,37 +2,15 @@ import { Request, Response } from 'express';
 
 import harvestSerializers from '../serializers/harvests';
 import harvestsService from '../services/harvests/harvests-service';
-import { HarvestSummaryRequest } from '../services/harvests/types';
+import { Harvest, HarvestRequest, HarvestResponse, HarvestSummaryRequest } from '../services/harvests/types';
 
-async function upsertHarvest(request: Request, response: Response) {
-  const harvestRequest = harvestSerializers.harvests.fromRequest(request);
+async function insertHarvests(request: Request, response: Response) {
+  const harvestRequests: HarvestRequest[] = harvestSerializers.harvests.fromRequest(request);
 
-  const harvest = await harvestsService.upsertHarvest(harvestRequest);
-  const harvestResponse = harvestSerializers.harvests.toResponse(harvest);
+  const harvests: Harvest[] = await harvestsService.insertHarvests(harvestRequests);
+  const harvestsResponse: HarvestResponse[] = harvests.map(harvestSerializers.harvests.toResponse);
 
-  response
-    .status(harvestRequest.harvestId === undefined ? 201 : 200)
-    .send(harvestResponse);
-}
-
-async function getHarvestById(request: Request, response: Response) {
-  const { harvestId, } = request.params;
-
-  if (harvestId === undefined) {
-    response.status(400).send('harvestId required');
-  }
-
-  const harvest = await harvestsService.getHarvestById(harvestId!);
-  const harvestResponse = harvestSerializers.harvests.toResponse(harvest);
-
-  response.status(200).send(harvestResponse);
-}
-
-async function getHarvests(request: Request, response: Response) {
-  const harvests = await harvestsService.getHarvests();
-  const harvestsResponse = harvests.map(harvestSerializers.harvests.toResponse);
-
-  response.status(200).send(harvestsResponse);
+  response.status(201).send(harvestsResponse);
 }
 
 async function getHarvestSummary(request: Request, response: Response) {
@@ -57,9 +35,7 @@ async function deleteHarvestById(request: Request, response: Response) {
 }
 
 export default {
-  upsertHarvest,
-  getHarvestById,
-  getHarvests,
+  insertHarvests,
   getHarvestSummary,
   deleteHarvestById,
 }

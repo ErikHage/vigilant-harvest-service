@@ -10,7 +10,7 @@ import {
 import { BadRequestError } from '../errors/common';
 
 const harvests = {
-  fromRequest: (req: Request): HarvestRequest => ({
+  fromRequest: (req: Request): HarvestRequest[] => req.body.harvests.map({
     harvestId: req.body.harvestId,
     plantingId: req.body.plantingId,
     quantity: req.body.quantity,

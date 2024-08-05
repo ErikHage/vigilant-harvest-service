@@ -8,39 +8,18 @@ import { getLogger } from '../../logging';
 
 const logger = getLogger('harvests-service');
 
-async function upsertHarvest(harvestRequest: HarvestRequest): Promise<Harvest> {
+async function insertHarvests(harvestRequests: HarvestRequest[]): Promise<Harvest[]> {
   try {
-    const harvest: Harvest = {
-      harvestId: harvestRequest.harvestId || v4(),
+    const harvests = harvestRequests.map(harvestRequest => ({
+      harvestId: v4(),
       plantingId: harvestRequest.plantingId,
       quantity: harvestRequest.quantity,
-    };
+    }));
 
-    return await datasource.upsertHarvest(harvest);
+    return await datasource.insertHarvests(harvests);
   } catch (err) {
     const error = ensureError(err);
-    logger.error(error, 'Error upserting harvest');
-    throw err;
-  }
-}
-
-async function getHarvestById(harvestId: string): Promise<Harvest> {
-  try {
-    return await datasource.getHarvestById(harvestId);
-  } catch (err) {
-    const error = ensureError(err);
-    logger.error(error, 'Error getting harvest by id %s', harvestId);
-    throw err;
-  }
-}
-
-// TODO change to by planting? might also need a by-year.
-async function getHarvests(): Promise<Harvest[]> {
-  try {
-    return await datasource.getHarvests();
-  } catch (err) {
-    const error = ensureError(err);
-    logger.error(error, 'Error getting harvests');
+    logger.error(error, 'Error inserting harvests');
     throw err;
   }
 }
@@ -66,9 +45,7 @@ async function deleteHarvestById(harvestId: string): Promise<void> {
 }
 
 export default {
-  upsertHarvest,
-  getHarvestById,
-  getHarvests,
+  insertHarvests,
   getHarvestSummary,
   deleteHarvestById,
 }

@@ -8,7 +8,7 @@ function fromRow(row: HarvestRow): Harvest {
   }
 }
 
-const upsert = {
+const insert = {
   toParams: (harvest: Harvest): Array<string | number> => ([
     harvest.harvestId,
     harvest.plantingId,
@@ -29,7 +29,7 @@ const summary = {
 };
 
 export default {
-  upsert,
+  insert,
   summary,
   fromRow,
 }
