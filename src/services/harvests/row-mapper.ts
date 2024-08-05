@@ -24,7 +24,7 @@ const summary = {
   fromRow: (row: HarvestSummaryRow): HarvestSummary => ({
     plantingYear: row.planting_year,
     plantingId: row.planting_id,
-    quantity: row.quantity,
+    quantity: parseInt(row.quantity),
   }),
 };
 

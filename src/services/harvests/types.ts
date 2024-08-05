@@ -40,7 +40,7 @@ export interface HarvestSummary {
 export interface HarvestSummaryRow extends RowDataPacket {
   planting_year: number, //int
   planting_id: string,
-  quantity: number, //int
+  quantity: string, //int, but SUM returns a decimal, which mysql2 represents as a string
 }
 
 export interface HarvestSummaryResponse {

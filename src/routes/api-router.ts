@@ -9,6 +9,8 @@ import harvestHandlers from '../handlers/harvest-handlers';
 const apiRouter: Express = Router();
 
 const buildRouter = (): Express => {
+  // apiRouter.use(logRequests);
+
   apiRouter.get('/service-info', getServiceInfo);
 
   apiRouter.put('/plots', plotHandlers.upsertPlot);
@@ -27,8 +29,9 @@ const buildRouter = (): Express => {
   apiRouter.delete('/plants/:plantId', plantHandlers.deletePlantById);
 
   apiRouter.put('/harvests', harvestHandlers.upsertHarvest);
-  apiRouter.get('/harvests/:harvestId', harvestHandlers.getHarvestById);
   apiRouter.get('/harvests', harvestHandlers.getHarvests);
+  apiRouter.get('/harvests/summary', harvestHandlers.getHarvestSummary);
+  apiRouter.get('/harvests/:harvestId', harvestHandlers.getHarvestById);
   apiRouter.delete('/harvests/:harvestId', harvestHandlers.deleteHarvestById);
 
   return apiRouter;
