@@ -9,12 +9,16 @@ import {
 } from '../services/harvests/types';
 import { BadRequestError } from '../errors/common';
 
-const harvests = {
-  fromRequest: (req: Request): HarvestRequest[] => req.body.harvests.map({
-    harvestId: req.body.harvestId,
-    plantingId: req.body.plantingId,
-    quantity: req.body.quantity,
-  }),
+const insert = {
+  fromRequest: (req: Request): HarvestRequest[] => {
+    const { harvests, } = req.body;
+
+    return harvests.map((harvest: HarvestRequest): HarvestRequest => ({
+      harvestId: harvest.harvestId,
+      plantingId: harvest.plantingId,
+      quantity: harvest.quantity,
+    }));
+  },
 
   toResponse: (harvest: Harvest): HarvestResponse => ({
     harvestId: harvest.harvestId,
@@ -42,6 +46,6 @@ const summary = {
 };
 
 export default {
-  harvests,
+  insert,
   summary,
 }
