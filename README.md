@@ -31,3 +31,5 @@ Plants
 Planting -> add plot id to this, many to one plot 
 
 Harvest -> many to one planting
+
+Later on, add more details to plantings, like notes
