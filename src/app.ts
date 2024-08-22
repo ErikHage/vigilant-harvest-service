@@ -14,7 +14,7 @@ const getApp = (appRoot: string, port: string): Express => {
 
   app.use(cors());
 
-  app.use('/v0/api', buildApiRouter());
+  app.use('/api/vigilant-harvest-service/v0', buildApiRouter());
 
   return app;
 }
