@@ -35,6 +35,8 @@ WORKDIR ${HOME}
 COPY --from=buildStage ${HOME}/node_modules ./node_modules
 COPY --from=buildStage ${HOME}/dist ./dist
 COPY package.json ./package.json
+COPY ./database.json ${HOME}/
+COPY ./migrations ${HOME}/migrations
 
 EXPOSE 3000
 
