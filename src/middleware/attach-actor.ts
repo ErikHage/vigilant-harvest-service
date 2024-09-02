@@ -12,7 +12,7 @@ const logger = getLogger('attach-actor-middleware');
 
 const signer: JwtSigner = new JwtSigner(
   () => '', // don't need this
-  environment.envVarLoader('SESSION_PUBLIC_CERT'),
+  environment.envVarLoader('SESSION_PUBLIC_KEY'),
   {
     verifyOptions: {
       algorithms: [ 'RS256', ],

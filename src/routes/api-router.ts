@@ -5,13 +5,17 @@ import plotHandlers from '../handlers/plot-handlers';
 import plantingHandlers from '../handlers/planting-handlers';
 import plantHandlers from '../handlers/plant-handlers';
 import harvestHandlers from '../handlers/harvest-handlers';
+import logRequests from '../middleware/log-requests';
+import attachActor from '../middleware/attach-actor';
 
 const apiRouter: Express = Router();
 
 const buildRouter = (): Express => {
-  // apiRouter.use(logRequests);
+  apiRouter.use(logRequests);
 
   apiRouter.get('/service-info', getServiceInfo);
+
+  apiRouter.use(attachActor);
 
   apiRouter.put('/plots', plotHandlers.upsertPlot);
   apiRouter.get('/plots/:plotId', plotHandlers.getPlotById);
