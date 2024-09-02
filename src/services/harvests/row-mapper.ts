@@ -1,10 +1,12 @@
 import { Harvest, HarvestRow, HarvestSummary, HarvestSummaryRequest, HarvestSummaryRow } from './types';
+import mysqlUtils from '../../database/mysql-utils';
 
 function fromRow(row: HarvestRow): Harvest {
   return {
     harvestId: row.harvest_id,
     plantingId: row.planting_id,
     quantity: row.quantity,
+    harvestDate: row.date_created,
   }
 }
 
@@ -13,6 +15,7 @@ const insert = {
     harvest.harvestId,
     harvest.plantingId,
     harvest.quantity,
+    mysqlUtils.dateToDbString(harvest.harvestDate),
   ]),
 };
 

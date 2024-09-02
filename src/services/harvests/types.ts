@@ -4,24 +4,28 @@ export interface HarvestRequest {
   harvestId: string | undefined,
   plantingId: string,
   quantity: number, //int
+  harvestDate: Date,
 }
 
 export interface HarvestResponse {
   harvestId: string,
   plantingId: string,
   quantity: number, //int
+  harvestDate: Date,
 }
 
 export interface Harvest {
   harvestId: string,
   plantingId: string,
   quantity: number, //int
+  harvestDate: Date,
 }
 
 export interface HarvestRow extends RowDataPacket {
   harvest_id: string,
   planting_id: string,
   quantity: number, //int
+  date_created: Date,
 }
 
 export interface HarvestSummaryRequest {

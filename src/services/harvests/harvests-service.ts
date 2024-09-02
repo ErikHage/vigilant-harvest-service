@@ -10,10 +10,11 @@ const logger = getLogger('harvests-service');
 
 async function insertHarvests(harvestRequests: HarvestRequest[]): Promise<Harvest[]> {
   try {
-    const harvests = harvestRequests.map(harvestRequest => ({
+    const harvests: Harvest[] = harvestRequests.map(harvestRequest => ({
       harvestId: v4(),
       plantingId: harvestRequest.plantingId,
       quantity: harvestRequest.quantity,
+      harvestDate: harvestRequest.harvestDate,
     }));
 
     return await datasource.insertHarvests(harvests);

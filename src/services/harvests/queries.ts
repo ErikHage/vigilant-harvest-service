@@ -1,4 +1,4 @@
-const insertHarvest: string = 'INSERT into harvests (harvest_id, planting_id, quantity) VALUES (?,?,?)';
+const insertHarvest: string = 'INSERT into harvests (harvest_id, planting_id, quantity, date_created) VALUES (?,?,?,?)';
 
 const getHarvestSummary: string =
   `SELECT p.planting_year, h.planting_id, SUM(h.quantity) as quantity

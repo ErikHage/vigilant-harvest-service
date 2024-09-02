@@ -5,7 +5,8 @@ import {
   HarvestRequest,
   HarvestResponse,
   HarvestSummary,
-  HarvestSummaryRequest, HarvestSummaryResponse
+  HarvestSummaryRequest,
+  HarvestSummaryResponse
 } from '../services/harvests/types';
 import { BadRequestError } from '../errors/common';
 
@@ -13,10 +14,13 @@ const insert = {
   fromRequest: (req: Request): HarvestRequest[] => {
     const { harvests, } = req.body;
 
-    return harvests.map((harvest: HarvestRequest): HarvestRequest => ({
+    // this is the mapper, it won't know what type is coming in from the request object
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return harvests.map((harvest: any): HarvestRequest => ({
       harvestId: harvest.harvestId,
       plantingId: harvest.plantingId,
       quantity: harvest.quantity,
+      harvestDate: new Date(harvest.harvestDate),
     }));
   },
 
@@ -24,6 +28,7 @@ const insert = {
     harvestId: harvest.harvestId,
     plantingId: harvest.plantingId,
     quantity: harvest.quantity,
+    harvestDate: harvest.harvestDate,
   }),
 };
 
