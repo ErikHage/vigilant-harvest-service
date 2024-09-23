@@ -22,6 +22,10 @@ async function getHarvestSummary(request: Request, response: Response) {
   response.status(200).send(harvestsResponse);
 }
 
+function searchHarvests(request: Request, response: Response) {
+  response.sendStatus(200);
+}
+
 async function deleteHarvestById(request: Request, response: Response) {
   const { harvestId, } = request.params;
 
@@ -37,5 +41,6 @@ async function deleteHarvestById(request: Request, response: Response) {
 export default {
   insertHarvests,
   getHarvestSummary,
+  searchHarvests,
   deleteHarvestById,
 }

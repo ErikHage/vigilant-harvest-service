@@ -34,6 +34,7 @@ const buildRouter = (): Express => {
 
   apiRouter.put('/harvests', harvestHandlers.insertHarvests);
   apiRouter.get('/harvests/summary', harvestHandlers.getHarvestSummary);
+  apiRouter.get('/harvests/search', harvestHandlers.searchHarvests);
   apiRouter.delete('/harvests/:harvestId', harvestHandlers.deleteHarvestById);
 
   return apiRouter;

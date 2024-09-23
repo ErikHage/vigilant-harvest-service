@@ -52,3 +52,8 @@ export interface HarvestSummaryResponse {
   plantingId: string,
   quantity: number, //int
 }
+
+export interface HarvestSearchRequest {
+  skip: number, // int
+  limit: number, // int
+}
