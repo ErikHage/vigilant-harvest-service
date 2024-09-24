@@ -3,7 +3,7 @@ import { Request } from 'express';
 import {
   Harvest,
   HarvestRequest,
-  HarvestResponse,
+  HarvestResponse, HarvestSearchRequest,
   HarvestSummary,
   HarvestSummaryRequest,
   HarvestSummaryResponse
@@ -50,7 +50,17 @@ const summary = {
   }),
 };
 
+const search = {
+  fromRequest: (req: Request): HarvestSearchRequest => {
+    return {
+      skip: parseInt(req.query.skip as string),
+      limit: parseInt(req.query.limit as string),
+    };
+  },
+};
+
 export default {
   insert,
   summary,
+  search,
 }
