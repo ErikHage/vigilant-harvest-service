@@ -1,6 +1,6 @@
 import { v4 } from 'uuid';
 
-import { Harvest, HarvestRequest, HarvestSummary, HarvestSummaryRequest } from './types';
+import { Harvest, HarvestRequest, HarvestSearchRequest, HarvestSummary, HarvestSummaryRequest } from './types';
 
 import datasource from './harvests-mysql-datasource';
 import { ensureError } from '../../errors';
@@ -35,6 +35,17 @@ async function getHarvestSummary(request: HarvestSummaryRequest): Promise<Harves
   }
 }
 
+function searchHarvests(request: HarvestSearchRequest): Harvest[] {
+  const harvests: Harvest[] = [];
+  try {
+    return harvests;
+  } catch (err) {
+    const error = ensureError(err);
+    logger.error(error, 'Error searching harvests', { request, });
+    throw err;
+  }
+}
+
 async function deleteHarvestById(harvestId: string): Promise<void> {
   try {
     await datasource.deleteHarvestById(harvestId);
@@ -49,4 +60,5 @@ export default {
   insertHarvests,
   getHarvestSummary,
   deleteHarvestById,
+  searchHarvests,
 }
