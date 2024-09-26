@@ -32,8 +32,9 @@ async function searchHarvests(request: Request, response: Response) {
   const params: HarvestSearchRequest = harvestSerializers.search.fromRequest(request);
 
   const harvests = await harvestsService.searchHarvests(params);
+  const harvestsResponse = harvests.map(harvestSerializers.search.toResponse);
 
-  response.status(200).send(harvests);
+  response.status(200).send(harvestsResponse);
 }
 
 async function deleteHarvestById(request: Request, response: Response) {

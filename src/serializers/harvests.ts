@@ -57,6 +57,15 @@ const search = {
       limit: parseInt(req.query.limit as string),
     };
   },
+
+  toResponse: (harvest: Harvest): HarvestResponse => {
+    return {
+      harvestId: harvest.harvestId,
+      plantingId: harvest.plantingId,
+      quantity: harvest.quantity,
+      harvestDate: harvest.harvestDate,
+    };
+  },
 };
 
 export default {
