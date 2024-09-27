@@ -1,4 +1,11 @@
-import { Harvest, HarvestRow, HarvestSummary, HarvestSummaryRequest, HarvestSummaryRow } from './types';
+import {
+  Harvest,
+  HarvestRow,
+  HarvestSearchRequest,
+  HarvestSummary,
+  HarvestSummaryRequest,
+  HarvestSummaryRow
+} from './types';
 import mysqlUtils from '../../database/mysql-utils';
 
 function fromRow(row: HarvestRow): Harvest {
@@ -31,8 +38,16 @@ const summary = {
   }),
 };
 
+const search = {
+  toParams: (request: HarvestSearchRequest): Array<string | number> => ([
+    request.skip,
+    request.limit,
+  ]),
+};
+
 export default {
   insert,
   summary,
+  search,
   fromRow,
 }
