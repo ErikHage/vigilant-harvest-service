@@ -8,10 +8,19 @@ const getHarvestSummary: string =
     WHERE p.planting_year = ?
     GROUP BY p.planting_year, h.planting_id`;
 
+const searchHarvests: string =
+  `SELECT harvest_id, planting_id, quantity, date_created
+     FROM harvests
+   ORDER BY
+   SKIP ?
+   LIMIT ?
+  `;
+
 const deleteById: string = 'DELETE FROM harvests WHERE harvest_id = ?';
 
 export default {
   insertHarvest,
   getHarvestSummary,
+  searchHarvests,
   deleteById,
 }
