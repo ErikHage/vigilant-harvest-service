@@ -1,4 +1,11 @@
-import { Harvest, HarvestSummary, HarvestSummaryRequest, HarvestSummaryRow } from './types';
+import {
+  Harvest,
+  HarvestRow,
+  HarvestSearchRequest,
+  HarvestSummary,
+  HarvestSummaryRequest,
+  HarvestSummaryRow
+} from './types';
 import { QueryPayload } from '../../database/types';
 
 import queries from './queries';
@@ -31,6 +38,17 @@ async function getHarvestSummary(request: HarvestSummaryRequest): Promise<Harves
   return results.map(rowMapper.summary.fromRow);
 }
 
+async function searchHarvests(request: HarvestSearchRequest): Promise<Harvest[]> {
+  const query = {
+    sql: queries.searchHarvests,
+    params: rowMapper.search.toParams(request),
+  };
+
+  const results = await db.execQuery<HarvestRow[]>(query);
+
+  return results.map(rowMapper.fromRow);
+}
+
 async function deleteHarvestById(harvestId: string): Promise<void> {
   const query = {
     sql: queries.deleteById,
@@ -44,4 +62,5 @@ export default {
   insertHarvests,
   getHarvestSummary,
   deleteHarvestById,
+  searchHarvests,
 }
