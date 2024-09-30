@@ -35,10 +35,9 @@ async function getHarvestSummary(request: HarvestSummaryRequest): Promise<Harves
   }
 }
 
-function searchHarvests(request: HarvestSearchRequest): Harvest[] {
-  const harvests: Harvest[] = [];
+async function searchHarvests(request: HarvestSearchRequest): Promise<Harvest[]> {
   try {
-    return harvests;
+    return await datasource.searchHarvests(request);
   } catch (err) {
     const error = ensureError(err);
     logger.error(error, 'Error searching harvests', { request, });
