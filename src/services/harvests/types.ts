@@ -54,6 +54,7 @@ export interface HarvestSummaryResponse {
 }
 
 export interface HarvestSearchRequest {
+  year: number, // int
   skip: number, // int
   limit: number, // int
 }
