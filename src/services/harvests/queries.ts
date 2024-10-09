@@ -9,9 +9,11 @@ const getHarvestSummary: string =
     GROUP BY p.planting_year, h.planting_id`;
 
 const searchHarvests: string =
-  `SELECT harvest_id, planting_id, quantity, date_created
-     FROM harvests
-   ORDER BY
+  `SELECT h.harvest_id, h.planting_id, h.quantity, h.date_created, p.planting_year
+     FROM harvests h
+     JOIN plantings p
+    WHERE p.planting_year = ?
+   ORDER BY h.date_created DESC
    SKIP ?
    LIMIT ?
   `;
