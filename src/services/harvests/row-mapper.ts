@@ -40,6 +40,7 @@ const summary = {
 
 const search = {
   toParams: (request: HarvestSearchRequest): Array<string | number> => ([
+    request.year,
     request.skip,
     request.limit,
   ]),
