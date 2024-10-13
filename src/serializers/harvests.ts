@@ -53,8 +53,7 @@ const summary = {
 const search = {
   fromRequest: (req: Request): HarvestSearchRequest => {
     return {
-      skip: parseInt(req.query.skip as string),
-      limit: parseInt(req.query.limit as string),
+      year: parseInt(req.query.year as string),
     };
   },
 

@@ -14,8 +14,6 @@ const searchHarvests: string =
      JOIN plantings p
     WHERE p.planting_year = ?
    ORDER BY h.date_created DESC
-   SKIP ?
-   LIMIT ?
   `;
 
 const deleteById: string = 'DELETE FROM harvests WHERE harvest_id = ?';
