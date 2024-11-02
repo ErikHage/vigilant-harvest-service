@@ -12,6 +12,7 @@ const searchHarvests: string =
   `SELECT h.harvest_id, h.planting_id, h.quantity, h.date_created
      FROM harvests h
      JOIN plantings p
+       ON h.planting_id = p.planting_id
     WHERE p.planting_year = ?
    ORDER BY h.date_created DESC
   `;
