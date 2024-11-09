@@ -12,7 +12,6 @@ import {
 
 async function insertHarvests(request: Request, response: Response) {
   const harvestRequests: HarvestRequest[] = harvestSerializers.insert.fromRequest(request);
-  console.log('harvestRequests', harvestRequests);
 
   const harvests: Harvest[] = await harvestsService.insertHarvests(harvestRequests);
   const harvestsResponse: HarvestResponse[] = harvests.map(harvestSerializers.insert.toResponse);

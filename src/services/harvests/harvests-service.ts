@@ -13,8 +13,6 @@ async function insertHarvests(harvestRequests: HarvestRequest[]): Promise<Harves
     const harvestPromises: Promise<Harvest>[] = harvestRequests.map(async (harvestRequest) => {
       const maybeExistingHarvest = await maybeMergeHarvest(harvestRequest);
 
-      console.log('maybeExistingHarvest', maybeExistingHarvest);
-      console.log('harvestRequest', harvestRequest);
       const quantity = maybeExistingHarvest !== null
         ? maybeExistingHarvest.quantity + harvestRequest.quantity
         : harvestRequest.quantity;
