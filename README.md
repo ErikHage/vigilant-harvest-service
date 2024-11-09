@@ -33,3 +33,18 @@ Planting -> add plot id to this, many to one plot
 Harvest -> many to one planting
 
 Later on, add more details to plantings, like notes
+
+
+Example curl:
+
+``` shell
+curl -vX PUT http://localhost:8002/api/vigilant-harvest-service/v0/harvests \
+  -H 'content-type: application/json' \
+  -d '{
+    "harvests": [{
+      "plantingId": "1",
+      "quantity": "1",
+      "harvestDate": "2024-11-09T00:00:00"
+    }]
+  }'
+```

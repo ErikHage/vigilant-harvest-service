@@ -27,6 +27,21 @@ async function insertHarvests(harvests: Harvest[]): Promise<Harvest[]> {
   return harvests;
 }
 
+async function getHarvestByPlantingIdAndDate(plantingId: string, harvestDate: Date): Promise<Harvest | null> {
+  const query = {
+    sql: queries.getHarvestByPlantingIdAndDate,
+    params: rowMapper.getByPlantingIdAndDate.toParams(plantingId, harvestDate),
+  };
+
+  const results = await db.execQuery<HarvestRow[]>(query);
+
+  if (results.length === 0) {
+    return null;
+  }
+
+  return rowMapper.fromRow(results[0]!);
+}
+
 async function getHarvestSummary(request: HarvestSummaryRequest): Promise<HarvestSummary[]> {
   const query = {
     sql: queries.getHarvestSummary,
@@ -60,6 +75,7 @@ async function deleteHarvestById(harvestId: string): Promise<void> {
 
 export default {
   insertHarvests,
+  getHarvestByPlantingIdAndDate,
   getHarvestSummary,
   deleteHarvestById,
   searchHarvests,

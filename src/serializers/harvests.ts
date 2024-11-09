@@ -16,12 +16,17 @@ const insert = {
 
     // this is the mapper, it won't know what type is coming in from the request object
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return harvests.map((harvest: any): HarvestRequest => ({
-      harvestId: harvest.harvestId,
-      plantingId: harvest.plantingId,
-      quantity: harvest.quantity,
-      harvestDate: new Date(harvest.harvestDate),
-    }));
+    return harvests.map((harvest: any): HarvestRequest => {
+      const harvestDate: Date = new Date(harvest.harvestDate);
+      harvestDate.setHours(0, 0, 0, 0); // Sets time to 00:00:00
+
+      return {
+        harvestId: harvest.harvestId,
+        plantingId: harvest.plantingId,
+        quantity: Number(harvest.quantity),
+        harvestDate,
+      }
+    });
   },
 
   toResponse: (harvest: Harvest): HarvestResponse => ({

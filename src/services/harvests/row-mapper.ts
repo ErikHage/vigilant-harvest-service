@@ -44,8 +44,16 @@ const search = {
   ]),
 };
 
+const getByPlantingIdAndDate = {
+  toParams: (plantingId: string, harvestDate: Date): Array<string | number> => ([
+    plantingId,
+    mysqlUtils.dateToDbString(harvestDate),
+  ]),
+};
+
 export default {
   insert,
+  getByPlantingIdAndDate,
   summary,
   search,
   fromRow,

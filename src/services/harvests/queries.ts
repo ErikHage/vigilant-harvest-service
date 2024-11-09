@@ -1,4 +1,16 @@
-const insertHarvest: string = 'INSERT into harvests (harvest_id, planting_id, quantity, date_created) VALUES (?,?,?,?)';
+const insertHarvest: string =
+  `INSERT INTO harvests (harvest_id, planting_id, quantity, date_created)
+   VALUES (?, ?, ?, ?)
+       ON DUPLICATE KEY
+       UPDATE planting_id = VALUES(planting_id),
+              quantity = VALUES(quantity),
+              date_created = VALUES(date_created)`;
+
+const getHarvestByPlantingIdAndDate: string =
+  `SELECT harvest_id, planting_id, quantity, date_created
+     FROM harvests
+    WHERE planting_id = ?
+      AND date_created = ?`;
 
 const getHarvestSummary: string =
   `SELECT p.planting_year, h.planting_id, SUM(h.quantity) as quantity
@@ -14,13 +26,13 @@ const searchHarvests: string =
      JOIN plantings p
        ON h.planting_id = p.planting_id
     WHERE p.planting_year = ?
-   ORDER BY h.date_created DESC
-  `;
+   ORDER BY h.date_created DESC`;
 
 const deleteById: string = 'DELETE FROM harvests WHERE harvest_id = ?';
 
 export default {
   insertHarvest,
+  getHarvestByPlantingIdAndDate,
   getHarvestSummary,
   searchHarvests,
   deleteById,
