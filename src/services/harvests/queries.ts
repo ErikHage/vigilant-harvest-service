@@ -1,4 +1,4 @@
-const insertHarvest: string =
+const upsertHarvest: string =
   `INSERT INTO harvests (harvest_id, planting_id, quantity, date_created)
    VALUES (?, ?, ?, ?)
        ON DUPLICATE KEY
@@ -31,7 +31,7 @@ const searchHarvests: string =
 const deleteById: string = 'DELETE FROM harvests WHERE harvest_id = ?';
 
 export default {
-  insertHarvest,
+  upsertHarvest,
   getHarvestByPlantingIdAndDate,
   getHarvestSummary,
   searchHarvests,

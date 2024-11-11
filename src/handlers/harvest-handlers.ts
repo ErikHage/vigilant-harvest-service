@@ -10,10 +10,10 @@ import {
   HarvestSummaryRequest
 } from '../services/harvests/types';
 
-async function insertHarvests(request: Request, response: Response) {
+async function upsertHarvests(request: Request, response: Response) {
   const harvestRequests: HarvestRequest[] = harvestSerializers.insert.fromRequest(request);
 
-  const harvests: Harvest[] = await harvestsService.insertHarvests(harvestRequests);
+  const harvests: Harvest[] = await harvestsService.upsertHarvests(harvestRequests);
   const harvestsResponse: HarvestResponse[] = harvests.map(harvestSerializers.insert.toResponse);
 
   response.status(201).send(harvestsResponse);
@@ -50,7 +50,7 @@ async function deleteHarvestById(request: Request, response: Response) {
 }
 
 export default {
-  insertHarvests,
+  upsertHarvests,
   getHarvestSummary,
   searchHarvests,
   deleteHarvestById,

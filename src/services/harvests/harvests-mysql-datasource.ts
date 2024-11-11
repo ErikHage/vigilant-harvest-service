@@ -12,12 +12,12 @@ import queries from './queries';
 import db from '../../database'
 import rowMapper from './row-mapper';
 
-async function insertHarvests(harvests: Harvest[]): Promise<Harvest[]> {
+async function upsertHarvests(harvests: Harvest[]): Promise<Harvest[]> {
   const queriesToRun: QueryPayload[] = [];
 
   harvests.forEach(harvest => {
     queriesToRun.push({
-      sql: queries.insertHarvest,
+      sql: queries.upsertHarvest,
       params: rowMapper.insert.toParams(harvest),
     });
   });
@@ -74,7 +74,7 @@ async function deleteHarvestById(harvestId: string): Promise<void> {
 }
 
 export default {
-  insertHarvests,
+  upsertHarvests,
   getHarvestByPlantingIdAndDate,
   getHarvestSummary,
   deleteHarvestById,

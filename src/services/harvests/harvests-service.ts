@@ -8,7 +8,7 @@ import { getLogger } from '../../logging';
 
 const logger = getLogger('harvests-service');
 
-async function insertHarvests(harvestRequests: HarvestRequest[]): Promise<Harvest[]> {
+async function upsertHarvests(harvestRequests: HarvestRequest[]): Promise<Harvest[]> {
   try {
     const harvestPromises: Promise<Harvest>[] = harvestRequests.map(async (harvestRequest) => {
       let maybeExistingHarvest = null;
@@ -31,7 +31,7 @@ async function insertHarvests(harvestRequests: HarvestRequest[]): Promise<Harves
 
     const harvests: Harvest[] = await Promise.all(harvestPromises);
 
-    return await datasource.insertHarvests(harvests);
+    return await datasource.upsertHarvests(harvests);
   } catch (err) {
     const error = ensureError(err);
     logger.error(error, 'Error inserting harvests');
@@ -80,7 +80,7 @@ async function deleteHarvestById(harvestId: string): Promise<void> {
 }
 
 export default {
-  insertHarvests,
+  upsertHarvests,
   getHarvestSummary,
   deleteHarvestById,
   searchHarvests,

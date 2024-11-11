@@ -32,7 +32,7 @@ const buildRouter = (): Express => {
   apiRouter.get('/plants', plantHandlers.getPlants);
   apiRouter.delete('/plants/:plantId', plantHandlers.deletePlantById);
 
-  apiRouter.put('/harvests', harvestHandlers.insertHarvests);
+  apiRouter.put('/harvests', harvestHandlers.upsertHarvests);
   apiRouter.get('/harvests/summary', harvestHandlers.getHarvestSummary);
   apiRouter.get('/harvests/search', harvestHandlers.searchHarvests);
   apiRouter.delete('/harvests/:harvestId', harvestHandlers.deleteHarvestById);
