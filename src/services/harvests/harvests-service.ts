@@ -11,7 +11,11 @@ const logger = getLogger('harvests-service');
 async function insertHarvests(harvestRequests: HarvestRequest[]): Promise<Harvest[]> {
   try {
     const harvestPromises: Promise<Harvest>[] = harvestRequests.map(async (harvestRequest) => {
-      const maybeExistingHarvest = await maybeMergeHarvest(harvestRequest);
+      let maybeExistingHarvest = null;
+
+      if (harvestRequest.harvestId == null) {
+        maybeExistingHarvest = await maybeMergeHarvest(harvestRequest);
+      }
 
       const quantity = maybeExistingHarvest !== null
         ? maybeExistingHarvest.quantity + harvestRequest.quantity
