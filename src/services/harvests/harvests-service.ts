@@ -22,7 +22,7 @@ async function upsertHarvests(harvestRequests: HarvestRequest[]): Promise<Harves
         : harvestRequest.quantity;
 
       return {
-        harvestId: maybeExistingHarvest?.harvestId || v4(),
+        harvestId: maybeExistingHarvest?.harvestId || harvestRequest.harvestId || v4(),
         plantingId: harvestRequest.plantingId,
         quantity,
         harvestDate: harvestRequest.harvestDate,
