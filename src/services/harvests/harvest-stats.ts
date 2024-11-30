@@ -1,10 +1,10 @@
 import { Harvest, HarvestStats } from './types';
 
 function calculate(harvests: Harvest[]): HarvestStats {
-  const harvestsByDate = mapHarvestsToDates(harvests);
+  const harvestsByDate: Map<string, Harvest[]> = mapHarvestsToDates(harvests);
 
   return {
-    numberOfHarvests: Object.keys(harvestsByDate).length,
+    numberOfHarvests: harvestsByDate.size,
   };
 }
 

@@ -6,6 +6,10 @@ function dateToDbString(date: Date) {
   return format(date, mysqlFormat);
 }
 
+function dbDateStringToJsDate(dateString: string): Date {
+  return new Date(dateString);
+}
+
 function booleanToDbInt(val: boolean): number {
   return val ? 1 : 0;
 }
@@ -16,6 +20,7 @@ function dbIntToBoolean(val: number): boolean {
 
 export default {
   dateToDbString,
+  dbDateStringToJsDate,
   booleanToDbInt,
   dbIntToBoolean,
 }

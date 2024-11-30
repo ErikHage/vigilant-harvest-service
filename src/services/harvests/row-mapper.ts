@@ -13,7 +13,7 @@ function fromRow(row: HarvestRow): Harvest {
     harvestId: row.harvest_id,
     plantingId: row.planting_id,
     quantity: row.quantity,
-    harvestDate: row.date_created,
+    harvestDate: mysqlUtils.dbDateStringToJsDate(row.date_created),
   }
 }
 

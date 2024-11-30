@@ -25,7 +25,7 @@ export interface HarvestRow extends RowDataPacket {
   harvest_id: string,
   planting_id: string,
   quantity: number, //int
-  date_created: Date,
+  date_created: string,
 }
 
 export interface HarvestSummaryRequest {
