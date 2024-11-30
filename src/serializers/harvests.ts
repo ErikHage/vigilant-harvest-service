@@ -79,7 +79,6 @@ const stats = {
     };
   },
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   toResponse: (harvestStats: HarvestStats): HarvestStatsResponse => {
     return {
       numberOfHarvests: harvestStats.numberOfHarvests,
