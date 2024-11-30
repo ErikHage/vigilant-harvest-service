@@ -56,3 +56,15 @@ export interface HarvestSummaryResponse {
 export interface HarvestSearchRequest {
   year: number, // int
 }
+
+export interface HarvestStatsRequest {
+  year: number, // int
+}
+
+export interface HarvestStats {
+  numberOfHarvests: number, // int
+}
+
+export interface HarvestStatsResponse {
+  numberOfHarvests: number, // int
+}

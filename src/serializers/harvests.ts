@@ -3,7 +3,7 @@ import { Request } from 'express';
 import {
   Harvest,
   HarvestRequest,
-  HarvestResponse, HarvestSearchRequest,
+  HarvestResponse, HarvestSearchRequest, HarvestStats, HarvestStatsRequest, HarvestStatsResponse,
   HarvestSummary,
   HarvestSummaryRequest,
   HarvestSummaryResponse
@@ -72,8 +72,24 @@ const search = {
   },
 };
 
+const stats = {
+  fromRequest: (req: Request): HarvestStatsRequest => {
+    return {
+      year: parseInt(req.query.year as string),
+    };
+  },
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  toResponse: (harvestStats: HarvestStats): HarvestStatsResponse => {
+    return {
+      numberOfHarvests: harvestStats.numberOfHarvests,
+    };
+  },
+};
+
 export default {
   insert,
   summary,
   search,
+  stats,
 }

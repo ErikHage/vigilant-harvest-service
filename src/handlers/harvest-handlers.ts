@@ -6,7 +6,7 @@ import {
   Harvest,
   HarvestRequest,
   HarvestResponse,
-  HarvestSearchRequest,
+  HarvestSearchRequest, HarvestStats, HarvestStatsRequest,
   HarvestSummaryRequest
 } from '../services/harvests/types';
 
@@ -37,8 +37,13 @@ async function searchHarvests(request: Request, response: Response) {
   response.status(200).send(harvestsResponse);
 }
 
-function getHarvestStats(request: Request, response: Response) {
-  response.sendStatus(200);
+async function getHarvestStats(request: Request, response: Response) {
+  const params: HarvestStatsRequest = harvestSerializers.stats.fromRequest(request);
+
+  const stats: HarvestStats = await harvestsService.getHarvestStats(params);
+  const statsResponse = harvestSerializers.stats.toResponse(stats);
+
+  response.status(200).send(statsResponse);
 }
 
 async function deleteHarvestById(request: Request, response: Response) {
