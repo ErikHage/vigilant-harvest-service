@@ -18,6 +18,7 @@ function calculate(harvests: Harvest[]): HarvestStats {
 function mapHarvestsToDates(harvests: Harvest[]): Map<Date, Harvest[]> {
   return harvests.reduce((harvestsByDate, harvest) => {
     const dateKey = harvest.harvestDate;
+    dateKey.setHours(0, 0, 0, 0);
 
     if (!harvestsByDate.has(dateKey)) {
       harvestsByDate.set(dateKey, []);
