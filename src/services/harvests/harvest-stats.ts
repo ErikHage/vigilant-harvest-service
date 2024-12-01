@@ -1,9 +1,16 @@
 import { Harvest, HarvestStats } from './types';
+import { getLogger } from '../../logging';
 
 const MILLIS_PER_DAY: number = 1000 * 60 * 60 * 24;
 
+const logger = getLogger('harvests-stats');
+
 function calculate(harvests: Harvest[]): HarvestStats {
   const harvestsByDate: Map<Date, Harvest[]> = mapHarvestsToDates(harvests);
+
+  logger.info('harvestsByDate' + harvestsByDate);
+  logger.info('harvestsByDate.size' + harvestsByDate.size);
+
   const harvestDates = findFirstAndLast(harvestsByDate);
   const numberOfDays = calculateNumberOfDays(harvestDates.firstHarvestDate, harvestDates.lastHarvestDate);
 
