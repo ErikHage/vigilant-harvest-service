@@ -6,9 +6,9 @@ const MILLIS_PER_DAY: number = 1000 * 60 * 60 * 24;
 const logger = getLogger('harvests-stats');
 
 function calculate(harvests: Harvest[]): HarvestStats {
-  const harvestsByDate: Map<Date, Harvest[]> = mapHarvestsToDates(harvests);
+  const harvestsByDate: Map<string, Harvest[]> = mapHarvestsToDates(harvests);
 
-  logger.info('date keys' + Array.from(harvestsByDate.keys()).map(d => d.toDateString()));
+  logger.info('date keys' + Array.from(harvestsByDate.keys()));
   logger.info('harvestsByDate.size' + harvestsByDate.size);
 
   const harvestDates = findFirstAndLast(harvestsByDate);
@@ -22,10 +22,9 @@ function calculate(harvests: Harvest[]): HarvestStats {
   };
 }
 
-function mapHarvestsToDates(harvests: Harvest[]): Map<Date, Harvest[]> {
+function mapHarvestsToDates(harvests: Harvest[]): Map<string, Harvest[]> {
   return harvests.reduce((harvestsByDate, harvest) => {
-    const dateKey = harvest.harvestDate;
-    dateKey.setHours(0, 0, 0, 0);
+    const dateKey = harvest.harvestDate.toDateString();
 
     if (!harvestsByDate.has(dateKey)) {
       harvestsByDate.set(dateKey, []);
@@ -34,11 +33,11 @@ function mapHarvestsToDates(harvests: Harvest[]): Map<Date, Harvest[]> {
     harvestsByDate.get(dateKey)!.push(harvest);
 
     return harvestsByDate;
-  }, new Map<Date, Harvest[]>());
+  }, new Map<string, Harvest[]>());
 }
 
-function findFirstAndLast(harvestsByDate: Map<Date, Harvest[]>) {
-  const dates: Date[] = Array.from(harvestsByDate.keys());
+function findFirstAndLast(harvestsByDate: Map<string, Harvest[]>) {
+  const dates: Date[] = Array.from(harvestsByDate.keys()).map(d => new Date(d));
 
   if (dates.length === 0) {
     return {
