@@ -8,7 +8,7 @@ const logger = getLogger('harvests-stats');
 function calculate(harvests: Harvest[]): HarvestStats {
   const harvestsByDate: Map<Date, Harvest[]> = mapHarvestsToDates(harvests);
 
-  logger.info('harvestsByDate' + harvestsByDate);
+  logger.info('date keys' + Array.from(harvestsByDate.keys()).map(d => d.toDateString()));
   logger.info('harvestsByDate.size' + harvestsByDate.size);
 
   const harvestDates = findFirstAndLast(harvestsByDate);
