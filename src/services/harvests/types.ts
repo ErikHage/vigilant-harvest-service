@@ -62,9 +62,15 @@ export interface HarvestStatsRequest {
 }
 
 export interface HarvestStats {
+  firstHarvestDate: Date | null,
+  lastHarvestDate: Date | null,
   numberOfHarvests: number, // int
+  numberOfDays: number, // int
 }
 
 export interface HarvestStatsResponse {
+  firstHarvestDate: Date | null,
+  lastHarvestDate: Date | null,
   numberOfHarvests: number, // int
+  numberOfDays: number, // int
 }

@@ -81,7 +81,10 @@ const stats = {
 
   toResponse: (harvestStats: HarvestStats): HarvestStatsResponse => {
     return {
+      firstHarvestDate: harvestStats.firstHarvestDate,
+      lastHarvestDate: harvestStats.lastHarvestDate,
       numberOfHarvests: harvestStats.numberOfHarvests,
+      numberOfDays: harvestStats.numberOfDays,
     };
   },
 };
