@@ -1,7 +1,7 @@
 import { PlantingYear, PlantingYearRow } from './types';
 
 const plantingYears = {
-  upsert: {
+  insert: {
     toParams: function(plantingYear: PlantingYear): Array<string | number> {
       return [
         plantingYear.plantingYear,
