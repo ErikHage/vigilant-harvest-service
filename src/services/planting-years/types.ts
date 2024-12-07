@@ -12,3 +12,7 @@ export interface PlantingYear {
 export interface PlantingYearRow extends RowDataPacket  {
   planting_year: number, // int
 }
+
+export interface PlantingYearResponse {
+  plantingYear: number, // int
+}
