@@ -3,6 +3,7 @@ import Router, { Express } from 'express';
 import getServiceInfo from '../handlers/service-info-handler';
 import plotHandlers from '../handlers/plot-handlers';
 import plantingHandlers from '../handlers/planting-handlers';
+import plantingYearHandlers from '../handlers/planting-year-handlers';
 import plantHandlers from '../handlers/plant-handlers';
 import harvestHandlers from '../handlers/harvest-handlers';
 import logRequests from '../middleware/log-requests';
@@ -16,6 +17,9 @@ const buildRouter = (): Express => {
   apiRouter.get('/service-info', getServiceInfo);
 
   apiRouter.use(attachActor);
+
+  apiRouter.put('/planting-years', plantingYearHandlers.insertPlantingYear);
+  apiRouter.get('/planting-years', plantingYearHandlers.getPlantingYears);
 
   apiRouter.put('/plots', plotHandlers.upsertPlot);
   apiRouter.get('/plots/:plotId', plotHandlers.getPlotById);
