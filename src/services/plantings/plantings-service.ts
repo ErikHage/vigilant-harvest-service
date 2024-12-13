@@ -12,6 +12,7 @@ async function upsertPlanting(plantingRequest: PlantingRequest): Promise<Plantin
       plantId: plantingRequest.plantId,
       numPlants: plantingRequest.numPlants,
       plantingYear: plantingRequest.plantingYear,
+      notes: plantingRequest.notes,
     };
 
     return await datasource.upsertPlanting(planting);

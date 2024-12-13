@@ -2,13 +2,14 @@ import { Planting, PlantingRow } from './types';
 
 const plantings = {
   upsert: {
-    toParams: function(planting: Planting): Array<string | number> {
+    toParams: function(planting: Planting): Array<string | number | null> {
       return [
         planting.plantingId,
         planting.plotId,
         planting.plantId,
         planting.numPlants,
         planting.plantingYear,
+        planting.notes,
       ];
     },
   },
@@ -20,6 +21,7 @@ const plantings = {
       plantId: row.plant_id,
       numPlants: row.num_plants,
       plantingYear: row.planting_year,
+      notes: row.notes,
     };
   },
 };
