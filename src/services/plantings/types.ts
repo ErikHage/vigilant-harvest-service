@@ -6,7 +6,7 @@ export interface PlantingRequest {
   plantId: string,
   numPlants: number, // int
   plantingYear: number, // int
-  notes: string | null,
+  notes: string[],
 }
 
 export interface PlantingResponse {
@@ -15,7 +15,7 @@ export interface PlantingResponse {
   plantId: string,
   numPlants: number, // int
   plantingYear: number, // int
-  notes: string | null,
+  notes: string[],
 }
 
 export interface Planting {
@@ -24,7 +24,7 @@ export interface Planting {
   plantId: string,
   numPlants: number, // int
   plantingYear: number, // int
-  notes: string | null,
+  notes: string[],
 }
 
 export interface PlantingRow extends RowDataPacket  {
