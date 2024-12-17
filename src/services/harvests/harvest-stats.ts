@@ -1,4 +1,4 @@
-import { Harvest, HarvestStats } from './types';
+import { Harvest, HarvestPlantingStats, HarvestStats } from './types';
 
 const MILLIS_PER_DAY: number = 1000 * 60 * 60 * 24;
 
@@ -7,12 +7,14 @@ function calculate(harvests: Harvest[]): HarvestStats {
 
   const harvestDates = findFirstAndLast(harvestsByDate);
   const numberOfDays = calculateNumberOfDays(harvestDates.firstHarvestDate, harvestDates.lastHarvestDate);
+  const plantingStats = calculatePlantingStats();
 
   return {
     numberOfHarvests: harvestsByDate.size,
     firstHarvestDate: harvestDates.firstHarvestDate,
     lastHarvestDate: harvestDates.lastHarvestDate,
     numberOfDays,
+    plantingStats,
   };
 }
 
@@ -56,6 +58,10 @@ function calculateNumberOfDays(date1: Date | null, date2: Date | null): number {
 
   const diffInMs = Math.abs(date2.getTime() - date1.getTime());
   return Math.ceil(diffInMs / MILLIS_PER_DAY);
+}
+
+function calculatePlantingStats(): HarvestPlantingStats[] {
+  return [];
 }
 
 export default {
