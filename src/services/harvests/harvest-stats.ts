@@ -7,7 +7,7 @@ function calculate(harvests: Harvest[]): HarvestStats {
 
   const harvestDates = findFirstAndLast(harvestsByDate);
   const numberOfDays = calculateNumberOfDays(harvestDates.firstHarvestDate, harvestDates.lastHarvestDate);
-  const plantingStats = calculatePlantingStats();
+  const plantingStats = calculatePlantingStats(harvests);
 
   return {
     numberOfHarvests: harvestsByDate.size,
@@ -60,8 +60,18 @@ function calculateNumberOfDays(date1: Date | null, date2: Date | null): number {
   return Math.ceil(diffInMs / MILLIS_PER_DAY);
 }
 
-function calculatePlantingStats(): HarvestPlantingStats[] {
-  return [];
+function calculatePlantingStats(harvests: Harvest[]): Map<string,HarvestPlantingStats> {
+  return harvests.reduce((harvestPlantingStats, harvest) => {
+    const key = harvest.plantingId;
+
+    if (!harvestPlantingStats.has(key)) {
+      harvestPlantingStats.set(key, {
+        plantingId: key,
+      });
+    }
+
+    return harvestPlantingStats;
+  }, new Map<string, HarvestPlantingStats>());
 }
 
 export default {
