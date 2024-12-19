@@ -4,10 +4,11 @@ const MILLIS_PER_DAY: number = 1000 * 60 * 60 * 24;
 
 function calculate(harvests: Harvest[]): HarvestStats {
   const harvestsByDate: Map<string, Harvest[]> = mapHarvestsToDates(harvests);
+  const harvestsByPlanting: Map<string, Harvest[]> = mapHarvestsToPlantings(harvests);
 
   const harvestDates = findFirstAndLast(harvestsByDate);
   const numberOfDays = calculateNumberOfDays(harvestDates.firstHarvestDate, harvestDates.lastHarvestDate);
-  const plantingStats = calculatePlantingStats(harvests);
+  const plantingStats = calculatePlantingStats(harvestsByPlanting);
 
   return {
     numberOfHarvests: harvestsByDate.size,
@@ -29,6 +30,20 @@ function mapHarvestsToDates(harvests: Harvest[]): Map<string, Harvest[]> {
     harvestsByDate.get(dateKey)!.push(harvest);
 
     return harvestsByDate;
+  }, new Map<string, Harvest[]>());
+}
+
+function mapHarvestsToPlantings(harvests: Harvest[]): Map<string, Harvest[]> {
+  return harvests.reduce((harvestsByPlanting, harvest) => {
+    const plantingId = harvest.plantingId;
+
+    if (!harvestsByPlanting.has(plantingId)) {
+      harvestsByPlanting.set(plantingId, []);
+    }
+
+    harvestsByPlanting.get(plantingId)!.push(harvest);
+
+    return harvestsByPlanting;
   }, new Map<string, Harvest[]>());
 }
 
@@ -60,18 +75,10 @@ function calculateNumberOfDays(date1: Date | null, date2: Date | null): number {
   return Math.ceil(diffInMs / MILLIS_PER_DAY);
 }
 
-function calculatePlantingStats(harvests: Harvest[]): Map<string,HarvestPlantingStats> {
-  return harvests.reduce((harvestPlantingStats, harvest) => {
-    const key = harvest.plantingId;
-
-    if (!harvestPlantingStats.has(key)) {
-      harvestPlantingStats.set(key, {
-        plantingId: key,
-      });
-    }
-
-    return harvestPlantingStats;
-  }, new Map<string, HarvestPlantingStats>());
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function calculatePlantingStats(harvestsByPlanting: Map<string, Harvest[]>): Map<string,HarvestPlantingStats> {
+  // todo
+  return new Map<string, HarvestPlantingStats>();
 }
 
 export default {
