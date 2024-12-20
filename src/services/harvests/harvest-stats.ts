@@ -75,10 +75,22 @@ function calculateNumberOfDays(date1: Date | null, date2: Date | null): number {
   return Math.ceil(diffInMs / MILLIS_PER_DAY);
 }
 
+function calculatePlantingStats(harvestsByPlanting: Map<string, Harvest[]>): Map<string, HarvestPlantingStats> {
+  const result = new Map<string, HarvestPlantingStats>();
+
+  for (const plantingId of harvestsByPlanting.keys()) {
+    result.set(plantingId, calculatePlantingStat(plantingId, harvestsByPlanting.get(plantingId)!))
+  }
+
+  return result;
+}
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-function calculatePlantingStats(harvestsByPlanting: Map<string, Harvest[]>): Map<string,HarvestPlantingStats> {
-  // todo
-  return new Map<string, HarvestPlantingStats>();
+function calculatePlantingStat(plantingId: string, harvests: Harvest[]): HarvestPlantingStats {
+
+  return {
+    plantingId,
+  };
 }
 
 export default {
