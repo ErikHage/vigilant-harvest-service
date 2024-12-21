@@ -85,11 +85,17 @@ function calculatePlantingStats(harvestsByPlanting: Map<string, Harvest[]>): Map
   return result;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function calculatePlantingStat(plantingId: string, harvests: Harvest[]): HarvestPlantingStats {
+
+  let totalQuantity = 0;
+
+  harvests.forEach(harvest => {
+    totalQuantity += harvest.quantity;
+  });
 
   return {
     plantingId,
+    totalQuantity,
   };
 }
 

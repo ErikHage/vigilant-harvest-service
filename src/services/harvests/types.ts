@@ -79,4 +79,5 @@ export interface HarvestStatsResponse {
 
 export interface HarvestPlantingStats {
   plantingId: string,
+  totalQuantity: number, // int
 }
