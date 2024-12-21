@@ -86,9 +86,11 @@ function calculatePlantingStats(harvestsByPlanting: Map<string, Harvest[]>): Map
 }
 
 function calculatePlantingStat(plantingId: string, harvests: Harvest[]): HarvestPlantingStats {
+  const harvestsByDate = mapHarvestsToDates(harvests);
+  const harvestDates = findFirstAndLast(harvestsByDate);
+  const numberOfDays = calculateNumberOfDays(harvestDates.firstHarvestDate, harvestDates.lastHarvestDate);
 
   let totalQuantity = 0;
-
   harvests.forEach(harvest => {
     totalQuantity += harvest.quantity;
   });
@@ -96,6 +98,9 @@ function calculatePlantingStat(plantingId: string, harvests: Harvest[]): Harvest
   return {
     plantingId,
     totalQuantity,
+    averageHarvestPerDay: totalQuantity / numberOfDays,
+    firstHarvest: harvestDates.firstHarvestDate,
+    lastHarvest: harvestDates.lastHarvestDate,
   };
 }
 

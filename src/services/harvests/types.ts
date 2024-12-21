@@ -80,4 +80,7 @@ export interface HarvestStatsResponse {
 export interface HarvestPlantingStats {
   plantingId: string,
   totalQuantity: number, // int
+  averageHarvestPerDay: number // int
+  firstHarvest: Date | null,
+  lastHarvest: Date | null,
 }
