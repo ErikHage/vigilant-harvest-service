@@ -10,6 +10,8 @@ function calculate(harvests: Harvest[]): HarvestStats {
   const numberOfDays = calculateNumberOfDays(harvestDates.firstHarvestDate, harvestDates.lastHarvestDate);
   const plantingStats = calculatePlantingStats(harvestsByPlanting);
 
+  console.log('in calculate', plantingStats);
+
   return {
     numberOfHarvests: harvestsByDate.size,
     firstHarvestDate: harvestDates.firstHarvestDate,

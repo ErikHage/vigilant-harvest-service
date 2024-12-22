@@ -74,7 +74,7 @@ export interface HarvestStatsResponse {
   lastHarvestDate: Date | null,
   numberOfHarvests: number, // int
   numberOfDays: number, // int
-  plantingStats: Map<string, HarvestPlantingStats>,
+  plantingStats: HarvestPlantingStats[],
 }
 
 export interface HarvestPlantingStats {
