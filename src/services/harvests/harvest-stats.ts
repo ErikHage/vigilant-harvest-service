@@ -74,7 +74,7 @@ function calculateNumberOfDays(date1: Date | null, date2: Date | null): number {
   }
 
   const diffInMs = Math.abs(date2.getTime() - date1.getTime());
-  return Math.ceil(diffInMs / MILLIS_PER_DAY);
+  return Math.ceil(diffInMs / MILLIS_PER_DAY) + 1;
 }
 
 function calculatePlantingStats(harvestsByPlanting: Map<string, Harvest[]>): Map<string, HarvestPlantingStats> {
