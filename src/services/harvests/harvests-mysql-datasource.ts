@@ -4,7 +4,7 @@ import {
   HarvestSearchRequest,
   HarvestSummary,
   HarvestSummaryRequest,
-  HarvestSummaryRow
+  HarvestSummaryRow, HydratedHarvest, HydratedHarvestRow
 } from './types';
 import { QueryPayload } from '../../database/types';
 
@@ -64,6 +64,17 @@ async function searchHarvests(request: HarvestSearchRequest): Promise<Harvest[]>
   return results.map(rowMapper.fromRow);
 }
 
+async function getHydratedHarvestsByYear(year: number): Promise<HydratedHarvest[]> {
+  const query = {
+    sql: queries.getHydratedHarvestsByYear,
+    params: [ year, ],
+  };
+
+  const results = await db.execQuery<HydratedHarvestRow[]>(query);
+
+  return results.map(rowMapper.fromHydratedRow);
+}
+
 async function deleteHarvestById(harvestId: string): Promise<void> {
   const query = {
     sql: queries.deleteById,
@@ -79,4 +90,5 @@ export default {
   getHarvestSummary,
   deleteHarvestById,
   searchHarvests,
+  getHydratedHarvestsByYear,
 }

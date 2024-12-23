@@ -4,7 +4,7 @@ import {
   HarvestSearchRequest,
   HarvestSummary,
   HarvestSummaryRequest,
-  HarvestSummaryRow
+  HarvestSummaryRow, HydratedHarvest, HydratedHarvestRow
 } from './types';
 import mysqlUtils from '../../database/mysql-utils';
 
@@ -12,6 +12,16 @@ function fromRow(row: HarvestRow): Harvest {
   return {
     harvestId: row.harvest_id,
     plantingId: row.planting_id,
+    quantity: row.quantity,
+    harvestDate: mysqlUtils.dbDateStringToJsDate(row.date_created),
+  }
+}
+
+function fromHydratedRow(row: HydratedHarvestRow): HydratedHarvest {
+  return {
+    harvestId: row.harvest_id,
+    plantingId: row.planting_id,
+    plantName: row.plant_name,
     quantity: row.quantity,
     harvestDate: mysqlUtils.dbDateStringToJsDate(row.date_created),
   }
@@ -57,4 +67,5 @@ export default {
   summary,
   search,
   fromRow,
+  fromHydratedRow,
 }

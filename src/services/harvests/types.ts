@@ -28,6 +28,22 @@ export interface HarvestRow extends RowDataPacket {
   date_created: string,
 }
 
+export interface HydratedHarvest {
+  harvestId: string,
+  plantingId: string,
+  plantName: string,
+  quantity: number, //int
+  harvestDate: Date,
+}
+
+export interface HydratedHarvestRow extends RowDataPacket {
+  harvest_id: string,
+  planting_id: string,
+  plant_name: string,
+  quantity: number, //int
+  date_created: string,
+}
+
 export interface HarvestSummaryRequest {
   plantingYear: number, //int
   // future optional filters?
@@ -79,6 +95,7 @@ export interface HarvestStatsResponse {
 
 export interface HarvestPlantingStats {
   plantingId: string,
+  plantName: string,
   totalQuantity: number, // int
   averageHarvestPerDay: number // int
   firstHarvest: Date | null,

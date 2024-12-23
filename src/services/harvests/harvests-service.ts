@@ -6,7 +6,7 @@ import {
   HarvestSearchRequest,
   HarvestStats, HarvestStatsRequest,
   HarvestSummary,
-  HarvestSummaryRequest
+  HarvestSummaryRequest, HydratedHarvest
 } from './types';
 
 import datasource from './harvests-mysql-datasource';
@@ -79,7 +79,7 @@ async function searchHarvests(request: HarvestSearchRequest): Promise<Harvest[]>
 
 async function getHarvestStats(request: HarvestStatsRequest): Promise<HarvestStats> {
   try {
-    const harvests: Harvest[] = await datasource.searchHarvests(request);
+    const harvests: HydratedHarvest[] = await datasource.getHydratedHarvestsByYear(request.year);
     return harvestStats.calculate(harvests);
   } catch (err) {
     const error = ensureError(err);

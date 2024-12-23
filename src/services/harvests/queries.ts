@@ -28,6 +28,16 @@ const searchHarvests: string =
     WHERE p.planting_year = ?
    ORDER BY h.date_created DESC`;
 
+const getHydratedHarvestsByYear: string =
+  `SELECT h.harvest_id, h.planting_id, pl.friendly_name AS plant_name, h.quantity, h.date_created
+     FROM harvests h
+     JOIN plantings p
+       ON h.planting_id = p.planting_id
+     JOIN plants pl
+       ON p.plant_id = pl.plant_id
+    WHERE p.planting_year = ?
+   ORDER BY h.date_created DESC`;
+
 const deleteById: string = 'DELETE FROM harvests WHERE harvest_id = ?';
 
 export default {
@@ -35,5 +45,6 @@ export default {
   getHarvestByPlantingIdAndDate,
   getHarvestSummary,
   searchHarvests,
+  getHydratedHarvestsByYear,
   deleteById,
 }
