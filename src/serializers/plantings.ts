@@ -9,6 +9,7 @@ export default {
     plantId: req.body.plantId,
     numPlants: req.body.numPlants,
     plantingYear: req.body.plantingYear,
+    name: req.body.name,
     notes: req.body.notes,
   }),
 
@@ -18,6 +19,7 @@ export default {
     plantId: planting.plantId,
     numPlants: planting.numPlants,
     plantingYear: planting.plantingYear,
+    name: planting.name,
     notes: planting.notes,
   }),
 }
