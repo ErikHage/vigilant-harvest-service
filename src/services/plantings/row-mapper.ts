@@ -9,6 +9,7 @@ const plantings = {
         planting.plantId,
         planting.numPlants,
         planting.plantingYear,
+        null,
         JSON.stringify(planting.notes),
       ];
     },
