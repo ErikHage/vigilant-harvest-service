@@ -25,3 +25,19 @@ curl -vX PUT http://localhost:8002/api/vigilant-harvest-service/v0/harvests \
     }]
   }'
 ```
+
+
+Plot layouts, how to map a planting to a location in a plot.
+
+Idea #1
+
+add new table, plot_plantings to map coordinates of plantings onto plots
+
+  plot_id,        plot
+  planting_id,    planting
+  x,              x coordinate
+  y,              y coordinate
+
+plot is x long and y wide
+limits to rectangular shapes (or does it?)
+
