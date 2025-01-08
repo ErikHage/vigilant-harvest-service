@@ -13,6 +13,7 @@ async function upsertPlanting(plantingRequest: PlantingRequest): Promise<Plantin
       numPlants: plantingRequest.numPlants,
       plantingYear: plantingRequest.plantingYear,
       name: plantingRequest.name,
+      lotNumber: plantingRequest.lotNumber,
       notes: plantingRequest.notes,
     };
 

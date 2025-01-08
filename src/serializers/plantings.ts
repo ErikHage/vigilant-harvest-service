@@ -10,6 +10,7 @@ export default {
     numPlants: req.body.numPlants,
     plantingYear: req.body.plantingYear,
     name: req.body.name,
+    lotNumber: req.body.lotNumber || null,
     notes: req.body.notes,
   }),
 
@@ -20,6 +21,7 @@ export default {
     numPlants: planting.numPlants,
     plantingYear: planting.plantingYear,
     name: planting.name,
+    lotNumber: planting.lotNumber,
     notes: planting.notes,
   }),
 }

@@ -10,6 +10,7 @@ const plantings = {
         planting.numPlants,
         planting.plantingYear,
         planting.name,
+        planting.lotNumber,
         JSON.stringify(planting.notes),
       ];
     },
@@ -23,6 +24,7 @@ const plantings = {
       numPlants: row.num_plants,
       plantingYear: row.planting_year,
       name: row.planting_name,
+      lotNumber: row.lot_number,
       notes: row.notes ? JSON.parse(row.notes) : [],
     };
   },

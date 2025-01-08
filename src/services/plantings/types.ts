@@ -7,6 +7,7 @@ export interface PlantingRequest {
   numPlants: number, // int
   plantingYear: number, // int
   name: string,
+  lotNumber: string | null,
   notes: string[],
 }
 
@@ -17,6 +18,7 @@ export interface PlantingResponse {
   numPlants: number, // int
   plantingYear: number, // int
   name: string,
+  lotNumber: string | null,
   notes: string[],
 }
 
@@ -27,6 +29,7 @@ export interface Planting {
   numPlants: number, // int
   plantingYear: number, // int
   name: string,
+  lotNumber: string | null,
   notes: string[],
 }
 
@@ -37,5 +40,6 @@ export interface PlantingRow extends RowDataPacket  {
   num_plants: number, // int
   planting_year: number, // int
   planting_name: string,
+  lot_number: string | null,
   notes: string | null,
 }
