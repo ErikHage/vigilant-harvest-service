@@ -7,6 +7,8 @@ function fromRow(row: PlantRow): Plant {
     genus: row.genus,
     species: row.species,
     friendlyName: row.friendly_name,
+    dateCreated: row.date_created,
+    dateModified: row.date_modified,
   }
 }
 

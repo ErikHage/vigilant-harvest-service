@@ -14,6 +14,8 @@ export interface PlantResponse {
   genus: string,
   species: string,
   friendlyName: string,
+  dateCreated: Date,
+  dateModified: Date,
 }
 
 export interface PlantRow extends RowDataPacket {
@@ -22,6 +24,8 @@ export interface PlantRow extends RowDataPacket {
   genus: string,
   species: string,
   friendly_name: string,
+  date_created: Date,
+  date_modified: Date,
 }
 
 export interface Plant {
@@ -30,4 +34,6 @@ export interface Plant {
   genus: string,
   species: string,
   friendlyName: string,
+  dateCreated?: Date,
+  dateModified?: Date,
 }

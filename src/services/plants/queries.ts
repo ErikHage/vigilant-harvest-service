@@ -1,4 +1,4 @@
-const allPlantFields = 'plant_id, family, genus, species, friendly_name';
+const allPlantFields = 'plant_id, family, genus, species, friendly_name, date_created, date_modified';
 
 const upsertPlant: string = `
   INSERT into plants (plant_id, family, genus, species, friendly_name) VALUES (?,?,?,?,?)

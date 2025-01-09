@@ -17,5 +17,7 @@ export default {
     genus: plant.genus,
     species: plant.species,
     friendlyName: plant.friendlyName,
+    dateCreated: plant.dateCreated!,
+    dateModified: plant.dateModified!,
   }),
 }
