@@ -14,6 +14,13 @@ function booleanToDbInt(val: boolean): number {
   return val ? 1 : 0;
 }
 
+function nullableBooleanToDbInt(val?: boolean): number | null {
+  if (val === undefined) {
+    return null;
+  }
+  return val ? 1 : 0;
+}
+
 function dbIntToBoolean(val: number): boolean {
   return val === 1;
 }
@@ -22,5 +29,6 @@ export default {
   dateToDbString,
   dbDateStringToJsDate,
   booleanToDbInt,
+  nullableBooleanToDbInt,
   dbIntToBoolean,
 }

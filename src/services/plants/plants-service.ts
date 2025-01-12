@@ -8,10 +8,16 @@ async function upsertPlant(plantRequest: PlantRequest): Promise<Plant> {
   try {
     const plant: Plant = {
       plantId: plantRequest.plantId || uuidV4(),
-      family: plantRequest.family,
-      genus: plantRequest.genus,
-      species: plantRequest.species,
+      category: plantRequest.category,
       friendlyName: plantRequest.friendlyName,
+      seedSource: plantRequest.seedSource,
+      tags: plantRequest.tags,
+      description: plantRequest.description,
+      taxonomy: plantRequest.taxonomy,
+      sowing: plantRequest.sowing,
+      planting: plantRequest.planting,
+      growing: plantRequest.growing,
+      harvesting: plantRequest.harvesting,
     };
 
     return await datasource.upsertPlant(plant);
