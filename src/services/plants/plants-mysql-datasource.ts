@@ -12,10 +12,7 @@ async function upsertPlant(plant: Plant): Promise<Plant> {
     params: rowMapper.insert.toParams(plant),
   }
 
-  console.log(query);
-
-  const newVar = await db.execQuery(query);
-  console.log(newVar);
+  await db.execQuery(query);
 
   return plant;
 }
