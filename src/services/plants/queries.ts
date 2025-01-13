@@ -35,14 +35,18 @@ const upsertPlant: string = `
   climbing_height_feet, plant_size, fruit_size, shelf_stability, harvest_instructions)
   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
   ON DUPLICATE KEY
-  UPDATE category =          VALUES(category),
-         seed_source =       VALUES(seed_source),
-         tags =              VALUES(tags),
-         plant_description = VALUES(plant_description),
-         friendly_name =     VALUES(friendly_name),
-         family =            VALUES(family),
-         genus =             VALUES(genus),
-         species =           VALUES(species)
+  UPDATE category =               VALUES(category),
+         seed_source =            VALUES(seed_source),
+         tags =                   VALUES(tags),
+         plant_description =      VALUES(plant_description),
+         friendly_name =          VALUES(friendly_name),
+         family =                 VALUES(family),
+         genus =                  VALUES(genus),
+         species =                VALUES(species),
+         indoor_sowing =          VALUES(indoor_sowing),
+         direct_sowing =          VALUES(direct_sowing),
+         germination_days_range = VALUES(germination_days_range),
+         germination_temp_range = VALUES(germination_temp_range)
 `;
 
 const getById: string = `SELECT ${allPlantFields} FROM plants WHERE plant_id = ?`;
