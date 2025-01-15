@@ -84,7 +84,7 @@ export interface PlantRow extends RowDataPacket {
   planting_instructions: string,
   required_sun: string,
   days_to_maturity: number,
-  is_climbing: boolean,
+  is_climbing: number,
   climbing_height_feet: number,
   plant_size: string,
   fruit_size: string,

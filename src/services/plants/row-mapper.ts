@@ -31,7 +31,7 @@ function fromRow(row: PlantRow): Plant {
     growing: {
       requiredSun: row.required_sun,
       daysToMaturity: row.days_to_maturity,
-      isClimbing: row.is_climbing,
+      isClimbing: mysqlUtils.dbIntToBoolean(row.is_climbing),
       climbingHeightFeet: row.climbing_height_feet,
       plantSize: row.plant_size,
     },
