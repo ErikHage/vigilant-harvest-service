@@ -7,7 +7,6 @@ export default {
     plantId: req.body.plantId,
     category: req.body.category,
     friendlyName: req.body.friendlyName,
-    seedSource: req.body.seedSource,
     tags: req.body.tags ?? [],
     description: req.body.description,
     taxonomy: {
@@ -45,7 +44,6 @@ export default {
     plantId: plant.plantId,
     category: plant.category,
     friendlyName: plant.friendlyName,
-    seedSource: plant.seedSource,
     tags: plant.tags,
     description: plant.description,
     taxonomy: plant.taxonomy,

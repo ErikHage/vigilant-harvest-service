@@ -5,7 +5,6 @@ function fromRow(row: PlantRow): Plant {
   return {
     plantId: row.plant_id,
     category: row.category,
-    seedSource: row.seed_source,
     tags: row.tags === '' ? [] : JSON.parse(row.tags),
     description: row.plant_description,
     friendlyName: row.friendly_name,
@@ -47,7 +46,6 @@ const insert = {
   toParams: (plant: Plant): Array<string | number | null> => ([
     plant.plantId,
     plant.category,
-    plant.seedSource,
     JSON.stringify(plant.tags),
     plant.description,
     plant.friendlyName,
