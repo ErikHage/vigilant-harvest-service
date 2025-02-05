@@ -10,9 +10,10 @@ export default {
     tags: req.body.tags ?? [],
     description: req.body.description,
     taxonomy: {
-      family: req.body.taxonomy.family,
-      genus: req.body.taxonomy.genus,
-      species: req.body.taxonomy.species,
+      // TODO make these not required in db
+      family: req.body.taxonomy?.family ?? '',
+      genus: req.body.taxonomy?.genus ?? '',
+      species: req.body.taxonomy?.species ?? '',
     },
     sowing: {
       indoor: req.body.sowing?.indoor,
