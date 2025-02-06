@@ -23,19 +23,34 @@ export function ensureError(value: unknown): FeralError {
   return new FeralError(`This value was thrown as is, not through an Error: ${stringValue}`);
 }
 
+interface FeralErrorDetails {
+  name: string,
+  message: string,
+  status: number,
+  cause?: FeralErrorDetails,
+  debugParams: object,
+}
+
 export class FeralError extends Error {
   status: number;
   debugParams: object;
+  feralCause?: FeralError;
 
   constructor(message: string, cause?: FeralError) {
     super(message);
     this.name = 'FeralError';
-    this.cause = cause;
+    this.feralCause = cause;
     this.status = 500;
     this.debugParams = {};
   }
 
-  // toJson(): string {
-  //
-  // }
+  toObject(): FeralErrorDetails {
+    return {
+      name: this.name,
+      message: this.message,
+      status: this.status,
+      cause: this.feralCause ? this.feralCause.toObject() : undefined,
+      debugParams: this.debugParams,
+    };
+  }
 }
