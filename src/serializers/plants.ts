@@ -10,16 +10,16 @@ export default {
     tags: req.body.tags ?? [],
     description: req.body.description,
     taxonomy: {
-      // TODO make these not required in db
-      family: req.body.taxonomy?.family ?? '',
-      genus: req.body.taxonomy?.genus ?? '',
-      species: req.body.taxonomy?.species ?? '',
+      family: req.body.taxonomy?.family,
+      genus: req.body.taxonomy?.genus,
+      species: req.body.taxonomy?.species,
     },
     sowing: {
       indoor: req.body.sowing?.indoor,
       direct: req.body.sowing?.direct,
       germinationDaysRange: req.body.sowing?.germinationDaysRange,
       germinationTempRange: req.body.sowing?.germinationTempRange,
+      sowingNotes: req.body.sowing?.sowingNotes,
     },
     planting: {
       depthInInches: req.body.planting?.depthInInches,
@@ -33,6 +33,7 @@ export default {
       isClimbing: !!req.body.growing?.isClimbing,
       climbingHeightFeet: req.body.growing?.climbingHeightFeet,
       plantSize: req.body.growing?.plantSize,
+      growingNotes: req.body.growing.growingNotes,
     },
     harvesting: {
       fruitSize: req.body.harvesting?.fruitSize,

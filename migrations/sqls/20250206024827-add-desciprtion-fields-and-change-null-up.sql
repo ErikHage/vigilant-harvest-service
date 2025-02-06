@@ -1,0 +1,14 @@
+ALTER TABLE plants
+MODIFY COLUMN species VARCHAR(255) NULL;
+
+ALTER TABLE plants
+MODIFY COLUMN genus VARCHAR(255) NULL;
+
+ALTER TABLE plants
+MODIFY COLUMN family VARCHAR(255) NULL;
+
+ALTER TABLE plants
+ADD COLUMN sowing_notes TEXT AFTER germination_temp_range;
+
+ALTER TABLE plants
+ADD COLUMN growing_notes TEXT AFTER plant_size;

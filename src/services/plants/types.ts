@@ -11,6 +11,7 @@ interface SowingInfo {
   direct?: string,
   germinationDaysRange?: string,
   germinationTempRange?: string,
+  sowingNotes?: string,
 }
 
 interface PlantingInfo {
@@ -26,6 +27,7 @@ interface GrowingInfo {
   isClimbing?: boolean,
   climbingHeightFeet?: number,
   plantSize?: string,
+  growingNotes?: string,
 }
 
 interface HarvestingInfo {
@@ -75,6 +77,7 @@ export interface PlantRow extends RowDataPacket {
   direct_sowing: string,
   germination_days_range: string,
   germination_temp_range: string,
+  sowing_notes: string,
   planting_depth_inches: number,
   plant_spacing_inches: number,
   row_spacing_inches: number,
@@ -84,6 +87,7 @@ export interface PlantRow extends RowDataPacket {
   is_climbing: number,
   climbing_height_feet: number,
   plant_size: string,
+  growing_notes: string,
   fruit_size: string,
   shelf_stability: string,
   harvest_instructions: string,

@@ -20,6 +20,7 @@ function fromRow(row: PlantRow): Plant {
       direct: row.direct_sowing,
       germinationDaysRange: row.germination_days_range,
       germinationTempRange: row.germination_temp_range,
+      sowingNotes: row.sowing_notes,
     },
     planting: {
       depthInInches: row.planting_depth_inches,
@@ -33,6 +34,7 @@ function fromRow(row: PlantRow): Plant {
       isClimbing: mysqlUtils.dbIntToBoolean(row.is_climbing),
       climbingHeightFeet: row.climbing_height_feet,
       plantSize: row.plant_size,
+      growingNotes: row.growing_notes,
     },
     harvesting: {
       fruitSize: row.fruit_size,
@@ -56,6 +58,7 @@ const insert = {
     plant.sowing.direct ?? null,
     plant.sowing.germinationDaysRange ?? null,
     plant.sowing.germinationTempRange ?? null,
+    plant.sowing.sowingNotes ?? null,
     plant.planting.depthInInches ?? null,
     plant.planting.plantSpacingInches ?? null,
     plant.planting.rowSpacingInches ?? null,
@@ -65,6 +68,7 @@ const insert = {
     mysqlUtils.nullableBooleanToDbInt(plant.growing.isClimbing),
     plant.growing.climbingHeightFeet ?? null,
     plant.growing.plantSize ?? null,
+    plant.growing.growingNotes ?? null,
     plant.harvesting.fruitSize ?? null,
     plant.harvesting.shelfStability ?? null,
     plant.harvesting.harvestInstructions ?? null,
