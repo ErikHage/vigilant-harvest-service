@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 
 import plantingYearSerializers from '../serializers/planting-years';
 import plantingYearsService from '../services/planting-years/planting-years-service';
+import tryDecorator from '../middleware/try-decorator';
 
 async function insertPlantingYear(request: Request, response: Response) {
   const plantingRequest = plantingYearSerializers.fromRequest(request);
@@ -23,6 +24,6 @@ async function getPlantingYears(request: Request, response: Response) {
 }
 
 export default {
-  insertPlantingYear,
-  getPlantingYears,
+  insertPlantingYear: tryDecorator.decorate(insertPlantingYear),
+  getPlantingYears: tryDecorator.decorate(getPlantingYears),
 }
