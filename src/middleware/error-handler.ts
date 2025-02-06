@@ -5,8 +5,13 @@ import { ensureError } from '../errors';
 
 const logger = getLogger('error-handler');
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export default (err: Error, request: Request, response: Response, next: NextFunction) => {
+export default (
+  err: Error,
+  request: Request,
+  response: Response,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  next: NextFunction) =>
+{
   const error = ensureError(err);
 
   if (process.env.DEPLOYMENT_ENVIRONMENT === 'dev') {
