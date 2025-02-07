@@ -1,6 +1,7 @@
 import { PlantingYear, PlantingYearRequest } from './types';
 
 import datasource from './planting-years-mysql-datasource';
+import { ensureError, FeralError } from '../../errors';
 
 async function insertPlantingYear(plantingYearRequest: PlantingYearRequest): Promise<PlantingYear> {
   try {
@@ -10,8 +11,8 @@ async function insertPlantingYear(plantingYearRequest: PlantingYearRequest): Pro
 
     return await datasource.insertPlantingYear(plantingYear);
   } catch (err) {
-    // log and wrap error
-    throw err;
+    throw new FeralError('Error inserting planting year', ensureError(err))
+      .withDebugParams(plantingYearRequest);
   }
 }
 
@@ -19,8 +20,7 @@ async function getPlantingYears(): Promise<PlantingYear[]> {
   try {
     return await datasource.getPlantingYears();
   } catch (err) {
-    // log and wrap error
-    throw err;
+    throw new FeralError('Error getting all planting years', ensureError(err));
   }
 }
 
