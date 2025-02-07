@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 
 import plantSerializers from '../serializers/plants';
 import plantsService from '../services/plants/plants-service';
+import tryDecorator from '../middleware/try-decorator';
 
 async function upsertPlant(request: Request, response: Response) {
   const plantRequest = plantSerializers.fromRequest(request);
@@ -47,8 +48,8 @@ async function deletePlantById(request: Request, response: Response) {
 }
 
 export default {
-  upsertPlant,
-  getPlantById,
-  getPlants,
-  deletePlantById,
+  upsertPlant: tryDecorator.decorate(upsertPlant),
+  getPlantById: tryDecorator.decorate(getPlantById),
+  getPlants: tryDecorator.decorate(getPlants),
+  deletePlantById: tryDecorator.decorate(deletePlantById),
 }

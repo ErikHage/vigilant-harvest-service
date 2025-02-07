@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 
 import plotsService from '../services/plots/plots-service';
 import plotSerializers from '../serializers/plots';
+import tryDecorator from '../middleware/try-decorator';
 
 async function upsertPlot(request: Request, response: Response) {
   const plotRequest = plotSerializers.plots.fromRequest(request);
@@ -47,8 +48,8 @@ async function deletePlotById(request: Request, response: Response) {
 }
 
 export default {
-  upsertPlot,
-  getPlotById,
-  getPlots,
-  deletePlotById,
+  upsertPlot: tryDecorator.decorate(upsertPlot),
+  getPlotById: tryDecorator.decorate(getPlotById),
+  getPlots: tryDecorator.decorate(getPlots),
+  deletePlotById: tryDecorator.decorate(deletePlotById),
 }

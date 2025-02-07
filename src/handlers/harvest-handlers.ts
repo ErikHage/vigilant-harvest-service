@@ -9,6 +9,7 @@ import {
   HarvestSearchRequest, HarvestStats, HarvestStatsRequest,
   HarvestSummaryRequest
 } from '../services/harvests/types';
+import tryDecorator from '../middleware/try-decorator';
 
 async function upsertHarvests(request: Request, response: Response) {
   const harvestRequests: HarvestRequest[] = harvestSerializers.insert.fromRequest(request);
@@ -59,9 +60,9 @@ async function deleteHarvestById(request: Request, response: Response) {
 }
 
 export default {
-  upsertHarvests,
-  getHarvestSummary,
-  searchHarvests,
-  getHarvestStats,
-  deleteHarvestById,
+  upsertHarvests: tryDecorator.decorate(upsertHarvests),
+  getHarvestSummary: tryDecorator.decorate(getHarvestSummary),
+  searchHarvests: tryDecorator.decorate(searchHarvests),
+  getHarvestStats: tryDecorator.decorate(getHarvestStats),
+  deleteHarvestById: tryDecorator.decorate(deleteHarvestById),
 }

@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import plantingSerializers from '../serializers/plantings';
 import plantingsService from '../services/plantings/plantings-service';
 import { Planting } from '../services/plantings/types';
+import tryDecorator from '../middleware/try-decorator';
 
 async function upsertPlanting(request: Request, response: Response) {
   const plantingRequest = plantingSerializers.fromRequest(request);
@@ -58,8 +59,8 @@ async function deletePlantingById(request: Request, response: Response) {
 
 
 export default {
-  upsertPlanting,
-  getPlantingById,
-  getPlantings,
-  deletePlantingById,
+  upsertPlanting: tryDecorator.decorate(upsertPlanting),
+  getPlantingById: tryDecorator.decorate(getPlantingById),
+  getPlantings: tryDecorator.decorate(getPlantings),
+  deletePlantingById: tryDecorator.decorate(deletePlantingById),
 }
