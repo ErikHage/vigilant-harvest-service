@@ -3,6 +3,7 @@ import { v4 as uuidV4 } from 'uuid';
 import { Plot, PlotRequest } from './types';
 
 import datasource from './plots-mysql-datasource';
+import { ensureError, FeralError } from '../../errors';
 
 async function upsertPlot(plotRequest: PlotRequest): Promise<Plot> {
   try {
@@ -17,8 +18,8 @@ async function upsertPlot(plotRequest: PlotRequest): Promise<Plot> {
 
     return await datasource.upsertPlot(plot);
   } catch (err) {
-    // log and wrap error
-    throw err;
+    throw new FeralError('Error upserting plot', ensureError(err))
+      .withDebugParams(plotRequest);
   }
 }
 
@@ -26,8 +27,8 @@ async function getPlotById(plotId: string): Promise<Plot> {
   try {
     return await datasource.getPlotById(plotId);
   } catch (err) {
-    // log and wrap error
-    throw err;
+    throw new FeralError('Error fetching plot by id', ensureError(err))
+      .withDebugParams({ plotId, });
   }
 }
 
@@ -35,8 +36,7 @@ async function getPlots(): Promise<Plot[]> {
   try {
     return await datasource.getPlots();
   } catch (err) {
-    // log and wrap error
-    throw err;
+    throw new FeralError('Error fetching all plots', ensureError(err));
   }
 }
 
@@ -44,8 +44,8 @@ async function deletePlotById(plotId: string) {
   try {
     await datasource.deletePlotById(plotId);
   } catch (err) {
-    // log and wrap error
-    throw err;
+    throw new FeralError('Error deleting plot by id', ensureError(err))
+      .withDebugParams({ plotId, });
   }
 }
 
