@@ -44,6 +44,11 @@ export class FeralError extends Error {
     this.debugParams = {};
   }
 
+  withDebugParams(debugParams: object): FeralError {
+    this.debugParams = debugParams;
+    return this;
+  }
+
   toObject(): FeralErrorDetails {
     return {
       name: this.name,
