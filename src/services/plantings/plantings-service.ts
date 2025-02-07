@@ -3,6 +3,7 @@ import { v4 as uuidV4 } from 'uuid';
 import { Planting, PlantingRequest } from './types';
 
 import datasource from './plantings-mysql-datasource';
+import { ensureError, FeralError } from '../../errors';
 
 async function upsertPlanting(plantingRequest: PlantingRequest): Promise<Planting> {
   try {
@@ -20,8 +21,8 @@ async function upsertPlanting(plantingRequest: PlantingRequest): Promise<Plantin
 
     return await datasource.upsertPlanting(planting);
   } catch (err) {
-    // log and wrap error
-    throw err;
+    throw new FeralError('Error upserting planting', ensureError(err))
+      .withDebugParams(plantingRequest);
   }
 }
 
@@ -29,8 +30,8 @@ async function getPlantingById(plantingId: string): Promise<Planting> {
   try {
     return await datasource.getPlantingById(plantingId);
   } catch (err) {
-    // log and wrap error
-    throw err;
+    throw new FeralError('Error fetching planting by id', ensureError(err))
+      .withDebugParams({ plantingId, });
   }
 }
 
@@ -38,8 +39,8 @@ async function getPlantingsByYear(plantingYear: number): Promise<Planting[]> {
   try {
     return await datasource.getPlantingsByYear(plantingYear);
   } catch (err) {
-    // log and wrap error
-    throw err;
+    throw new FeralError('Error fetching plantings by planting year', ensureError(err))
+      .withDebugParams({ plantingYear, });
   }
 }
 
@@ -47,8 +48,7 @@ async function getPlantings(): Promise<Planting[]> {
   try {
     return await datasource.getPlantings();
   } catch (err) {
-    // log and wrap error
-    throw err;
+    throw new FeralError('Error fetching all plantings', ensureError(err));
   }
 }
 
@@ -56,8 +56,8 @@ async function deletePlantingById(plantingId: string): Promise<void> {
   try {
     await datasource.deletePlantingById(plantingId);
   } catch (err) {
-    // log and wrap error
-    throw err;
+    throw new FeralError('Error deleting planting by id', ensureError(err))
+      .withDebugParams({ plantingId, });
   }
 }
 
