@@ -15,7 +15,7 @@ const plantings = {
            lot_number = VALUES(lot_number),
            notes = VALUES(notes)`,
 
-  getById: `SELECT ${allPlantingFields} FROM plantings WHERE plant_id = ?`,
+  getById: `SELECT ${allPlantingFields} FROM plantings WHERE planting_id = ?`,
 
   getByYear: `SELECT ${allPlantingFields} FROM plantings WHERE planting_year = ?`,
 
