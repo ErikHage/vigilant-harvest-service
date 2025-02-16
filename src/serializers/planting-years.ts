@@ -5,9 +5,13 @@ import { PlantingYearRequest, PlantingYear, PlantingYearResponse } from '../serv
 export default {
   fromRequest: (req: Request): PlantingYearRequest => ({
     plantingYear: req.body.plantingYear,
+    lastFrostDate: req.body.lastFrostDate,
+    targetPlantingDate: req.body.targetPlantingDate,
   }),
 
   toResponse: (planting: PlantingYear): PlantingYearResponse => ({
     plantingYear: planting.plantingYear,
+    lastFrostDate: planting.lastFrostDate,
+    targetPlantingDate: planting.targetPlantingDate,
   }),
 }

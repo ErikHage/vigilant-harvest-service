@@ -7,6 +7,8 @@ async function insertPlantingYear(plantingYearRequest: PlantingYearRequest): Pro
   try {
     const plantingYear: PlantingYear = {
       plantingYear: plantingYearRequest.plantingYear,
+      lastFrostDate: plantingYearRequest.lastFrostDate,
+      targetPlantingDate: plantingYearRequest.targetPlantingDate,
     };
 
     return await datasource.insertPlantingYear(plantingYear);
