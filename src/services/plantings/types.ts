@@ -22,6 +22,8 @@ export interface PlantingResponse {
   seedSource?: string,
   lotNumber?: string,
   notes: string[],
+  dateCreated: Date,
+  dateModified: Date,
 }
 
 export interface Planting {
@@ -34,6 +36,8 @@ export interface Planting {
   seedSource?: string,
   lotNumber?: string,
   notes: string[],
+  dateCreated?: Date,
+  dateModified?: Date,
 }
 
 export interface PlantingRow extends RowDataPacket  {
@@ -46,4 +50,6 @@ export interface PlantingRow extends RowDataPacket  {
   seed_source: string,
   lot_number: string,
   notes: string,
+  date_created: Date,
+  date_modified: Date,
 }

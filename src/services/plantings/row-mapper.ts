@@ -28,6 +28,8 @@ const plantings = {
       seedSource: row.seed_source,
       lotNumber: row.lot_number,
       notes: row.notes ? JSON.parse(row.notes) : [],
+      dateCreated: row.date_created,
+      dateModified: row.date_modified,
     };
   },
 };

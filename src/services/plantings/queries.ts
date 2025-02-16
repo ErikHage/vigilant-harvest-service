@@ -1,5 +1,16 @@
 const allPlantingFields: string =
-  'planting_id, plot_id, plant_id, num_plants, planting_year, planting_name, seed_source, lot_number, notes ';
+`planting_id,
+plot_id,
+plant_id,
+num_plants,
+planting_year,
+planting_name,
+seed_source,
+lot_number,
+notes,
+date_created,
+date_modified
+`;
 
 const plantings = {
   upsert: `

@@ -25,5 +25,7 @@ export default {
     seedSource: planting.seedSource,
     lotNumber: planting.lotNumber,
     notes: planting.notes,
+    dateCreated: planting.dateCreated!,
+    dateModified: planting.dateModified!,
   }),
 }
