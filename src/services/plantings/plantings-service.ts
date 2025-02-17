@@ -11,18 +11,24 @@ async function upsertPlanting(plantingRequest: PlantingRequest): Promise<Plantin
       plantingId: plantingRequest.plantingId || uuidV4(),
       plotId: plantingRequest.plotId,
       plantId: plantingRequest.plantId,
-      numPlants: plantingRequest.numPlants,
       plantingYear: plantingRequest.plantingYear,
       name: plantingRequest.name,
       seedSource: plantingRequest.seedSource,
       lotNumber: plantingRequest.lotNumber,
+      leadTimeWeeks: plantingRequest.leadTimeWeeks,
+      sowDate: plantingRequest.sowDate,
+      sowType: plantingRequest.sowType,
+      numberSown: plantingRequest.numberSown,
+      transplantDate: plantingRequest.transplantDate,
+      numberTransplanted: plantingRequest.numberTransplanted,
+      currentStatus: plantingRequest.currentStatus,
       notes: plantingRequest.notes,
     };
 
     return await datasource.upsertPlanting(planting);
   } catch (err) {
     throw new FeralError('Error upserting planting', ensureError(err))
-      .withDebugParams(plantingRequest);
+      .withDebugParams({ plantingRequest, });
   }
 }
 

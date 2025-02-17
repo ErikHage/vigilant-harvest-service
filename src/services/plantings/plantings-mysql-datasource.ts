@@ -4,15 +4,26 @@ import { QueryPayload } from '../../database/types';
 import queries from './queries';
 import db, { RowNotFoundError } from '../../database'
 import rowMapper from './row-mapper';
+import { ensureError, FeralError } from '../../errors';
 
 async function upsertPlanting(planting: Planting): Promise<Planting> {
-  const query: QueryPayload = {
-    sql: queries.plantings.upsert,
-    params: rowMapper.plantings.upsert.toParams(planting),
-  };
+  let query: QueryPayload;
+  try {
+    query = {
+      sql: queries.plantings.upsert,
+      params: rowMapper.plantings.upsert.toParams(planting),
+    };
+  } catch (err) {
+    throw new FeralError('Error building query and params to upsert planting', ensureError(err));
+  }
 
-  await db.execQuery(query);
-  return planting;
+  try {
+    await db.execQuery(query);
+    return planting;
+  } catch (err) {
+    throw new FeralError('Error upserting planting', ensureError(err))
+      .withDebugParams({ query, });
+  }
 }
 
 async function getPlantingById(plantingId: string): Promise<Planting> {
