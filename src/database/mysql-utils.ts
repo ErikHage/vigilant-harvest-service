@@ -2,7 +2,14 @@ import { format } from 'date-fns'
 
 const mysqlFormat = 'yyyy-MM-dd HH:mm:ss';
 
-function dateToDbString(date: Date) {
+function dateToDbString(date: Date): string {
+  return format(date, mysqlFormat);
+}
+
+function nullableDateToDbString(date?: Date): string | null {
+  if (!date) {
+    return null;
+  }
   return format(date, mysqlFormat);
 }
 
@@ -27,6 +34,7 @@ function dbIntToBoolean(val: number): boolean {
 
 export default {
   dateToDbString,
+  nullableDateToDbString,
   dbDateStringToJsDate,
   booleanToDbInt,
   nullableBooleanToDbInt,
