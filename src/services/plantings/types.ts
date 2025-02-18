@@ -2,7 +2,7 @@ import { RowDataPacket } from 'mysql2';
 
 export interface PlantingRequest {
   plantingId: string | undefined,
-  plotId: string,
+  plotId?: string,
   plantId: string,
   numberTransplanted?: number, // int
   plantingYear: number, // int
@@ -20,7 +20,7 @@ export interface PlantingRequest {
 
 export interface PlantingResponse {
   plantingId: string,
-  plotId: string,
+  plotId?: string,
   plantId: string,
   numberTransplanted?: number, // int
   plantingYear: number, // int
@@ -40,7 +40,7 @@ export interface PlantingResponse {
 
 export interface Planting {
   plantingId: string,
-  plotId: string,
+  plotId?: string,
   plantId: string,
   numberTransplanted?: number, // int
   plantingYear: number, // int

@@ -6,7 +6,7 @@ const plantings = {
     toParams: function(planting: Planting): Array<string | number | null> {
       return [
         planting.plantingId,
-        planting.plotId,
+        planting.plotId ?? null,
         planting.plantId,
         planting.plantingYear,
         planting.name,
