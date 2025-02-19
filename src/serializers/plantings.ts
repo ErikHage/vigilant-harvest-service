@@ -12,7 +12,7 @@ export default {
     seedSource: req.body.seedSource,
     lotNumber: req.body.lotNumber,
     leadTimeWeeks: req.body.leadTimeWeeks,
-    sowDate: req.body.sowDate,
+    sowDate: req.body.sowDate ? new Date(req.body.sowDate) : undefined,
     sowType: req.body.sowType,
     numberSown: req.body.numberSown,
     transplantDate: req.body.transplantDate,
