@@ -15,7 +15,7 @@ export default {
     sowDate: req.body.sowDate ? new Date(req.body.sowDate) : undefined,
     sowType: req.body.sowType,
     numberSown: req.body.numberSown,
-    transplantDate: req.body.transplantDate,
+    transplantDate: req.body.transplantDate ? new Date(req.body.transplantDate) : undefined,
     numberTransplanted: req.body.numberTransplanted,
     currentStatus: req.body.currentStatus,
     notes: req.body.notes,
