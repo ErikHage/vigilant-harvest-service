@@ -1,8 +1,19 @@
 import { Request } from 'express';
 
-import { Planting, PlantingRequest, PlantingResponse } from '../services/plantings/types';
+import { CreatePlantingRequest, Planting, PlantingRequest, PlantingResponse } from '../services/plantings/types';
 
-export default {
+const insert = {
+  fromRequest: (req: Request): CreatePlantingRequest => ({
+    plantId: req.body.plantId,
+    plantingYear: req.body.plantingYear,
+    name: req.body.name,
+    seedSource: req.body.seedSource,
+    lotNumber: req.body.lotNumber,
+    leadTimeWeeks: req.body.leadTimeWeeks,
+  }),
+};
+
+const upsert = {
   fromRequest: (req: Request): PlantingRequest => ({
     plantingId: req.body.plantingId,
     plotId: req.body.plotId,
@@ -20,6 +31,11 @@ export default {
     currentStatus: req.body.currentStatus,
     notes: req.body.notes,
   }),
+};
+
+export default {
+  insert,
+  upsert,
 
   toResponse: (planting: Planting): PlantingResponse => ({
     plantingId: planting.plantingId,

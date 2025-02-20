@@ -2,6 +2,22 @@ import { Planting, PlantingRow } from './types';
 import mysqlUtils from '../../database/mysql-utils';
 
 const plantings = {
+  insert: {
+    toParams: function(planting: Planting): Array<string | number | null> {
+      return [
+        planting.plantingId,
+        planting.plantId,
+        planting.plantingYear,
+        planting.name,
+        planting.seedSource ?? null,
+        planting.lotNumber ?? null,
+        planting.leadTimeWeeks ?? null,
+        planting.currentStatus ?? null,
+        JSON.stringify(planting.notes),
+      ];
+    },
+  },
+
   upsert: {
     toParams: function(planting: Planting): Array<string | number | null> {
       return [

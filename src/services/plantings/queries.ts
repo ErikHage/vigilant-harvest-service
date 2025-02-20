@@ -19,6 +19,13 @@ date_modified
 `;
 
 const plantings = {
+  insert: `
+    INSERT into plantings (
+        planting_id, plant_id, planting_year, planting_name, seed_source, lot_number, lead_time_weeks,
+        current_status, notes)
+    VALUES (?,?,?,?,?,?,?,?,?)
+`,
+
   upsert: `
     INSERT into plantings (
         planting_id, plot_id, plant_id, planting_year, planting_name, seed_source, lot_number, lead_time_weeks,

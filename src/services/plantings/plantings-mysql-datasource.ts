@@ -6,6 +6,21 @@ import db, { RowNotFoundError } from '../../database'
 import rowMapper from './row-mapper';
 import { ensureError, FeralError } from '../../errors';
 
+async function insertPlanting(planting: Planting): Promise<Planting> {
+  const query: QueryPayload = {
+    sql: queries.plantings.insert,
+    params: rowMapper.plantings.insert.toParams(planting),
+  };
+
+  try {
+    await db.execQuery(query);
+    return planting;
+  } catch (err) {
+    throw new FeralError('Error inserting planting', ensureError(err))
+      .withDebugParams({ query, });
+  }
+}
+
 async function upsertPlanting(planting: Planting): Promise<Planting> {
   let query: QueryPayload;
   try {
@@ -73,6 +88,7 @@ async function deletePlantingById(plantingId: string): Promise<void> {
 }
 
 export default {
+  insertPlanting,
   upsertPlanting,
   getPlantingById,
   getPlantingsByYear,

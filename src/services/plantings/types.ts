@@ -1,5 +1,14 @@
 import { RowDataPacket } from 'mysql2';
 
+export interface CreatePlantingRequest {
+  plantId: string,
+  plantingYear: number, // int
+  name: string,
+  leadTimeWeeks?: number, // int
+  seedSource?: string,
+  lotNumber?: string,
+}
+
 export interface PlantingRequest {
   plantingId: string | undefined,
   plotId?: string,

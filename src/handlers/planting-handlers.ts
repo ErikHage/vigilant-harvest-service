@@ -5,8 +5,19 @@ import plantingsService from '../services/plantings/plantings-service';
 import { Planting } from '../services/plantings/types';
 import tryDecorator from '../middleware/try-decorator';
 
+async function createPlanting(request: Request, response: Response) {
+  const plantingRequest = plantingSerializers.insert.fromRequest(request);
+
+  const planting = await plantingsService.createPlanting(plantingRequest);
+  const plantingResponse = plantingSerializers.toResponse(planting);
+
+  response
+    .status(201)
+    .send(plantingResponse)
+}
+
 async function upsertPlanting(request: Request, response: Response) {
-  const plantingRequest = plantingSerializers.fromRequest(request);
+  const plantingRequest = plantingSerializers.upsert.fromRequest(request);
 
   const planting = await plantingsService.upsertPlanting(plantingRequest);
   const plantingResponse = plantingSerializers.toResponse(planting);
@@ -59,6 +70,7 @@ async function deletePlantingById(request: Request, response: Response) {
 
 
 export default {
+  createPlanting: tryDecorator.decorate(createPlanting),
   upsertPlanting: tryDecorator.decorate(upsertPlanting),
   getPlantingById: tryDecorator.decorate(getPlantingById),
   getPlantings: tryDecorator.decorate(getPlantings),

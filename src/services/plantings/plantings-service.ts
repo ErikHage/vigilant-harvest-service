@@ -1,9 +1,34 @@
 import { v4 as uuidV4 } from 'uuid';
 
-import { Planting, PlantingRequest } from './types';
+import { CreatePlantingRequest, Planting, PlantingRequest } from './types';
 
 import datasource from './plantings-mysql-datasource';
 import { ensureError, FeralError } from '../../errors';
+
+const plantingStatuses = {
+  CREATED: 'CREATED',
+}
+
+async function createPlanting(createPlantingRequest: CreatePlantingRequest): Promise<Planting> {
+  try {
+    const planting: Planting = {
+      plantingId: uuidV4(),
+      plantId: createPlantingRequest.plantId,
+      plantingYear: createPlantingRequest.plantingYear,
+      name: createPlantingRequest.name,
+      leadTimeWeeks: createPlantingRequest.leadTimeWeeks,
+      seedSource: createPlantingRequest.seedSource,
+      lotNumber: createPlantingRequest.lotNumber,
+      currentStatus: plantingStatuses.CREATED,
+      notes: [], // TODO remove notes in favor of an events list
+    };
+
+    return await datasource.insertPlanting(planting);
+  } catch (err) {
+    throw new FeralError('Error creating new planting', ensureError(err))
+      .withDebugParams({ createPlantingRequest, });
+  }
+}
 
 async function upsertPlanting(plantingRequest: PlantingRequest): Promise<Planting> {
   try {
@@ -68,6 +93,7 @@ async function deletePlantingById(plantingId: string): Promise<void> {
 }
 
 export default {
+  createPlanting,
   upsertPlanting,
   getPlantingById,
   getPlantingsByYear,
