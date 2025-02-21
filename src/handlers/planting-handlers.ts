@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 
 import plantingSerializers from '../serializers/plantings';
 import plantingsService from '../services/plantings/plantings-service';
-import { Planting } from '../services/plantings/types';
+import { PerformActionRequest, Planting, PlantingResponse } from '../services/plantings/types';
 import tryDecorator from '../middleware/try-decorator';
 
 async function createPlanting(request: Request, response: Response) {
@@ -13,6 +13,17 @@ async function createPlanting(request: Request, response: Response) {
 
   response
     .status(201)
+    .send(plantingResponse)
+}
+
+async function performPlantingAction(request: Request, response: Response) {
+  const performActionRequest: PerformActionRequest = plantingSerializers.action.fromRequest(request);
+
+  const planting: Planting = await plantingsService.performAction(performActionRequest);
+  const plantingResponse: PlantingResponse = plantingSerializers.toResponse(planting);
+
+  response
+    .status(200)
     .send(plantingResponse)
 }
 
@@ -71,6 +82,7 @@ async function deletePlantingById(request: Request, response: Response) {
 
 export default {
   createPlanting: tryDecorator.decorate(createPlanting),
+  performPlantingAction: tryDecorator.decorate(performPlantingAction),
   upsertPlanting: tryDecorator.decorate(upsertPlanting),
   getPlantingById: tryDecorator.decorate(getPlantingById),
   getPlantings: tryDecorator.decorate(getPlantings),

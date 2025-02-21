@@ -9,6 +9,26 @@ export interface CreatePlantingRequest {
   lotNumber?: string,
 }
 
+export interface PerformActionRequest {
+  plantingId: string,
+  actionType: string,
+  sowActionData?: SowActionData,
+  transplantActionData?: TransplantActionData,
+}
+
+export interface SowActionData {
+  sowType: 'INDOOR' | 'OUTDOOR',
+  sowDate: Date,
+  numberSown: number // int
+  plotId?: string, // only for outdoor sowing
+}
+
+export interface TransplantActionData {
+  transplantDate: Date,
+  numberTransplanted: number // int
+  plotId: string,
+}
+
 export interface PlantingRequest {
   plantingId: string | undefined,
   plotId?: string,
@@ -61,7 +81,7 @@ export interface Planting {
   sowType?: string,
   numberSown?: number, //int
   transplantDate?: Date,
-  currentStatus?: string,
+  currentStatus: string,
   notes: string[],
   dateCreated?: Date,
   dateModified?: Date,

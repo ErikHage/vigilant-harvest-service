@@ -13,3 +13,10 @@ export class UnauthorizedError extends FeralError {
     this.status = 401;
   }
 }
+
+export class ValidationError extends FeralError {
+  constructor(message: string) {
+    super(message);
+    this.status = 400;
+  }
+}

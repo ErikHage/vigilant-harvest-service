@@ -28,6 +28,7 @@ const buildRouter = (): Express => {
   apiRouter.delete('/plots/:plotId', plotHandlers.deletePlotById);
 
   apiRouter.post('/plantings', plantingHandlers.createPlanting);
+  apiRouter.post('/plantings/:plantingId', plantingHandlers.performPlantingAction);
   apiRouter.put('/plantings', plantingHandlers.upsertPlanting); // DEPRECATED - replaced by insert and actions
   apiRouter.get('/plantings/:plantingId', plantingHandlers.getPlantingById);
   apiRouter.get('/plantings', plantingHandlers.getPlantings);

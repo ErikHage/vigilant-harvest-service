@@ -1,12 +1,19 @@
 import { v4 as uuidV4 } from 'uuid';
 
-import { CreatePlantingRequest, Planting, PlantingRequest } from './types';
+import actions, { PlantingAction } from './actions/planting-action';
+import { CreatePlantingRequest, PerformActionRequest, Planting, PlantingRequest } from './types';
+import { LifecycleTransitionViolationError } from './errors';
 
 import datasource from './plantings-mysql-datasource';
 import { ensureError, FeralError } from '../../errors';
+import { getStrategy } from './actions/planting-action-factory';
+import { ValidationError } from '../../errors/common';
 
 const plantingStatuses = {
   CREATED: 'CREATED',
+  INDOOR_SOW: 'INDOOR_SOWN',
+  OUTDOOR_SOW: 'OUTDOOR_SOWN',
+  RETIRED: 'RETIRED',
 }
 
 async function createPlanting(createPlantingRequest: CreatePlantingRequest): Promise<Planting> {
@@ -30,6 +37,21 @@ async function createPlanting(createPlantingRequest: CreatePlantingRequest): Pro
   }
 }
 
+async function performAction(plantingActionRequest: PerformActionRequest): Promise<Planting> {
+  const currentPlanting: Planting = await datasource.getPlantingById(plantingActionRequest.plantingId);
+
+  _assertLifecycleTransition(currentPlanting, plantingActionRequest);
+
+  const strategy: PlantingAction = getStrategy(plantingActionRequest.actionType);
+
+  try {
+    return await strategy.performAction(plantingActionRequest);
+  } catch (err) {
+    throw new FeralError('Error performing planting action', ensureError(err))
+      .withDebugParams({ plantingActionRequest, });
+  }
+}
+
 async function upsertPlanting(plantingRequest: PlantingRequest): Promise<Planting> {
   try {
     const planting: Planting = {
@@ -46,7 +68,7 @@ async function upsertPlanting(plantingRequest: PlantingRequest): Promise<Plantin
       numberSown: plantingRequest.numberSown,
       transplantDate: plantingRequest.transplantDate,
       numberTransplanted: plantingRequest.numberTransplanted,
-      currentStatus: plantingRequest.currentStatus,
+      currentStatus: plantingRequest.currentStatus || 'UNKNOWN',
       notes: plantingRequest.notes,
     };
 
@@ -92,8 +114,23 @@ async function deletePlantingById(plantingId: string): Promise<void> {
   }
 }
 
+function _assertLifecycleTransition(planting: Planting, plantingActionRequest: PerformActionRequest) {
+  const allowedActions: string[] | undefined = actions.allowedLifecycleTransitions.get(planting.currentStatus);
+
+  if (!allowedActions) {
+    throw new ValidationError(`Invalid action type ${plantingActionRequest.actionType}`)
+      .withDebugParams({ plantingActionRequest, });
+  }
+
+  if (!allowedActions.includes(plantingActionRequest.actionType)) {
+    throw new LifecycleTransitionViolationError(planting.currentStatus, plantingActionRequest.actionType)
+      .withDebugParams({ planting, plantingActionRequest, });
+  }
+}
+
 export default {
   createPlanting,
+  performAction,
   upsertPlanting,
   getPlantingById,
   getPlantingsByYear,
