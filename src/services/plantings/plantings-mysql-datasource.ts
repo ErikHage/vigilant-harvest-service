@@ -14,7 +14,7 @@ async function insertPlanting(planting: Planting): Promise<Planting> {
 
   try {
     await db.execQuery(query);
-    return planting;
+    return await getPlantingById(planting.plantingId);
   } catch (err) {
     throw new FeralError('Error inserting planting', ensureError(err))
       .withDebugParams({ query, });
