@@ -8,9 +8,9 @@ export class SowAction implements PlantingAction {
 
   async performAction(plantingActionRequest: PerformActionRequest): Promise<Planting> {
     try {
-      // await datasource.updatePlanting({
-      //
-      // });
+      await datasource.updatePlanting(plantingActionRequest.plantingId, {
+        ...plantingActionRequest.sowActionData,
+      });
     } catch (err) {
       throw new SowActionError().withDebugParams({ plantingActionRequest, });
     }

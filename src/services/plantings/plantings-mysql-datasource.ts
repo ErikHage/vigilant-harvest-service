@@ -1,4 +1,4 @@
-import { Planting, PlantingRow } from './types';
+import { Planting, PlantingRow, PlantingUpdate } from './types';
 import { QueryPayload } from '../../database/types';
 
 import queries from './queries';
@@ -17,6 +17,20 @@ async function insertPlanting(planting: Planting): Promise<Planting> {
     return planting;
   } catch (err) {
     throw new FeralError('Error inserting planting', ensureError(err))
+      .withDebugParams({ query, });
+  }
+}
+
+async function updatePlanting(plantingId: string, plantingUpdate: PlantingUpdate) {
+  const query: QueryPayload = {
+    sql: queries.plantings.buildUpdateQuery(plantingUpdate),
+    params: rowMapper.plantings.update.toParams(plantingId, plantingUpdate),
+  };
+
+  try {
+    await db.execQuery(query);
+  } catch (err) {
+    throw new FeralError('Error updating planting', ensureError(err))
       .withDebugParams({ query, });
   }
 }
@@ -89,6 +103,7 @@ async function deletePlantingById(plantingId: string): Promise<void> {
 
 export default {
   insertPlanting,
+  updatePlanting,
   upsertPlanting,
   getPlantingById,
   getPlantingsByYear,

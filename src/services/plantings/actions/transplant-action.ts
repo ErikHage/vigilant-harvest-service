@@ -6,9 +6,9 @@ import { FeralError } from '../../../errors';
 export class TransplantAction implements PlantingAction {
   async performAction(plantingActionRequest: PerformActionRequest): Promise<Planting> {
     try {
-      // await datasource.updatePlanting({
-      //
-      // });
+      await datasource.updatePlanting(plantingActionRequest.plantingId, {
+        ...plantingActionRequest.transplantActionData,
+      });
     } catch (err) {
       throw new TransplantActionError().withDebugParams({ plantingActionRequest, });
     }

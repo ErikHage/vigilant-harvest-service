@@ -31,13 +31,13 @@ export interface TransplantActionData {
 
 export interface PlantingRequest {
   plantingId: string | undefined,
-  plotId?: string,
   plantId: string,
-  numberTransplanted?: number, // int
   plantingYear: number, // int
   name: string,
   seedSource?: string,
   lotNumber?: string,
+  plotId?: string,
+  numberTransplanted?: number, // int
   leadTimeWeeks?: number, // int
   sowDate?: Date,
   sowType?: string,
@@ -85,6 +85,16 @@ export interface Planting {
   notes: string[],
   dateCreated?: Date,
   dateModified?: Date,
+}
+
+export interface PlantingUpdate {
+  plotId?: string,
+  numberTransplanted?: number, // int
+  leadTimeWeeks?: number, // int
+  sowDate?: Date,
+  sowType?: string,
+  numberSown?: number, //int
+  transplantDate?: Date,
 }
 
 export interface PlantingRow extends RowDataPacket  {
