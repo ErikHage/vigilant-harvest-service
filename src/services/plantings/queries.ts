@@ -35,7 +35,9 @@ const plantings = {
     VALUES (?,?,?,?,?,?,?,?,?)`,
 
   buildUpdateQuery(plantingUpdate: PlantingUpdate): string {
-    const queryParts: string[] = [];
+    const queryParts: string[] = [
+      'current_status = ?',
+    ];
 
     if (plantingUpdate.plotId) queryParts.push('plot_id = ?');
     if (plantingUpdate.numberSown) queryParts.push('number_sown = ?');
@@ -44,7 +46,7 @@ const plantings = {
     if (plantingUpdate.transplantDate) queryParts.push('transplant_date = ?');
     if (plantingUpdate.numberTransplanted) queryParts.push('number_transplanted = ?');
 
-    return `UPDATE plantings SET  ${queryParts.join(' ')} WHERE planting_id = ?`;
+    return `UPDATE plantings SET  ${queryParts.join(', ')} WHERE planting_id = ?`;
   },
 
   upsert: `

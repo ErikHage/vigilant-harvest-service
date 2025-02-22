@@ -22,10 +22,16 @@ async function insertPlanting(planting: Planting): Promise<Planting> {
 }
 
 async function updatePlanting(plantingId: string, plantingUpdate: PlantingUpdate) {
+  console.log('ds input', {
+    plantingUpdate,
+  })
+
   const query: QueryPayload = {
     sql: queries.plantings.buildUpdateQuery(plantingUpdate),
     params: rowMapper.plantings.update.toParams(plantingId, plantingUpdate),
   };
+
+  console.log('update planting query', { query, });
 
   try {
     await db.execQuery(query);

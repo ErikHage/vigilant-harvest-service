@@ -88,6 +88,7 @@ export interface Planting {
 }
 
 export interface PlantingUpdate {
+  status: string,
   plotId?: string,
   numberTransplanted?: number, // int
   leadTimeWeeks?: number, // int

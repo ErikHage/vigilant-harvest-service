@@ -8,6 +8,9 @@ import {
   PlantingResponse, SowActionData, TransplantActionData
 } from '../services/plantings/types';
 import { ValidationError } from '../errors/common';
+import plantingActions from '../services/plantings/actions/planting-action';
+
+const { actionTypes, } = plantingActions;
 
 const insert = {
   fromRequest: (req: Request): CreatePlantingRequest => ({
@@ -60,7 +63,7 @@ function _parsePlantingId(plantingIdInput: string | undefined): string {
 }
 
 function _parseSowActionData(actionType: string, req: Request): SowActionData | undefined {
-  if (actionType !== 'Sow') {
+  if (actionType !== actionTypes.sow) {
     return undefined;
   }
 
@@ -73,7 +76,7 @@ function _parseSowActionData(actionType: string, req: Request): SowActionData | 
 }
 
 function _parseTransplantActionData(actionType: string, req: Request): TransplantActionData | undefined {
-  if (actionType !== 'Transplant') {
+  if (actionType !== actionTypes.transplant) {
     return undefined;
   }
 

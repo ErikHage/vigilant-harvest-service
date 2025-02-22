@@ -7,8 +7,13 @@ import { FeralError } from '../../../errors';
 export class SowAction implements PlantingAction {
 
   async performAction(plantingActionRequest: PerformActionRequest): Promise<Planting> {
+    console.log('strategy input', {
+      plantingActionRequest,
+    });
+
     try {
       await datasource.updatePlanting(plantingActionRequest.plantingId, {
+        status: plantingActionRequest.sowActionData?.sowType === 'INDOOR' ? 'INDOOR SOWN' : 'OUTDOOR SOWN',
         ...plantingActionRequest.sowActionData,
       });
     } catch (err) {

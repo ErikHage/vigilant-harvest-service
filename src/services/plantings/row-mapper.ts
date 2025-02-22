@@ -22,6 +22,8 @@ const plantings = {
     toParams: function (plantingId: string, plantingUpdate: PlantingUpdate): Array<string | number> {
       const params: Array<string | number> = [];
 
+      params.push(plantingUpdate.status);
+
       if (plantingUpdate.plotId) params.push(plantingUpdate.plotId);
       if (plantingUpdate.leadTimeWeeks) params.push(plantingUpdate.leadTimeWeeks);
       if (plantingUpdate.numberSown) params.push(plantingUpdate.numberSown);

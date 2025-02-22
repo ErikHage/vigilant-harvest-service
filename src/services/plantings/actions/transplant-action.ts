@@ -7,6 +7,7 @@ export class TransplantAction implements PlantingAction {
   async performAction(plantingActionRequest: PerformActionRequest): Promise<Planting> {
     try {
       await datasource.updatePlanting(plantingActionRequest.plantingId, {
+        status: 'OUTDOOR SOWN',
         ...plantingActionRequest.transplantActionData,
       });
     } catch (err) {
