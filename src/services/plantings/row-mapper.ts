@@ -11,6 +11,7 @@ const plantings = {
         planting.name,
         planting.seedSource ?? null,
         planting.lotNumber ?? null,
+        planting.leadTimeWeeks ?? null,
         planting.currentStatus,
         JSON.stringify(planting.notes),
       ];

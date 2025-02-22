@@ -23,8 +23,15 @@ date_modified
 const plantings = {
   insert: `
     INSERT into plantings (
-        planting_id, plant_id, planting_year, planting_name, seed_source, lot_number, lead_time_weeks,
-        current_status, notes)
+        planting_id,
+        plant_id,
+        planting_year,
+        planting_name,
+        seed_source,
+        lot_number,
+        lead_time_weeks,
+        current_status,
+        notes)
     VALUES (?,?,?,?,?,?,?,?,?)`,
 
   buildUpdateQuery(plantingUpdate: PlantingUpdate): string {
