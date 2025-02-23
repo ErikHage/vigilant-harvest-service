@@ -14,6 +14,7 @@ export interface PerformActionRequest {
   actionType: string,
   sowActionData?: SowActionData,
   transplantActionData?: TransplantActionData,
+  retireActionData?: RetireActionData,
 }
 
 export interface SowActionData {
@@ -25,6 +26,10 @@ export interface TransplantActionData {
   plotId: string,
   transplantDate: Date,
   numberTransplanted: number // int
+}
+
+export interface RetireActionData {
+
 }
 
 export interface PlantingRequest {
