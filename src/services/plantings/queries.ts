@@ -76,7 +76,7 @@ const plantings = {
 
   getAll: `SELECT ${allPlantingFields} FROM plantings`,
 
-  deleteById: 'DELETE FROM plantings WHERE plant_id = ?',
+  deleteById: 'DELETE FROM plantings WHERE planting_id = ?',
 };
 
 export default {
