@@ -12,7 +12,7 @@ export class RetireAction implements PlantingAction {
         ...plantingActionRequest.retireActionData,
       });
     } catch (err) {
-      throw new TransplantActionError().withDebugParams({ plantingActionRequest, });
+      throw new RetireActionError().withDebugParams({ plantingActionRequest, });
     }
 
     return await datasource.getPlantingById(plantingActionRequest.plantingId);
@@ -20,7 +20,7 @@ export class RetireAction implements PlantingAction {
 
 }
 
-class TransplantActionError extends FeralError {
+class RetireActionError extends FeralError {
   constructor() {
     super('Error performing RETIRE action for planting');
   }
