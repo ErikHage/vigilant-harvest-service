@@ -1,14 +1,13 @@
-import plantingActions, { PlantingAction } from './planting-action';
-import { SowAction } from './sow-action';
+import { PlantingAction } from './planting-action';
+import { StartAction } from './start-action';
+import { PlantAction } from './plant-action';
 import { FeralError } from '../../../errors';
-import { TransplantAction } from './transplant-action';
-
-const { actionTypes, } = plantingActions;
+import constants from '../../../util/constants';
 
 const actionMap: Map<string, PlantingAction> = new Map<string, PlantingAction>();
 
-actionMap.set(actionTypes.sow, new SowAction());
-actionMap.set(actionTypes.transplant, new TransplantAction());
+actionMap.set(constants.plantings.actionTypes.start, new StartAction());
+actionMap.set(constants.plantings.actionTypes.plant, new PlantAction());
 
 export function getStrategy(actionType: string): PlantingAction {
   const action = actionMap.get(actionType);

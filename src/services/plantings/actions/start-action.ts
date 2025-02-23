@@ -1,26 +1,28 @@
 import { PlantingAction } from './planting-action';
 import { PerformActionRequest, Planting } from '../types';
+
 import datasource from '../plantings-mysql-datasource';
 import { FeralError } from '../../../errors';
+import constants from '../../../util/constants';
 
-export class TransplantAction implements PlantingAction {
+export class StartAction implements PlantingAction {
+
   async performAction(plantingActionRequest: PerformActionRequest): Promise<Planting> {
     try {
       await datasource.updatePlanting(plantingActionRequest.plantingId, {
-        status: 'OUTDOOR SOWN',
-        ...plantingActionRequest.transplantActionData,
+        status: constants.plantings.statuses.started,
+        ...plantingActionRequest.sowActionData,
       });
     } catch (err) {
-      throw new TransplantActionError().withDebugParams({ plantingActionRequest, });
+      throw new SowActionError().withDebugParams({ plantingActionRequest, });
     }
 
     return await datasource.getPlantingById(plantingActionRequest.plantingId);
   }
-
 }
 
-class TransplantActionError extends FeralError {
+class SowActionError extends FeralError {
   constructor() {
-    super('Error performing TRANSPLANT action for planting');
+    super('Error performing START action for planting');
   }
 }

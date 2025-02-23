@@ -17,16 +17,14 @@ export interface PerformActionRequest {
 }
 
 export interface SowActionData {
-  sowType: 'INDOOR' | 'OUTDOOR',
   sowDate: Date,
   numberSown: number // int
-  plotId?: string, // only for outdoor sowing
 }
 
 export interface TransplantActionData {
+  plotId: string,
   transplantDate: Date,
   numberTransplanted: number // int
-  plotId: string,
 }
 
 export interface PlantingRequest {

@@ -1,31 +1,27 @@
 import { PlantingAction } from './planting-action';
 import { PerformActionRequest, Planting } from '../types';
-
 import datasource from '../plantings-mysql-datasource';
 import { FeralError } from '../../../errors';
+import constants from '../../../util/constants';
 
-export class SowAction implements PlantingAction {
-
+export class PlantAction implements PlantingAction {
   async performAction(plantingActionRequest: PerformActionRequest): Promise<Planting> {
-    console.log('strategy input', {
-      plantingActionRequest,
-    });
-
     try {
       await datasource.updatePlanting(plantingActionRequest.plantingId, {
-        status: plantingActionRequest.sowActionData?.sowType === 'INDOOR' ? 'INDOOR SOWN' : 'OUTDOOR SOWN',
-        ...plantingActionRequest.sowActionData,
+        status: constants.plantings.statuses.planted,
+        ...plantingActionRequest.transplantActionData,
       });
     } catch (err) {
-      throw new SowActionError().withDebugParams({ plantingActionRequest, });
+      throw new TransplantActionError().withDebugParams({ plantingActionRequest, });
     }
 
     return await datasource.getPlantingById(plantingActionRequest.plantingId);
   }
+
 }
 
-class SowActionError extends FeralError {
+class TransplantActionError extends FeralError {
   constructor() {
-    super('Error performing SOW action for planting');
+    super('Error performing PLANT action for planting');
   }
 }
