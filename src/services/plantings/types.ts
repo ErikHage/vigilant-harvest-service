@@ -15,21 +15,28 @@ export interface PerformActionRequest {
   sowActionData?: SowActionData,
   transplantActionData?: TransplantActionData,
   retireActionData?: RetireActionData,
+  commentActionData?: CommentActionData,
 }
 
 export interface SowActionData {
   sowDate: Date,
-  numberSown: number // int
+  numberSown: number, // int
+  comment: string
 }
 
 export interface TransplantActionData {
   plotId: string,
   transplantDate: Date,
-  numberTransplanted: number // int
+  numberTransplanted: number, // int
+  comment: string
 }
 
 export interface RetireActionData {
+  comment: string
+}
 
+export interface CommentActionData {
+  comment: string,
 }
 
 export interface PlantingRequest {
@@ -99,6 +106,7 @@ export interface PlantingUpdate {
   sowType?: string,
   numberSown?: number, //int
   transplantDate?: Date,
+  comment: string,
 }
 
 export interface PlantingRow extends RowDataPacket  {

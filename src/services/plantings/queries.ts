@@ -49,6 +49,11 @@ const plantings = {
     return `UPDATE plantings SET  ${queryParts.join(', ')} WHERE planting_id = ?`;
   },
 
+  insertStatusHistory: `
+    INSERT INTO planting_status_history (planting_id, planting_status, \`comment\`)
+    VALUES (?,?,?)
+  `,
+
   upsert: `
     INSERT into plantings (
         planting_id, plot_id, plant_id, planting_year, planting_name, seed_source, lot_number, lead_time_weeks,

@@ -38,6 +38,18 @@ const plantings = {
     },
   },
 
+  statusHistory: {
+    insert: {
+      toParams: function (plantingId: string, status: string, comment: string): Array<string> {
+        return [
+          plantingId,
+          status,
+          comment,
+        ];
+      },
+    },
+  },
+
   upsert: {
     toParams: function (planting: Planting): Array<string | number | null> {
       return [

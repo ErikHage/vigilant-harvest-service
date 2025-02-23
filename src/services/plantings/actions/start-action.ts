@@ -12,6 +12,7 @@ export class StartAction implements PlantingAction {
       await datasource.updatePlanting(plantingActionRequest.plantingId, {
         status: constants.plantings.statuses.started,
         ...plantingActionRequest.sowActionData,
+        comment: plantingActionRequest.sowActionData?.comment ?? '---',
       });
     } catch (err) {
       throw new SowActionError().withDebugParams({ plantingActionRequest, });

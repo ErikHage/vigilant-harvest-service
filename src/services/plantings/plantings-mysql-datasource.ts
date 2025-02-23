@@ -5,6 +5,7 @@ import queries from './queries';
 import db, { RowNotFoundError } from '../../database'
 import rowMapper from './row-mapper';
 import { ensureError, FeralError } from '../../errors';
+import constants from '../../util/constants';
 
 async function insertPlanting(planting: Planting): Promise<Planting> {
   const query: QueryPayload = {
@@ -14,6 +15,7 @@ async function insertPlanting(planting: Planting): Promise<Planting> {
 
   try {
     await db.execQuery(query);
+    await insertStatusHistory(planting.plantingId, constants.plantings.statuses.created, '');
     return await getPlantingById(planting.plantingId);
   } catch (err) {
     throw new FeralError('Error inserting planting', ensureError(err))
@@ -29,8 +31,23 @@ async function updatePlanting(plantingId: string, plantingUpdate: PlantingUpdate
 
   try {
     await db.execQuery(query);
+    await insertStatusHistory(plantingId, plantingUpdate.status, plantingUpdate.comment)
   } catch (err) {
     throw new FeralError('Error updating planting', ensureError(err))
+      .withDebugParams({ query, });
+  }
+}
+
+async function insertStatusHistory(plantingId: string, status: string, comment: string): Promise<void> {
+  const query: QueryPayload = {
+    sql: queries.plantings.insertStatusHistory,
+    params: rowMapper.plantings.statusHistory.insert.toParams(plantingId, status, comment),
+  };
+
+  try {
+    await db.execQuery(query);
+  } catch (err) {
+    throw new FeralError('Error adding planting status history record', ensureError(err))
       .withDebugParams({ query, });
   }
 }
@@ -104,6 +121,7 @@ async function deletePlantingById(plantingId: string): Promise<void> {
 export default {
   insertPlanting,
   updatePlanting,
+  insertStatusHistory,
   upsertPlanting,
   getPlantingById,
   getPlantingsByYear,

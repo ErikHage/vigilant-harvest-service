@@ -1,11 +1,12 @@
 import { Request } from 'express';
 
 import {
+  CommentActionData,
   CreatePlantingRequest,
   PerformActionRequest,
   Planting,
   PlantingRequest,
-  PlantingResponse, SowActionData, TransplantActionData
+  PlantingResponse, RetireActionData, SowActionData, TransplantActionData
 } from '../services/plantings/types';
 import { ValidationError } from '../errors/common';
 import constants from '../util/constants';
@@ -29,6 +30,8 @@ const action = {
       actionType,
       sowActionData: _parseSowActionData(actionType, req),
       transplantActionData: _parseTransplantActionData(actionType, req),
+      retireActionData: _parseRetireActionData(actionType, req),
+      commentActionData: _parseCommentActionData(actionType, req),
     };
   },
 };
@@ -68,6 +71,7 @@ function _parseSowActionData(actionType: string, req: Request): SowActionData | 
   return {
     sowDate: new Date(req.body.sowDate),
     numberSown: req.body.numberSown,
+    comment: req.body.comment ?? '',
   };
 }
 
@@ -80,6 +84,27 @@ function _parseTransplantActionData(actionType: string, req: Request): Transplan
     plotId: req.body.plotId,
     transplantDate: new Date(req.body.transplantDate),
     numberTransplanted: req.body.numberTransplanted,
+    comment: req.body.comment ?? '',
+  };
+}
+
+function _parseRetireActionData(actionType: string, req: Request): RetireActionData | undefined {
+  if (actionType !== constants.plantings.actionTypes.retire) {
+    return undefined;
+  }
+
+  return {
+    comment: req.body.comment ?? '',
+  };
+}
+
+function _parseCommentActionData(actionType: string, req: Request): CommentActionData | undefined {
+  if (actionType !== constants.plantings.actionTypes.comment) {
+    return undefined;
+  }
+
+  return {
+    comment: req.body.comment,
   };
 }
 
