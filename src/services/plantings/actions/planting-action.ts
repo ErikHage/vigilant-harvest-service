@@ -21,8 +21,10 @@ allowedLifecycleTransitions.set(constants.plantings.statuses.planted, [
   constants.plantings.actionTypes.comment,
   constants.plantings.actionTypes.retire,
 ]);
-// do I need this? maybe if I accidentally retire
-// allowedLifecycleTransitions.set('RETIRED', [ actionTypes.comment, 'REVIVE', ]);
+// do I need a REVIVE action? maybe if I accidentally retire
+allowedLifecycleTransitions.set(constants.plantings.statuses.retired, [
+  constants.plantings.actionTypes.comment,
+]);
 
 export default {
   allowedLifecycleTransitions,
