@@ -39,24 +39,6 @@ export interface CommentActionData {
   comment: string,
 }
 
-export interface PlantingRequest {
-  plantingId: string | undefined,
-  plantId: string,
-  plantingYear: number, // int
-  name: string,
-  seedSource?: string,
-  lotNumber?: string,
-  plotId?: string,
-  numberTransplanted?: number, // int
-  leadTimeWeeks?: number, // int
-  sowDate?: Date,
-  sowType?: string,
-  numberSown?: number, //int
-  transplantDate?: Date,
-  currentStatus?: string,
-  notes: string[],
-}
-
 export interface PlantingResponse {
   plantingId: string,
   plotId?: string,
@@ -72,7 +54,7 @@ export interface PlantingResponse {
   numberSown?: number, //int
   transplantDate?: Date,
   currentStatus?: string,
-  notes: string[],
+  notes?: string,
   statusHistory?: PlantingStatusHistoryRecord[],
   dateCreated: Date,
   dateModified: Date,
@@ -93,7 +75,7 @@ export interface Planting {
   numberSown?: number, //int
   transplantDate?: Date,
   currentStatus: string,
-  notes: string[],
+  notes?: string,
   dateCreated?: Date,
   dateModified?: Date,
   statusHistory?: PlantingStatusHistoryRecord[],
@@ -109,6 +91,7 @@ export interface PlantingUpdate {
   numberSown?: number, //int
   transplantDate?: Date,
   comment: string,
+  notes?: string,
 }
 
 export interface PlantingRow extends RowDataPacket  {

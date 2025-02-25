@@ -54,6 +54,7 @@ const plantings = {
     if (plantingUpdate.sowType) queryParts.push('sow_type = ?');
     if (plantingUpdate.transplantDate) queryParts.push('transplant_date = ?');
     if (plantingUpdate.numberTransplanted) queryParts.push('number_transplanted = ?');
+    if (plantingUpdate.notes) queryParts.push('notes = ?');
 
     return `UPDATE plantings SET  ${queryParts.join(', ')} WHERE planting_id = ?`;
   },

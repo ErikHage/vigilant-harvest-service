@@ -27,7 +27,6 @@ async function createPlanting(createPlantingRequest: CreatePlantingRequest): Pro
       seedSource: createPlantingRequest.seedSource,
       lotNumber: createPlantingRequest.lotNumber,
       currentStatus: plantingStatuses.CREATED,
-      notes: [], // TODO remove notes in favor of an events list
     };
 
     return await datasource.insertPlanting(planting);

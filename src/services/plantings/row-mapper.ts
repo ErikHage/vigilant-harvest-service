@@ -13,7 +13,7 @@ const plantings = {
         planting.lotNumber ?? null,
         planting.leadTimeWeeks ?? null,
         planting.currentStatus,
-        JSON.stringify(planting.notes),
+        planting.notes ?? null,
       ];
     },
   },
@@ -31,6 +31,7 @@ const plantings = {
       if (plantingUpdate.sowType) params.push(plantingUpdate.sowType);
       if (plantingUpdate.transplantDate) params.push(mysqlUtils.dateToDbString(plantingUpdate.transplantDate));
       if (plantingUpdate.numberTransplanted) params.push(plantingUpdate.numberTransplanted);
+      if (plantingUpdate.notes) params.push(plantingUpdate.notes);
 
       params.push(plantingId);
 
@@ -54,7 +55,7 @@ const plantings = {
       transplantDate: row.transplant_date,
       numberTransplanted: row.number_transplanted,
       currentStatus: row.current_status,
-      notes: row.notes ? JSON.parse(row.notes) : [],
+      notes: row.notes,
       dateCreated: row.date_created,
       dateModified: row.date_modified,
       statusHistory: historyRows?.map(plantingStatusHistory.fromRow),

@@ -18,7 +18,7 @@ export class DeleteAction implements PlantingAction {
       plantingYear: 1,
       name: 'Deleted',
       currentStatus: 'DELETED',
-      notes: [],
+      notes: '',
     };
   }
 }
