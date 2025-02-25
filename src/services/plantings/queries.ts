@@ -20,6 +20,15 @@ date_created,
 date_modified
 `;
 
+const allPlantingHistoryFields: string =
+`planting_history_id,
+planting_id,
+planting_status,
+comment,
+date_created,
+date_modified
+`;
+
 const plantings = {
   insert: `
     INSERT into plantings (
@@ -48,11 +57,6 @@ const plantings = {
 
     return `UPDATE plantings SET  ${queryParts.join(', ')} WHERE planting_id = ?`;
   },
-
-  insertStatusHistory: `
-    INSERT INTO planting_status_history (planting_id, planting_status, \`comment\`)
-    VALUES (?,?,?)
-  `,
 
   upsert: `
     INSERT into plantings (
@@ -84,6 +88,16 @@ const plantings = {
   deleteById: 'DELETE FROM plantings WHERE planting_id = ?',
 };
 
+const plantingStatusHistory = {
+  insert: `
+    INSERT INTO planting_status_history (planting_id, planting_status, \`comment\`)
+    VALUES (?,?,?)
+  `,
+
+  getByPlantingId: `SELECT ${allPlantingHistoryFields} FROM planting_status_history WHERE planting_id = ?`,
+};
+
 export default {
   plantings,
+  plantingStatusHistory,
 }

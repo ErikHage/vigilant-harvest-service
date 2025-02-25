@@ -1,4 +1,4 @@
-import { Planting, PlantingRow, PlantingUpdate } from './types';
+import { Planting, PlantingRow, PlantingStatusHistoryRecord, PlantingStatusHistoryRow, PlantingUpdate } from './types';
 import { QueryPayload } from '../../database/types';
 
 import queries from './queries';
@@ -40,8 +40,8 @@ async function updatePlanting(plantingId: string, plantingUpdate: PlantingUpdate
 
 async function insertStatusHistory(plantingId: string, status: string, comment: string): Promise<void> {
   const query: QueryPayload = {
-    sql: queries.plantings.insertStatusHistory,
-    params: rowMapper.plantings.statusHistory.insert.toParams(plantingId, status, comment),
+    sql: queries.plantingStatusHistory.insert,
+    params: rowMapper.plantingStatusHistory.insert.toParams(plantingId, status, comment),
   };
 
   try {
@@ -87,6 +87,17 @@ async function getPlantingById(plantingId: string): Promise<Planting> {
   return rowMapper.plantings.fromRow(results[0]!);
 }
 
+async function getPlantingStatusHistoryByPlantingId(plantingId: string): Promise<PlantingStatusHistoryRecord[]> {
+  const query: QueryPayload = {
+    sql: queries.plantingStatusHistory.getByPlantingId,
+    params: [ plantingId, ],
+  };
+
+  const results: PlantingStatusHistoryRow[] = await db.execQuery<PlantingStatusHistoryRow[]>(query);
+
+  return results.map(rowMapper.plantingStatusHistory.fromRow);
+}
+
 async function getPlantingsByYear(plantingYear: number): Promise<Planting[]> {
   const query: QueryPayload = {
     sql: queries.plantings.getByYear,
@@ -121,10 +132,12 @@ async function deletePlantingById(plantingId: string): Promise<void> {
 export default {
   insertPlanting,
   updatePlanting,
-  insertStatusHistory,
   upsertPlanting,
   getPlantingById,
   getPlantingsByYear,
   getPlantings,
   deletePlantingById,
+
+  insertStatusHistory,
+  getPlantingStatusHistoryByPlantingId,
 }

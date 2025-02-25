@@ -1,4 +1,4 @@
-import { Planting, PlantingRow, PlantingUpdate } from './types';
+import { Planting, PlantingRow, PlantingStatusHistoryRecord, PlantingStatusHistoryRow, PlantingUpdate } from './types';
 import mysqlUtils from '../../database/mysql-utils';
 
 const plantings = {
@@ -35,18 +35,6 @@ const plantings = {
       params.push(plantingId);
 
       return params;
-    },
-  },
-
-  statusHistory: {
-    insert: {
-      toParams: function (plantingId: string, status: string, comment: string): Array<string> {
-        return [
-          plantingId,
-          status,
-          comment,
-        ];
-      },
     },
   },
 
@@ -95,6 +83,30 @@ const plantings = {
   },
 };
 
+const plantingStatusHistory = {
+  insert: {
+    toParams: function (plantingId: string, status: string, comment: string): Array<string> {
+      return [
+        plantingId,
+        status,
+        comment,
+      ];
+    },
+  },
+
+  fromRow: function(row: PlantingStatusHistoryRow): PlantingStatusHistoryRecord {
+    return {
+      plantingHistoryId: row.planting_history_id,
+      plantingId: row.planting_id,
+      plantingStatus: row.planting_status,
+      comment: row.comment,
+      dateCreated: row.date_created,
+      dateModified: row.date_modified,
+    };
+  },
+};
+
 export default {
   plantings,
+  plantingStatusHistory,
 }

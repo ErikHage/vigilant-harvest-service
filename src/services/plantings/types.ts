@@ -128,3 +128,21 @@ export interface PlantingRow extends RowDataPacket  {
   date_created: Date,
   date_modified: Date,
 }
+
+export interface PlantingStatusHistoryRecord {
+  plantingHistoryId: number, //int
+  plantingId: string,
+  plantingStatus: string,
+  comment: string,
+  dateCreated: Date,
+  dateModified: Date,
+}
+
+export interface PlantingStatusHistoryRow extends RowDataPacket {
+  planting_history_id: number, //int
+  planting_id: string,
+  planting_status: string,
+  comment: string,
+  date_created: Date,
+  date_modified: Date,
+}
