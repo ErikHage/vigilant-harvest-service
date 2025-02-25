@@ -77,14 +77,19 @@ async function getPlantingById(plantingId: string): Promise<Planting> {
     sql: queries.plantings.getById,
     params: [ plantingId, ],
   };
+  const historyQuery: QueryPayload = {
+    sql: queries.plantingStatusHistory.getByPlantingId,
+    params: [ plantingId, ],
+  };
 
   const results: PlantingRow[] = await db.execQuery<PlantingRow[]>(query);
+  const historyResults: PlantingStatusHistoryRow[] = await db.execQuery(historyQuery);
 
   if (results.length < 1) {
     throw new RowNotFoundError('Planting not found', { plantingId, })
   }
 
-  return rowMapper.plantings.fromRow(results[0]!);
+  return rowMapper.plantings.fromRow(results[0]!, historyResults);
 }
 
 async function getPlantingStatusHistoryByPlantingId(plantingId: string): Promise<PlantingStatusHistoryRecord[]> {
@@ -106,7 +111,7 @@ async function getPlantingsByYear(plantingYear: number): Promise<Planting[]> {
 
   const results: PlantingRow[] = await db.execQuery<PlantingRow[]>(query);
 
-  return results.map(rowMapper.plantings.fromRow);
+  return results.map(plantingRow => rowMapper.plantings.fromRow(plantingRow, []));
 }
 
 async function getPlantings(): Promise<Planting[]> {
@@ -117,7 +122,7 @@ async function getPlantings(): Promise<Planting[]> {
 
   const results: PlantingRow[] = await db.execQuery<PlantingRow[]>(query);
 
-  return results.map(rowMapper.plantings.fromRow);
+  return results.map(plantingRow => rowMapper.plantings.fromRow(plantingRow, []));
 }
 
 async function deletePlantingById(plantingId: string): Promise<void> {

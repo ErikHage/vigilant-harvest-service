@@ -60,7 +60,7 @@ const plantings = {
     },
   },
 
-  fromRow: function (row: PlantingRow): Planting {
+  fromRow: function (row: PlantingRow, historyRows: PlantingStatusHistoryRow[] | undefined): Planting {
     return {
       plantingId: row.planting_id,
       plotId: row.plot_id,
@@ -79,6 +79,7 @@ const plantings = {
       notes: row.notes ? JSON.parse(row.notes) : [],
       dateCreated: row.date_created,
       dateModified: row.date_modified,
+      statusHistory: historyRows?.map(plantingStatusHistory.fromRow),
     };
   },
 };

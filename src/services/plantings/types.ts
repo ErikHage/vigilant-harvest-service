@@ -73,6 +73,7 @@ export interface PlantingResponse {
   transplantDate?: Date,
   currentStatus?: string,
   notes: string[],
+  statusHistory?: PlantingStatusHistoryRecord[],
   dateCreated: Date,
   dateModified: Date,
 }
@@ -95,6 +96,7 @@ export interface Planting {
   notes: string[],
   dateCreated?: Date,
   dateModified?: Date,
+  statusHistory?: PlantingStatusHistoryRecord[],
 }
 
 export interface PlantingUpdate {

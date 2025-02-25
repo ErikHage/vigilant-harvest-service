@@ -129,6 +129,7 @@ export default {
     numberTransplanted: planting.numberTransplanted,
     currentStatus: planting.currentStatus,
     notes: planting.notes,
+    statusHistory: planting.statusHistory,
     dateCreated: planting.dateCreated!,
     dateModified: planting.dateModified!,
   }),
