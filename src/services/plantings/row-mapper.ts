@@ -38,28 +38,6 @@ const plantings = {
     },
   },
 
-  upsert: {
-    toParams: function (planting: Planting): Array<string | number | null> {
-      return [
-        planting.plantingId,
-        planting.plotId ?? null,
-        planting.plantId,
-        planting.plantingYear,
-        planting.name,
-        planting.seedSource ?? null,
-        planting.lotNumber ?? null,
-        planting.leadTimeWeeks ?? null,
-        mysqlUtils.nullableDateToDbString(planting.sowDate),
-        planting.sowType ?? null,
-        planting.numberSown ?? null,
-        mysqlUtils.nullableDateToDbString(planting.transplantDate),
-        planting.numberTransplanted ?? null,
-        planting.currentStatus,
-        JSON.stringify(planting.notes),
-      ];
-    },
-  },
-
   fromRow: function (row: PlantingRow, historyRows: PlantingStatusHistoryRow[] | undefined): Planting {
     return {
       plantingId: row.planting_id,

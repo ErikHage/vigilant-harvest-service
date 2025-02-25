@@ -1,7 +1,7 @@
 import { v4 as uuidV4 } from 'uuid';
 
 import actions, { PlantingAction } from './actions/planting-action';
-import { CreatePlantingRequest, PerformActionRequest, Planting, PlantingRequest } from './types';
+import { CreatePlantingRequest, PerformActionRequest, Planting } from './types';
 import { LifecycleTransitionViolationError } from './errors';
 
 import datasource from './plantings-mysql-datasource';
@@ -49,33 +49,6 @@ async function performAction(plantingActionRequest: PerformActionRequest): Promi
   } catch (err) {
     throw new FeralError('Error performing planting action', ensureError(err))
       .withDebugParams({ plantingActionRequest, });
-  }
-}
-
-async function upsertPlanting(plantingRequest: PlantingRequest): Promise<Planting> {
-  try {
-    const planting: Planting = {
-      plantingId: plantingRequest.plantingId || uuidV4(),
-      plotId: plantingRequest.plotId,
-      plantId: plantingRequest.plantId,
-      plantingYear: plantingRequest.plantingYear,
-      name: plantingRequest.name,
-      seedSource: plantingRequest.seedSource,
-      lotNumber: plantingRequest.lotNumber,
-      leadTimeWeeks: plantingRequest.leadTimeWeeks,
-      sowDate: plantingRequest.sowDate,
-      sowType: plantingRequest.sowType,
-      numberSown: plantingRequest.numberSown,
-      transplantDate: plantingRequest.transplantDate,
-      numberTransplanted: plantingRequest.numberTransplanted,
-      currentStatus: plantingRequest.currentStatus || 'UNKNOWN',
-      notes: plantingRequest.notes,
-    };
-
-    return await datasource.upsertPlanting(planting);
-  } catch (err) {
-    throw new FeralError('Error upserting planting', ensureError(err))
-      .withDebugParams({ plantingRequest, });
   }
 }
 
@@ -131,7 +104,6 @@ function _assertLifecycleTransition(planting: Planting, plantingActionRequest: P
 export default {
   createPlanting,
   performAction,
-  upsertPlanting,
   getPlantingById,
   getPlantingsByYear,
   getPlantings,

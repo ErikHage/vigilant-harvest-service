@@ -27,17 +27,6 @@ async function performPlantingAction(request: Request, response: Response) {
     .send(plantingResponse)
 }
 
-async function upsertPlanting(request: Request, response: Response) {
-  const plantingRequest = plantingSerializers.upsert.fromRequest(request);
-
-  const planting = await plantingsService.upsertPlanting(plantingRequest);
-  const plantingResponse = plantingSerializers.toResponse(planting);
-
-  response
-    .status(plantingRequest.plantingId === undefined ? 201 : 200)
-    .send(plantingResponse)
-}
-
 async function getPlantingById(request: Request, response: Response) {
   const { plantingId, } = request.params;
 
@@ -83,7 +72,6 @@ async function deletePlantingById(request: Request, response: Response) {
 export default {
   createPlanting: tryDecorator.decorate(createPlanting),
   performPlantingAction: tryDecorator.decorate(performPlantingAction),
-  upsertPlanting: tryDecorator.decorate(upsertPlanting),
   getPlantingById: tryDecorator.decorate(getPlantingById),
   getPlantings: tryDecorator.decorate(getPlantings),
   deletePlantingById: tryDecorator.decorate(deletePlantingById),

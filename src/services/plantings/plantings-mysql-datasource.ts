@@ -52,26 +52,6 @@ async function insertStatusHistory(plantingId: string, status: string, comment: 
   }
 }
 
-async function upsertPlanting(planting: Planting): Promise<Planting> {
-  let query: QueryPayload;
-  try {
-    query = {
-      sql: queries.plantings.upsert,
-      params: rowMapper.plantings.upsert.toParams(planting),
-    };
-  } catch (err) {
-    throw new FeralError('Error building query and params to upsert planting', ensureError(err));
-  }
-
-  try {
-    await db.execQuery(query);
-    return planting;
-  } catch (err) {
-    throw new FeralError('Error upserting planting', ensureError(err))
-      .withDebugParams({ query, });
-  }
-}
-
 async function getPlantingById(plantingId: string): Promise<Planting> {
   const query: QueryPayload = {
     sql: queries.plantings.getById,
@@ -137,7 +117,6 @@ async function deletePlantingById(plantingId: string): Promise<void> {
 export default {
   insertPlanting,
   updatePlanting,
-  upsertPlanting,
   getPlantingById,
   getPlantingsByYear,
   getPlantings,

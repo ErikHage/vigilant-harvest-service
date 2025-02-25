@@ -5,8 +5,10 @@ import {
   CreatePlantingRequest,
   PerformActionRequest,
   Planting,
-  PlantingRequest,
-  PlantingResponse, RetireActionData, SowActionData, TransplantActionData
+  PlantingResponse,
+  RetireActionData,
+  SowActionData,
+  TransplantActionData
 } from '../services/plantings/types';
 import { ValidationError } from '../errors/common';
 import constants from '../util/constants';
@@ -34,26 +36,6 @@ const action = {
       commentActionData: _parseCommentActionData(actionType, req),
     };
   },
-};
-
-const upsert = {
-  fromRequest: (req: Request): PlantingRequest => ({
-    plantingId: req.body.plantingId,
-    plotId: req.body.plotId,
-    plantId: req.body.plantId,
-    plantingYear: req.body.plantingYear,
-    name: req.body.name,
-    seedSource: req.body.seedSource,
-    lotNumber: req.body.lotNumber,
-    leadTimeWeeks: req.body.leadTimeWeeks,
-    sowDate: req.body.sowDate ? new Date(req.body.sowDate) : undefined,
-    sowType: req.body.sowType,
-    numberSown: req.body.numberSown,
-    transplantDate: req.body.transplantDate ? new Date(req.body.transplantDate) : undefined,
-    numberTransplanted: req.body.numberTransplanted,
-    currentStatus: req.body.currentStatus,
-    notes: req.body.notes,
-  }),
 };
 
 function _parsePlantingId(plantingIdInput: string | undefined): string {
@@ -111,7 +93,6 @@ function _parseCommentActionData(actionType: string, req: Request): CommentActio
 export default {
   insert,
   action,
-  upsert,
 
   toResponse: (planting: Planting): PlantingResponse => ({
     plantingId: planting.plantingId,
