@@ -33,7 +33,7 @@ export default {
       isClimbing: !!req.body.growing?.isClimbing,
       climbingHeightFeet: req.body.growing?.climbingHeightFeet,
       plantSize: req.body.growing?.plantSize,
-      growingNotes: req.body.growing.growingNotes,
+      growingNotes: req.body.growing?.growingNotes,
     },
     harvesting: {
       fruitSize: req.body.harvesting?.fruitSize,
