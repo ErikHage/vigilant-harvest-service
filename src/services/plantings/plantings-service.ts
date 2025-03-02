@@ -1,7 +1,7 @@
 import { v4 as uuidV4 } from 'uuid';
 
 import actions, { PlantingAction } from './actions/planting-action';
-import { CreatePlantingRequest, PerformActionRequest, Planting } from './types';
+import { CreatePlantingRequest, PerformActionRequest, Planting, PlantingUpdate, PlantingUpdateRequest } from './types';
 import { LifecycleTransitionViolationError } from './errors';
 
 import datasource from './plantings-mysql-datasource';
@@ -77,6 +77,44 @@ async function getPlantings(): Promise<Planting[]> {
   }
 }
 
+async function updatePlanting(plantingId: string, plantingUpdateRequest: PlantingUpdateRequest): Promise<void> {
+  try {
+    const planting: Planting = await getPlantingById(plantingId);
+
+    const plantingUpdate: PlantingUpdate = {
+      status: planting.currentStatus,
+      plotId: plantingUpdateRequest.plotId,
+      leadTimeWeeks: plantingUpdateRequest.leadTimeWeeks,
+      sowDate: plantingUpdateRequest.sowDate,
+      sowType: plantingUpdateRequest.sowType,
+      numberSown: plantingUpdateRequest.numberSown,
+      transplantDate: plantingUpdateRequest.transplantDate,
+      numberTransplanted: plantingUpdateRequest.numberTransplanted,
+      notes: plantingUpdateRequest.notes,
+    };
+
+    await datasource.updatePlanting(plantingId, plantingUpdate);
+    await datasource.insertStatusHistory(
+      plantingId,
+      'COMMENT',
+      buildUpdateComment(plantingUpdateRequest));
+  } catch (err) {
+    throw new FeralError('Error updating planting', ensureError(err))
+      .withDebugParams({
+        plantingId,
+        plantingUpdateRequest,
+      });
+  }
+}
+
+function buildUpdateComment(plantingUpdateRequest: PlantingUpdateRequest): string {
+  const filteredObject = Object.fromEntries(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    Object.entries(plantingUpdateRequest).filter(([ _, value, ]) => value !== undefined)
+  );
+  return `Updated: ${JSON.stringify(filteredObject)}`;
+}
+
 async function deletePlantingById(plantingId: string): Promise<void> {
   try {
     await datasource.deletePlantingById(plantingId);
@@ -106,5 +144,6 @@ export default {
   getPlantingById,
   getPlantingsByYear,
   getPlantings,
+  updatePlanting,
   deletePlantingById,
 }

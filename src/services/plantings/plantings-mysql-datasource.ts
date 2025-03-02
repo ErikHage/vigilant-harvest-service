@@ -31,7 +31,6 @@ async function updatePlanting(plantingId: string, plantingUpdate: PlantingUpdate
 
   try {
     await db.execQuery(query);
-    await insertStatusHistory(plantingId, plantingUpdate.status, plantingUpdate.comment)
   } catch (err) {
     throw new FeralError('Error updating planting', ensureError(err))
       .withDebugParams({ query, });

@@ -81,6 +81,17 @@ export interface Planting {
   statusHistory?: PlantingStatusHistoryRecord[],
 }
 
+export interface PlantingUpdateRequest {
+  plotId?: string,
+  numberTransplanted?: number, // int
+  leadTimeWeeks?: number, // int
+  sowDate?: Date,
+  sowType?: string,
+  numberSown?: number, //int
+  transplantDate?: Date,
+  notes?: string,
+}
+
 export interface PlantingUpdate {
   status: string,
   plotId?: string,
@@ -90,7 +101,6 @@ export interface PlantingUpdate {
   sowType?: string,
   numberSown?: number, //int
   transplantDate?: Date,
-  comment: string,
   notes?: string,
 }
 

@@ -10,8 +10,11 @@ export class RetireAction implements PlantingAction {
       await datasource.updatePlanting(plantingActionRequest.plantingId, {
         status: constants.plantings.statuses.retired,
         ...plantingActionRequest.retireActionData,
-        comment: plantingActionRequest.retireActionData?.comment ?? '---',
       });
+      await datasource.insertStatusHistory(
+        plantingActionRequest.plantingId,
+        constants.plantings.statuses.retired,
+        plantingActionRequest.retireActionData?.comment ?? '---');
     } catch (err) {
       throw new RetireActionError().withDebugParams({ plantingActionRequest, });
     }

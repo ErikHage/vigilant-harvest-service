@@ -10,8 +10,11 @@ export class PlantAction implements PlantingAction {
       await datasource.updatePlanting(plantingActionRequest.plantingId, {
         status: constants.plantings.statuses.planted,
         ...plantingActionRequest.transplantActionData,
-        comment: plantingActionRequest.transplantActionData?.comment ?? '---',
       });
+      await datasource.insertStatusHistory(
+        plantingActionRequest.plantingId,
+        constants.plantings.statuses.planted,
+        plantingActionRequest.transplantActionData?.comment ?? '---');
     } catch (err) {
       throw new TransplantActionError().withDebugParams({ plantingActionRequest, });
     }
