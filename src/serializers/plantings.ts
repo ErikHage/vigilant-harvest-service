@@ -5,7 +5,7 @@ import {
   CreatePlantingRequest,
   PerformActionRequest,
   Planting,
-  PlantingResponse,
+  PlantingResponse, PlantingUpdateRequest,
   RetireActionData,
   SowActionData,
   TransplantActionData
@@ -36,6 +36,19 @@ const action = {
       commentActionData: _parseCommentActionData(actionType, req),
     };
   },
+};
+
+const update = {
+  fromRequest: (req: Request): PlantingUpdateRequest => ({
+    plotId: req.body.plotId,
+    numberTransplanted: req.body.numberTransplanted,
+    leadTimeWeeks: req.body.leadTimeWeeks,
+    sowDate: req.body.sowDate,
+    sowType: req.body.sowType,
+    numberSown: req.body.numberSown,
+    transplantDate: req.body.transplantDate,
+    notes: req.body.notes,
+  }),
 };
 
 function _parsePlantingId(plantingIdInput: string | undefined): string {
@@ -93,6 +106,7 @@ function _parseCommentActionData(actionType: string, req: Request): CommentActio
 export default {
   insert,
   action,
+  update,
 
   toResponse: (planting: Planting): PlantingResponse => ({
     plantingId: planting.plantingId,

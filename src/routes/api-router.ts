@@ -29,6 +29,7 @@ const buildRouter = (): Express => {
 
   apiRouter.post('/plantings', plantingHandlers.createPlanting);
   apiRouter.post('/plantings/:plantingId', plantingHandlers.performPlantingAction);
+  apiRouter.put('/plantings/:plantingId', plantingHandlers.updatePlanting);
   apiRouter.get('/plantings/:plantingId', plantingHandlers.getPlantingById);
   apiRouter.get('/plantings', plantingHandlers.getPlantings);
   apiRouter.delete('/plantings/:plantingId', plantingHandlers.deletePlantingById);

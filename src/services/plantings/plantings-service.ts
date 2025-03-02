@@ -77,7 +77,7 @@ async function getPlantings(): Promise<Planting[]> {
   }
 }
 
-async function updatePlanting(plantingId: string, plantingUpdateRequest: PlantingUpdateRequest): Promise<void> {
+async function updatePlanting(plantingId: string, plantingUpdateRequest: PlantingUpdateRequest): Promise<Planting> {
   try {
     const planting: Planting = await getPlantingById(plantingId);
 
@@ -98,6 +98,7 @@ async function updatePlanting(plantingId: string, plantingUpdateRequest: Plantin
       plantingId,
       'COMMENT',
       buildUpdateComment(plantingUpdateRequest));
+    return await datasource.getPlantingById(plantingId);
   } catch (err) {
     throw new FeralError('Error updating planting', ensureError(err))
       .withDebugParams({

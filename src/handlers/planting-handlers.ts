@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 
 import plantingSerializers from '../serializers/plantings';
 import plantingsService from '../services/plantings/plantings-service';
-import { PerformActionRequest, Planting, PlantingResponse } from '../services/plantings/types';
+import { PerformActionRequest, Planting, PlantingResponse, PlantingUpdateRequest } from '../services/plantings/types';
 import tryDecorator from '../middleware/try-decorator';
 
 async function createPlanting(request: Request, response: Response) {
@@ -20,6 +20,23 @@ async function performPlantingAction(request: Request, response: Response) {
   const performActionRequest: PerformActionRequest = plantingSerializers.action.fromRequest(request);
 
   const planting: Planting = await plantingsService.performAction(performActionRequest);
+  const plantingResponse: PlantingResponse = plantingSerializers.toResponse(planting);
+
+  response
+    .status(200)
+    .send(plantingResponse)
+}
+
+async function updatePlanting(request: Request, response: Response) {
+  const { plantingId, } = request.params;
+
+  if (plantingId === undefined) {
+    response.status(400).send('plantingId required');
+  }
+
+  const plantingUpdateRequest: PlantingUpdateRequest = plantingSerializers.update.fromRequest(request);
+
+  const planting: Planting = await plantingsService.updatePlanting(plantingId!, plantingUpdateRequest);
   const plantingResponse: PlantingResponse = plantingSerializers.toResponse(planting);
 
   response
@@ -72,6 +89,7 @@ async function deletePlantingById(request: Request, response: Response) {
 export default {
   createPlanting: tryDecorator.decorate(createPlanting),
   performPlantingAction: tryDecorator.decorate(performPlantingAction),
+  updatePlanting: tryDecorator.decorate(updatePlanting),
   getPlantingById: tryDecorator.decorate(getPlantingById),
   getPlantings: tryDecorator.decorate(getPlantings),
   deletePlantingById: tryDecorator.decorate(deletePlantingById),
