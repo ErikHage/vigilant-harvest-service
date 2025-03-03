@@ -43,10 +43,10 @@ const update = {
     plotId: req.body.plotId,
     numberTransplanted: req.body.numberTransplanted,
     leadTimeWeeks: req.body.leadTimeWeeks,
-    sowDate: req.body.sowDate,
+    sowDate: req.body.sowDate ? new Date(req.body.sowDate) : undefined,
     sowType: req.body.sowType,
     numberSown: req.body.numberSown,
-    transplantDate: req.body.transplantDate,
+    transplantDate: req.body.transplantDate ? new Date(req.body.transplantDate) : undefined,
     notes: req.body.notes,
   }),
 };
