@@ -48,7 +48,10 @@ const plantings = {
       'current_status = ?',
     ];
 
+    if (plantingUpdate.seedSource) queryParts.push('seed_source = ?');
+    if (plantingUpdate.lotNumber) queryParts.push('lot_number = ?');
     if (plantingUpdate.plotId) queryParts.push('plot_id = ?');
+    if (plantingUpdate.leadTimeWeeks) queryParts.push('lead_time_weeks = ?');
     if (plantingUpdate.numberSown) queryParts.push('number_sown = ?');
     if (plantingUpdate.sowDate) queryParts.push('sow_date = ?');
     if (plantingUpdate.sowType) queryParts.push('sow_type = ?');

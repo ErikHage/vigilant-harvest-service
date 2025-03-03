@@ -24,6 +24,8 @@ const plantings = {
 
       params.push(plantingUpdate.status);
 
+      if (plantingUpdate.seedSource) params.push(plantingUpdate.seedSource);
+      if (plantingUpdate.lotNumber) params.push(plantingUpdate.lotNumber);
       if (plantingUpdate.plotId) params.push(plantingUpdate.plotId);
       if (plantingUpdate.leadTimeWeeks) params.push(plantingUpdate.leadTimeWeeks);
       if (plantingUpdate.numberSown) params.push(plantingUpdate.numberSown);

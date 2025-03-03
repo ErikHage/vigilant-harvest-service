@@ -29,6 +29,8 @@ async function updatePlanting(plantingId: string, plantingUpdate: PlantingUpdate
     params: rowMapper.plantings.update.toParams(plantingId, plantingUpdate),
   };
 
+  console.log(query);
+
   try {
     await db.execQuery(query);
   } catch (err) {

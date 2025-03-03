@@ -40,6 +40,8 @@ const action = {
 
 const update = {
   fromRequest: (req: Request): PlantingUpdateRequest => ({
+    seedSource: req.body.seedSource,
+    lotNumber: req.body.lotNumber,
     plotId: req.body.plotId,
     numberTransplanted: req.body.numberTransplanted,
     leadTimeWeeks: req.body.leadTimeWeeks,
