@@ -6,3 +6,10 @@ export class LifecycleTransitionViolationError extends FeralError {
     this.status = 400;
   }
 }
+
+export class PlantingValidationError extends FeralError {
+  constructor(message: string) {
+    super(message);
+    this.status = 400;
+  }
+}
