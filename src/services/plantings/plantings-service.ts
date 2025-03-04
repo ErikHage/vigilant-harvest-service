@@ -8,6 +8,7 @@ import datasource from './plantings-mysql-datasource';
 import { ensureError, FeralError } from '../../errors';
 import { getStrategy } from './actions/planting-action-factory';
 import { ValidationError } from '../../errors/common';
+import plantingValidation from './planting-validation';
 
 const plantingStatuses = {
   CREATED: 'CREATED',
@@ -80,6 +81,8 @@ async function getPlantings(): Promise<Planting[]> {
 async function updatePlanting(plantingId: string, plantingUpdateRequest: PlantingUpdateRequest): Promise<Planting> {
   try {
     const planting: Planting = await getPlantingById(plantingId);
+
+    plantingValidation.validateUpdateInput(planting.currentStatus, plantingUpdateRequest);
 
     const plantingUpdate: PlantingUpdate = {
       status: planting.currentStatus,
