@@ -1,4 +1,10 @@
-import { Planting, PlantingRow, PlantingStatusHistoryRecord, PlantingStatusHistoryRow, PlantingUpdate } from './types';
+import {
+  Planting,
+  PlantingRow,
+  PlantingStatusHistoryRecord,
+  PlantingStatusHistoryRow,
+  PlantingUpdate
+} from './types';
 import { QueryPayload } from '../../database/types';
 
 import queries from './queries';
@@ -15,12 +21,23 @@ async function insertPlanting(planting: Planting): Promise<Planting> {
 
   try {
     await db.execQuery(query);
-    await insertStatusHistory(planting.plantingId, constants.plantings.statuses.created, '');
+    await insertStatusHistory(
+      planting.plantingId,
+      constants.plantings.statuses.created,
+      buildInsertComment(planting));
     return await getPlantingById(planting.plantingId);
   } catch (err) {
     throw new FeralError('Error inserting planting', ensureError(err))
       .withDebugParams({ query, });
   }
+}
+
+function buildInsertComment(planting: Planting): string {
+  const filteredObject = Object.fromEntries(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    Object.entries(planting).filter(([ _, value, ]) => value !== undefined)
+  );
+  return `${JSON.stringify(filteredObject)}`;
 }
 
 async function updatePlanting(plantingId: string, plantingUpdate: PlantingUpdate) {
