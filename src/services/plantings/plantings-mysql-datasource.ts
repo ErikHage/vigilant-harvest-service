@@ -1,9 +1,11 @@
+import { v4 as uuidV4 } from 'uuid';
+
 import {
   Planting,
   PlantingRow,
   PlantingStatusHistoryRecord,
   PlantingStatusHistoryRow,
-  PlantingUpdate
+  PlantingUpdate, SplitData
 } from './types';
 import { QueryPayload } from '../../database/types';
 
@@ -29,6 +31,61 @@ async function insertPlanting(planting: Planting): Promise<Planting> {
   } catch (err) {
     throw new FeralError('Error inserting planting', ensureError(err))
       .withDebugParams({ query, });
+  }
+}
+
+async function clonePlanting(sourcePlantingId: string, splits: SplitData[]): Promise<void> {
+  const queriesToRun: QueryPayload[] = [];
+
+  const sourcePlanting = await getPlantingById(sourcePlantingId);
+
+  for (const split of splits) {
+    const newId = uuidV4();
+
+    queriesToRun.push({
+      sql: queries.plantings.clone,
+      params: [ newId, split.name, sourcePlantingId, ],
+    });
+    queriesToRun.push({
+      sql: queries.plantingStatusHistory.clone,
+      params: [ newId, sourcePlantingId, ],
+    });
+
+    const updateQuery = queries.plantings.buildUpdateQuery({
+      status: sourcePlanting.currentStatus,
+      numberSown: sourcePlanting.numberSown! - split.count,
+    });
+    queriesToRun.push({
+      sql: updateQuery,
+      params: [ sourcePlanting.currentStatus, sourcePlanting.numberSown! - split.count, sourcePlantingId, ],
+    });
+    queriesToRun.push({
+      sql: updateQuery,
+      params: [ sourcePlanting.currentStatus, split.count, newId, ],
+    });
+
+    queriesToRun.push({
+      sql: queries.plantingStatusHistory.insert,
+      params: [
+        sourcePlantingId,
+        sourcePlanting.currentStatus,
+        `Split out ${split.count} plants into planting ${split.name}`,
+      ],
+    });
+    queriesToRun.push({
+      sql: queries.plantingStatusHistory.insert,
+      params: [
+        newId,
+        sourcePlanting.currentStatus,
+        `Split out ${split.count} plants from planting ${sourcePlanting.name}`,
+      ],
+    });
+  }
+  try {
+    await db.execTransactionQuery(queriesToRun);
+  } catch (err) {
+    throw new FeralError('Error cloning planting', ensureError(err))
+      .withDebugParams({ queriesToRun, });
   }
 }
 
@@ -132,6 +189,7 @@ async function deletePlantingById(plantingId: string): Promise<void> {
 
 export default {
   insertPlanting,
+  clonePlanting,
   updatePlanting,
   getPlantingById,
   getPlantingsByYear,

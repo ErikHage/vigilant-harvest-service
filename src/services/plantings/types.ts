@@ -14,6 +14,7 @@ export interface PerformActionRequest {
   actionType: string,
   sowActionData?: SowActionData,
   transplantActionData?: TransplantActionData,
+  splitActionData?: SplitActionData,
   retireActionData?: RetireActionData,
   commentActionData?: CommentActionData,
 }
@@ -29,6 +30,17 @@ export interface TransplantActionData {
   transplantDate: Date,
   numberTransplanted: number, // int
   comment: string
+}
+
+export interface SplitActionData {
+  sourcePlantingId: string,
+  comment: string,
+  splits: SplitData[],
+}
+
+export interface SplitData {
+  name: string,
+  count: number, // int
 }
 
 export interface RetireActionData {

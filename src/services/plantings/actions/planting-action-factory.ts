@@ -6,6 +6,7 @@ import { RetireAction } from './retire-action';
 import { DeleteAction } from './delete-action';
 import { FeralError } from '../../../errors';
 import constants from '../../../util/constants';
+import { SplitAction } from './split-action';
 
 const actionMap: Map<string, PlantingAction> = new Map<string, PlantingAction>();
 
@@ -13,6 +14,7 @@ actionMap.set(constants.plantings.actionTypes.comment, new CommentAction());
 actionMap.set(constants.plantings.actionTypes.delete, new DeleteAction());
 actionMap.set(constants.plantings.actionTypes.start, new StartAction());
 actionMap.set(constants.plantings.actionTypes.plant, new PlantAction());
+actionMap.set(constants.plantings.actionTypes.split, new SplitAction());
 actionMap.set(constants.plantings.actionTypes.retire, new RetireAction());
 
 export function getStrategy(actionType: string): PlantingAction {

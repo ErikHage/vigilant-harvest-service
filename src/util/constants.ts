@@ -10,6 +10,7 @@ export default {
       comment: 'COMMENT',
       start: 'START',
       plant: 'PLANT',
+      split: 'SPLIT',
       delete: 'DELETE',
       retire: 'RETIRE',
     },

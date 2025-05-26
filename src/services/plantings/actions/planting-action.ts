@@ -16,6 +16,7 @@ allowedLifecycleTransitions.set(constants.plantings.statuses.created, [
 allowedLifecycleTransitions.set(constants.plantings.statuses.started, [
   constants.plantings.actionTypes.comment,
   constants.plantings.actionTypes.plant,
+  constants.plantings.actionTypes.split,
 ]);
 allowedLifecycleTransitions.set(constants.plantings.statuses.planted, [
   constants.plantings.actionTypes.comment,
