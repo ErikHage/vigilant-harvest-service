@@ -13,8 +13,8 @@ const actionMap: Map<string, PlantingAction> = new Map<string, PlantingAction>()
 actionMap.set(constants.plantings.actionTypes.comment, new CommentAction());
 actionMap.set(constants.plantings.actionTypes.delete, new DeleteAction());
 actionMap.set(constants.plantings.actionTypes.start, new StartAction());
-actionMap.set(constants.plantings.actionTypes.plant, new PlantAction());
 actionMap.set(constants.plantings.actionTypes.split, new SplitAction());
+actionMap.set(constants.plantings.actionTypes.plant, new PlantAction());
 actionMap.set(constants.plantings.actionTypes.retire, new RetireAction());
 
 export function getStrategy(actionType: string): PlantingAction {

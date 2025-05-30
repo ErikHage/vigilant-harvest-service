@@ -22,7 +22,7 @@ async function validateSplitCount(sourcePlantingId: string, splits: SplitData[])
   const sourceCount = currentPlanting.numberSown || 0;
   const splitCount = splits.reduce((acc, split) => acc + split.count, 0);
 
-  if (splitCount > sourceCount) {
+  if (splitCount >= sourceCount) {
     throw new SplitActionOverflowError(sourceCount, splitCount)
       .withDebugParams({ sourcePlantingId, splits, });
   }
@@ -36,6 +36,6 @@ class SplitActionError extends FeralError {
 
 class SplitActionOverflowError extends FeralError {
   constructor(sourceCount: number, splitCount: number) {
-    super(`Total split count [${splitCount}] exceeds source planting numberSown [${sourceCount}]`);
+    super(`Total split count [${splitCount}] meets or exceeds source planting numberSown [${sourceCount}]`);
   }
 }

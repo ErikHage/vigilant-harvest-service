@@ -13,8 +13,8 @@ export interface PerformActionRequest {
   plantingId: string,
   actionType: string,
   sowActionData?: SowActionData,
-  transplantActionData?: TransplantActionData,
   splitActionData?: SplitActionData,
+  transplantActionData?: TransplantActionData,
   retireActionData?: RetireActionData,
   commentActionData?: CommentActionData,
 }

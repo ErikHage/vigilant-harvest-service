@@ -39,6 +39,7 @@ async function clonePlanting(sourcePlantingId: string, splits: SplitData[]): Pro
 
   const sourcePlanting = await getPlantingById(sourcePlantingId);
 
+  let sourceCount: number = sourcePlanting.numberSown!;
   for (const split of splits) {
     const newId = uuidV4();
 
@@ -53,11 +54,11 @@ async function clonePlanting(sourcePlantingId: string, splits: SplitData[]): Pro
 
     const updateQuery = queries.plantings.buildUpdateQuery({
       status: sourcePlanting.currentStatus,
-      numberSown: sourcePlanting.numberSown! - split.count,
+      numberSown: sourceCount,
     });
     queriesToRun.push({
       sql: updateQuery,
-      params: [ sourcePlanting.currentStatus, sourcePlanting.numberSown! - split.count, sourcePlantingId, ],
+      params: [ sourcePlanting.currentStatus, sourceCount - split.count, sourcePlantingId, ],
     });
     queriesToRun.push({
       sql: updateQuery,
@@ -80,6 +81,8 @@ async function clonePlanting(sourcePlantingId: string, splits: SplitData[]): Pro
         `Split out ${split.count} plants from planting ${sourcePlanting.name}`,
       ],
     });
+
+    sourceCount -= split.count;
   }
   try {
     await db.execTransactionQuery(queriesToRun);

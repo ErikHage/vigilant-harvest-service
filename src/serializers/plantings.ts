@@ -7,7 +7,7 @@ import {
   Planting,
   PlantingResponse, PlantingUpdateRequest,
   RetireActionData,
-  SowActionData,
+  SowActionData, SplitActionData, SplitData,
   TransplantActionData
 } from '../services/plantings/types';
 import { ValidationError } from '../errors/common';
@@ -31,6 +31,7 @@ const action = {
       plantingId: _parsePlantingId(req.params.plantingId),
       actionType,
       sowActionData: _parseSowActionData(actionType, req),
+      splitActionData: _parseSplitActionData(actionType, req),
       transplantActionData: _parseTransplantActionData(actionType, req),
       retireActionData: _parseRetireActionData(actionType, req),
       commentActionData: _parseCommentActionData(actionType, req),
@@ -70,6 +71,21 @@ function _parseSowActionData(actionType: string, req: Request): SowActionData | 
     sowDate: new Date(req.body.sowDate),
     numberSown: req.body.numberSown,
     comment: req.body.comment ?? '',
+  };
+}
+
+function _parseSplitActionData(actionType: string, req: Request): SplitActionData | undefined {
+  if (actionType !== constants.plantings.actionTypes.split) {
+    return undefined;
+  }
+
+  return {
+    sourcePlantingId: req.body.sourcePlantingId,
+    comment: req.body.comment ?? '',
+    splits: req.body.splits.map((split: SplitData) => ({
+      name: split.name,
+      count: split.count,
+    })),
   };
 }
 
