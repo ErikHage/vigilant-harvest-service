@@ -5,9 +5,12 @@ import {
   CreatePlantingRequest,
   PerformActionRequest,
   Planting,
-  PlantingResponse, PlantingUpdateRequest,
+  PlantingResponse,
+  PlantingUpdateRequest,
   RetireActionData,
-  SowActionData, SplitActionData, SplitData,
+  SowActionData,
+  SplitActionData,
+  SplitData,
   TransplantActionData
 } from '../services/plantings/types';
 import { ValidationError } from '../errors/common';
@@ -41,6 +44,7 @@ const action = {
 
 const update = {
   fromRequest: (req: Request): PlantingUpdateRequest => ({
+    name: req.body.name,
     plantId: req.body.plantId,
     seedSource: req.body.seedSource,
     lotNumber: req.body.lotNumber,

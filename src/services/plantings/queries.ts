@@ -82,6 +82,7 @@ const plantings = {
       'current_status = ?',
     ];
 
+    if (plantingUpdate.name) queryParts.push('planting_name = ?');
     if (plantingUpdate.plantId) queryParts.push('plant_id = ?');
     if (plantingUpdate.seedSource) queryParts.push('seed_source = ?');
     if (plantingUpdate.lotNumber) queryParts.push('lot_number = ?');

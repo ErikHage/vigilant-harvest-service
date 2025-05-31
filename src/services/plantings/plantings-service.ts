@@ -86,6 +86,7 @@ async function updatePlanting(plantingId: string, plantingUpdateRequest: Plantin
 
     const plantingUpdate: PlantingUpdate = {
       status: planting.currentStatus,
+      name: plantingUpdateRequest.name,
       plantId: plantingUpdateRequest.plantId,
       seedSource: plantingUpdateRequest.seedSource,
       lotNumber: plantingUpdateRequest.lotNumber,

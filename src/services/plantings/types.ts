@@ -95,6 +95,7 @@ export interface Planting {
 
 export interface PlantingUpdateRequest {
   plantId?: string,
+  name?: string,
   seedSource?: string,
   lotNumber?: string,
   plotId?: string,
@@ -109,6 +110,7 @@ export interface PlantingUpdateRequest {
 
 export interface PlantingUpdate {
   status: string,
+  name?: string,
   plantId?: string,
   seedSource?: string,
   lotNumber?: string,
