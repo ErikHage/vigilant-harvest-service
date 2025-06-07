@@ -1,21 +1,15 @@
 import { v4 as uuidV4 } from 'uuid';
 
 import actions, { PlantingAction } from './actions/planting-action';
+import constants from '../../util/constants';
 import { CreatePlantingRequest, PerformActionRequest, Planting, PlantingUpdate, PlantingUpdateRequest } from './types';
 import { LifecycleTransitionViolationError } from './errors';
 
-import datasource from './plantings-mysql-datasource';
 import { ensureError, FeralError } from '../../errors';
 import { getStrategy } from './actions/planting-action-factory';
 import { ValidationError } from '../../errors/common';
+import datasource from './plantings-mysql-datasource';
 import plantingValidation from './planting-validation';
-
-const plantingStatuses = {
-  CREATED: 'CREATED',
-  INDOOR_SOW: 'INDOOR_SOWN',
-  OUTDOOR_SOW: 'OUTDOOR_SOWN',
-  RETIRED: 'RETIRED',
-}
 
 async function createPlanting(createPlantingRequest: CreatePlantingRequest): Promise<Planting> {
   try {
@@ -27,7 +21,7 @@ async function createPlanting(createPlantingRequest: CreatePlantingRequest): Pro
       leadTimeWeeks: createPlantingRequest.leadTimeWeeks,
       seedSource: createPlantingRequest.seedSource,
       lotNumber: createPlantingRequest.lotNumber,
-      currentStatus: plantingStatuses.CREATED,
+      currentStatus: constants.plantings.statuses.created,
     };
 
     return await datasource.insertPlanting(planting);
@@ -45,7 +39,7 @@ async function performAction(plantingActionRequest: PerformActionRequest): Promi
   const strategy: PlantingAction = getStrategy(plantingActionRequest.actionType);
 
   try {
-    return await strategy.performAction(plantingActionRequest);
+    return await strategy.performAction(currentPlanting, plantingActionRequest);
   } catch (err) {
     throw new FeralError('Error performing planting action', ensureError(err))
       .withDebugParams({ plantingActionRequest, });

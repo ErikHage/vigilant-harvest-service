@@ -4,10 +4,10 @@ import datasource from '../plantings-mysql-datasource';
 import { FeralError } from '../../../errors';
 
 export class SplitAction implements PlantingAction {
-  async performAction(plantingActionRequest: PerformActionRequest): Promise<Planting> {
+  async performAction(currentPlanting: Planting, plantingActionRequest: PerformActionRequest): Promise<Planting> {
     try {
       const splits = plantingActionRequest.splitActionData!.splits;
-      await validateSplitCount(plantingActionRequest.plantingId, splits);
+      validateSplitCount(currentPlanting, plantingActionRequest.plantingId, splits);
       await datasource.splitPlanting(plantingActionRequest.plantingId, splits);
     } catch (err) {
       throw new SplitActionError().withDebugParams({ plantingActionRequest, });
@@ -17,8 +17,11 @@ export class SplitAction implements PlantingAction {
   }
 }
 
-async function validateSplitCount(sourcePlantingId: string, splits: SplitData[]): Promise<void> {
-  const currentPlanting = await datasource.getPlantingById(sourcePlantingId);
+function validateSplitCount(
+  currentPlanting: Planting,
+  sourcePlantingId: string,
+  splits: SplitData[]): void {
+
   const sourceCount = currentPlanting.numberSown || 0;
   const splitCount = splits.reduce((acc, split) => acc + split.count, 0);
 

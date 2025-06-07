@@ -7,7 +7,7 @@ import constants from '../../../util/constants';
 
 export class StartAction implements PlantingAction {
 
-  async performAction(plantingActionRequest: PerformActionRequest): Promise<Planting> {
+  async performAction(currentPlanting: Planting, plantingActionRequest: PerformActionRequest): Promise<Planting> {
     try {
       await datasource.updatePlanting(plantingActionRequest.plantingId, {
         status: constants.plantings.statuses.started,

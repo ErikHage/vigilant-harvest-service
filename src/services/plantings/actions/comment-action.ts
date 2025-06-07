@@ -5,7 +5,7 @@ import datasource from '../plantings-mysql-datasource';
 import { FeralError } from '../../../errors';
 
 export class CommentAction implements PlantingAction {
-  async performAction(plantingActionRequest: PerformActionRequest): Promise<Planting> {
+  async performAction(currentPlanting: Planting, plantingActionRequest: PerformActionRequest): Promise<Planting> {
     try {
       await datasource.insertStatusHistory(
         plantingActionRequest.plantingId,

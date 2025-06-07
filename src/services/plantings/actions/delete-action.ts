@@ -4,7 +4,7 @@ import datasource from '../plantings-mysql-datasource';
 import { FeralError } from '../../../errors';
 
 export class DeleteAction implements PlantingAction {
-  async performAction(plantingActionRequest: PerformActionRequest): Promise<Planting> {
+  async performAction(currentPlanting: Planting, plantingActionRequest: PerformActionRequest): Promise<Planting> {
     try {
       await datasource.deletePlantingById(plantingActionRequest.plantingId);
     } catch (err) {

@@ -2,7 +2,7 @@ import { PerformActionRequest, Planting } from '../types';
 import constants from '../../../util/constants';
 
 export interface PlantingAction {
-  performAction(plantingActionRequest: PerformActionRequest): Promise<Planting>;
+  performAction(currentPlanting: Planting, plantingActionRequest: PerformActionRequest): Promise<Planting>;
 }
 
 const allowedLifecycleTransitions: Map<string, string[]> = new Map<string, string[]>();
