@@ -34,7 +34,7 @@ async function insertPlanting(planting: Planting): Promise<Planting> {
   }
 }
 
-async function clonePlanting(sourcePlantingId: string, splits: SplitData[]): Promise<void> {
+async function splitPlanting(sourcePlantingId: string, splits: SplitData[]): Promise<void> {
   const queriesToRun: QueryPayload[] = [];
 
   const sourcePlanting = await getPlantingById(sourcePlantingId);
@@ -192,7 +192,7 @@ async function deletePlantingById(plantingId: string): Promise<void> {
 
 export default {
   insertPlanting,
-  clonePlanting,
+  splitPlanting,
   updatePlanting,
   getPlantingById,
   getPlantingsByYear,

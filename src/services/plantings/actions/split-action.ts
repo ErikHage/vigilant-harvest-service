@@ -8,7 +8,7 @@ export class SplitAction implements PlantingAction {
     try {
       const splits = plantingActionRequest.splitActionData!.splits;
       await validateSplitCount(plantingActionRequest.plantingId, splits);
-      await datasource.clonePlanting(plantingActionRequest.plantingId, splits);
+      await datasource.splitPlanting(plantingActionRequest.plantingId, splits);
     } catch (err) {
       throw new SplitActionError().withDebugParams({ plantingActionRequest, });
     }
