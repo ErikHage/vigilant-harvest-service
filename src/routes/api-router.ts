@@ -6,6 +6,7 @@ import plantingHandlers from '../handlers/planting-handlers';
 import plantingYearHandlers from '../handlers/planting-year-handlers';
 import plantHandlers from '../handlers/plant-handlers';
 import harvestHandlers from '../handlers/harvest-handlers';
+import journalHandlers from '../handlers/journal-handlers';
 import logRequests from '../middleware/log-requests';
 import attachActor from '../middleware/attach-actor';
 import errorHandler from '../middleware/error-handler';
@@ -44,6 +45,9 @@ const buildRouter = (): Express => {
   apiRouter.get('/harvests/search', harvestHandlers.searchHarvests);
   apiRouter.get('/harvests/stats', harvestHandlers.getHarvestStats);
   apiRouter.delete('/harvests/:harvestId', harvestHandlers.deleteHarvestById);
+
+  apiRouter.put('/journal', journalHandlers.upsertJournalEntry);
+  apiRouter.get('/journal/:plantingYear', journalHandlers.getJournalEntries);
 
   apiRouter.use(errorHandler);
 
