@@ -7,7 +7,7 @@ const journalEntries = {
       ON DUPLICATE KEY UPDATE
         planting_year =    VALUES(planting_year),
         entry =            VALUES(entry),
-        entry_date =       VALUES(entry_date),
+        entry_date =       VALUES(entry_date)
     `,
     getByEntryId: `SELECT ${allFields} FROM garden_journal WHERE entry_id = ?`,
     getByYear: `SELECT ${allFields} FROM garden_journal WHERE planting_year = ?`,
