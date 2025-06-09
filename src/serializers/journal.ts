@@ -8,7 +8,7 @@ const journalEntries = {
       entryId: req.body.entryId,
       plantingYear: req.body.plantingYear,
       entry: req.body.entry,
-      entryDate: req.body.entryDate,
+      entryDate: new Date(req.body.entryDate),
     }),
   },
 
