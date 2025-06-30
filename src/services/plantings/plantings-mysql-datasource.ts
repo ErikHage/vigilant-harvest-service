@@ -14,6 +14,7 @@ import db, { RowNotFoundError } from '../../database'
 import rowMapper from './row-mapper';
 import { ensureError, FeralError } from '../../errors';
 import constants from '../../util/constants';
+import { PlantingsBreakdown, PlantingsBreakdownRow } from '../planting-years/types';
 
 async function insertPlanting(planting: Planting): Promise<Planting> {
   const query: QueryPayload = {
@@ -181,6 +182,17 @@ async function getPlantings(): Promise<Planting[]> {
   return results.map(plantingRow => rowMapper.plantings.fromRow(plantingRow, []));
 }
 
+async function getPlantingsBreakdown(): Promise<Map<number, PlantingsBreakdown>> {
+  const query: QueryPayload = {
+    sql: queries.plantings.getStatusBreakdowns,
+    params: [],
+  };
+
+  const results: PlantingsBreakdownRow[] = await db.execQuery<PlantingsBreakdownRow[]>(query);
+
+  return rowMapper.plantings.breakdown.fromRows(results);
+}
+
 async function deletePlantingById(plantingId: string): Promise<void> {
   const query: QueryPayload = {
     sql: queries.plantings.deleteById,
@@ -195,6 +207,7 @@ export default {
   splitPlanting,
   updatePlanting,
   getPlantingById,
+  getPlantingsBreakdown,
   getPlantingsByYear,
   getPlantings,
   deletePlantingById,

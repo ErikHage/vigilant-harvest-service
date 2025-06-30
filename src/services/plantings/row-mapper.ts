@@ -1,5 +1,8 @@
 import { Planting, PlantingRow, PlantingStatusHistoryRecord, PlantingStatusHistoryRow, PlantingUpdate } from './types';
+import { PlantingsBreakdown, PlantingsBreakdownRow } from '../planting-years/types';
+
 import mysqlUtils from '../../database/mysql-utils';
+import constants from '../../util/constants';
 
 const plantings = {
   insert: {
@@ -43,6 +46,38 @@ const plantings = {
     },
   },
 
+  breakdown: {
+    fromRows: (rows: PlantingsBreakdownRow[]): Map<number, PlantingsBreakdown> => {
+      return rows.reduce((acc, row) => {
+        if (!acc.has(row.planting_year)) {
+          acc.set(row.planting_year, {
+            numberCreated: 0,
+            numberStarted: 0,
+            numberPlanted: 0,
+            numberRetired: 0,
+          });
+        }
+
+        switch (row.planting_status) {
+          case constants.plantings.statuses.created:
+            acc.get(row.planting_year)!.numberCreated += row.status_count;
+            break;
+          case constants.plantings.statuses.started:
+            acc.get(row.planting_year)!.numberStarted += row.status_count;
+            break;
+          case constants.plantings.statuses.planted:
+            acc.get(row.planting_year)!.numberPlanted += row.status_count;
+            break;
+          case constants.plantings.statuses.retired:
+            acc.get(row.planting_year)!.numberRetired += row.status_count;
+            break;
+        }
+
+        return acc;
+      }, new Map<number, PlantingsBreakdown>());
+    },
+  },
+
   fromRow: function (row: PlantingRow, historyRows: PlantingStatusHistoryRow[] | undefined): Planting {
     return {
       plantingId: row.planting_id,
@@ -78,7 +113,7 @@ const plantingStatusHistory = {
     },
   },
 
-  fromRow: function(row: PlantingStatusHistoryRow): PlantingStatusHistoryRecord {
+  fromRow: function (row: PlantingStatusHistoryRow): PlantingStatusHistoryRecord {
     return {
       plantingHistoryId: row.planting_history_id,
       plantingId: row.planting_id,

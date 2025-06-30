@@ -111,6 +111,12 @@ const plantings = {
   getAll: `SELECT ${allPlantingFields}
            FROM plantings`,
 
+  getStatusBreakdowns: `SELECT planting_year,
+                               current_status AS planting_status,
+                               count(*) AS status_count
+                          FROM plantings
+                         GROUP BY planting_year, current_status`,
+
   deleteById: 'DELETE FROM plantings WHERE planting_id = ?',
 };
 

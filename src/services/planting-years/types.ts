@@ -6,11 +6,11 @@ export interface PlantingYearRequest {
   targetPlantingDate: Date,
 }
 
-
 export interface PlantingYear {
   plantingYear: number, // int
   lastFrostDate: Date,
   targetPlantingDate: Date,
+  details?: PlantingYearDetails,
 }
 
 export interface PlantingYearRow extends RowDataPacket  {
@@ -23,4 +23,25 @@ export interface PlantingYearResponse {
   plantingYear: number, // int
   lastFrostDate: Date,
   targetPlantingDate: Date,
+  details: PlantingYearDetails,
+}
+
+export interface PlantingYearDetails {
+  createdPlantings: number,
+  startedPlantings: number,
+  plantedPlantings: number,
+  retiredPlantings: number,
+}
+
+export interface PlantingsBreakdown {
+  numberCreated: number,
+  numberStarted: number,
+  numberPlanted: number,
+  numberRetired: number,
+}
+
+export interface PlantingsBreakdownRow extends RowDataPacket {
+  planting_year: number,
+  planting_status: string,
+  status_count: number,
 }
