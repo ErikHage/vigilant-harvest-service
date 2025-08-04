@@ -11,6 +11,7 @@ async function upsertPlant(plantRequest: PlantRequest): Promise<Plant> {
       plantId: plantRequest.plantId || uuidV4(),
       category: plantRequest.category,
       friendlyName: plantRequest.friendlyName,
+      lifespanType: plantRequest.lifespanType,
       tags: plantRequest.tags,
       description: plantRequest.description,
       taxonomy: plantRequest.taxonomy,

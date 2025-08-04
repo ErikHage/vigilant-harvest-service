@@ -8,6 +8,7 @@ function fromRow(row: PlantRow): Plant {
     tags: row.tags === '' ? [] : JSON.parse(row.tags),
     description: row.plant_description,
     friendlyName: row.friendly_name,
+    lifespanType: row.lifespan_type,
     dateCreated: row.date_created,
     dateModified: row.date_modified,
     taxonomy: {
@@ -51,6 +52,7 @@ const insert = {
     JSON.stringify(plant.tags),
     plant.description,
     plant.friendlyName,
+    plant.lifespanType,
     plant.taxonomy.family,
     plant.taxonomy.genus,
     plant.taxonomy.species,

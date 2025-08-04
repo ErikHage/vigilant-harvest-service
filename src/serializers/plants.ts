@@ -2,11 +2,19 @@ import { Request } from 'express';
 
 import { Plant, PlantRequest, PlantResponse } from '../services/plants/types';
 
+function capitalizeFirstLetter(str: string): string {
+  if (!str) {
+    return '';
+  }
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
 export default {
   fromRequest: (req: Request): PlantRequest => ({
     plantId: req.body.plantId,
     category: req.body.category,
     friendlyName: req.body.friendlyName,
+    lifespanType: req.body.lifespanType?.toLowerCase() ?? 'annual',
     tags: req.body.tags ?? [],
     description: req.body.description,
     taxonomy: {
@@ -46,6 +54,7 @@ export default {
     plantId: plant.plantId,
     category: plant.category,
     friendlyName: plant.friendlyName,
+    lifespanType: capitalizeFirstLetter(plant.lifespanType),
     tags: plant.tags,
     description: plant.description,
     taxonomy: plant.taxonomy,
