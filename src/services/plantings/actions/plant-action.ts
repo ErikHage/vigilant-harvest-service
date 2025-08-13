@@ -13,6 +13,7 @@ export class PlantAction implements PlantingAction {
       // split out the remaining number sown to stay as a STARTED planting
       await splitOutRemainder(currentPlanting, plantingActionRequest);
 
+      // TODO do in a transaction?
       await datasource.updatePlanting(plantingActionRequest.plantingId, {
         status: constants.plantings.statuses.planted,
         ...plantingActionRequest.transplantActionData,

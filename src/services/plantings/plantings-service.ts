@@ -94,11 +94,8 @@ async function updatePlanting(plantingId: string, plantingUpdateRequest: Plantin
       notes: plantingUpdateRequest.notes,
     };
 
-    await datasource.updatePlanting(plantingId, plantingUpdate);
-    await datasource.insertStatusHistory(
-      plantingId,
-      'COMMENT',
-      buildUpdateComment(plantingUpdateRequest));
+    const updateComment = _buildUpdateComment(plantingUpdateRequest);
+    await datasource.updatePlanting(plantingId, plantingUpdate, updateComment);
     return await datasource.getPlantingById(plantingId);
   } catch (err) {
     throw new FeralError('Error updating planting', ensureError(err))
@@ -109,7 +106,7 @@ async function updatePlanting(plantingId: string, plantingUpdateRequest: Plantin
   }
 }
 
-function buildUpdateComment(plantingUpdateRequest: PlantingUpdateRequest): string {
+function _buildUpdateComment(plantingUpdateRequest: PlantingUpdateRequest): string {
   const filteredObject = Object.fromEntries(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     Object.entries(plantingUpdateRequest).filter(([ _, value, ]) => value !== undefined)

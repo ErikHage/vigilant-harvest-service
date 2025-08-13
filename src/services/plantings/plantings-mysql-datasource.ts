@@ -5,7 +5,8 @@ import {
   PlantingRow,
   PlantingStatusHistoryRecord,
   PlantingStatusHistoryRow,
-  PlantingUpdate, SplitData
+  PlantingUpdate,
+  SplitData
 } from './types';
 import { QueryPayload } from '../../database/types';
 
@@ -17,26 +18,25 @@ import constants from '../../util/constants';
 import { PlantingsBreakdown, PlantingsBreakdownRow } from '../planting-years/types';
 
 async function insertPlanting(planting: Planting): Promise<Planting> {
-  const query: QueryPayload = {
-    sql: queries.plantings.insert,
-    params: rowMapper.plantings.insert.toParams(planting),
-  };
+  const transaction: QueryPayload[] = [
+    {
+      sql: queries.plantings.insert,
+      params: rowMapper.plantings.insert.toParams(planting),
+    },
+    _getInsertStatusHistoryQueryAndParams(planting.plantingId, constants.plantings.statuses.created, _buildInsertComment(planting)),
+  ];
 
   try {
-    await db.execQuery(query);
-    await insertStatusHistory(
-      planting.plantingId,
-      constants.plantings.statuses.created,
-      buildInsertComment(planting));
+    await db.execTransactionQuery(transaction);
     return await getPlantingById(planting.plantingId);
   } catch (err) {
     throw new FeralError('Error inserting planting', ensureError(err))
-      .withDebugParams({ query, });
+      .withDebugParams({ transaction, });
   }
 }
 
 async function splitPlanting(sourcePlantingId: string, splits: SplitData[]): Promise<void> {
-  const queriesToRun: QueryPayload[] = [];
+  const transaction: QueryPayload[] = [];
 
   const sourcePlanting = await getPlantingById(sourcePlantingId);
 
@@ -44,11 +44,11 @@ async function splitPlanting(sourcePlantingId: string, splits: SplitData[]): Pro
   for (const split of splits) {
     const newId = uuidV4();
 
-    queriesToRun.push({
+    transaction.push({
       sql: queries.plantings.clone,
       params: [ newId, split.name, sourcePlantingId, ],
     });
-    queriesToRun.push({
+    transaction.push({
       sql: queries.plantingStatusHistory.clone,
       params: [ newId, sourcePlantingId, ],
     });
@@ -57,16 +57,16 @@ async function splitPlanting(sourcePlantingId: string, splits: SplitData[]): Pro
       status: sourcePlanting.currentStatus,
       numberSown: sourceCount,
     });
-    queriesToRun.push({
+    transaction.push({
       sql: updateQuery,
       params: [ sourcePlanting.currentStatus, sourceCount - split.count, sourcePlantingId, ],
     });
-    queriesToRun.push({
+    transaction.push({
       sql: updateQuery,
       params: [ sourcePlanting.currentStatus, split.count, newId, ],
     });
 
-    queriesToRun.push({
+    transaction.push({
       sql: queries.plantingStatusHistory.insert,
       params: [
         sourcePlantingId,
@@ -74,7 +74,7 @@ async function splitPlanting(sourcePlantingId: string, splits: SplitData[]): Pro
         `Split out ${split.count} plants into planting ${split.name}`,
       ],
     });
-    queriesToRun.push({
+    transaction.push({
       sql: queries.plantingStatusHistory.insert,
       params: [
         newId,
@@ -86,14 +86,14 @@ async function splitPlanting(sourcePlantingId: string, splits: SplitData[]): Pro
     sourceCount -= split.count;
   }
   try {
-    await db.execTransactionQuery(queriesToRun);
+    await db.execTransactionQuery(transaction);
   } catch (err) {
     throw new FeralError('Error cloning planting', ensureError(err))
-      .withDebugParams({ queriesToRun, });
+      .withDebugParams({ transaction, });
   }
 }
 
-function buildInsertComment(planting: Planting): string {
+function _buildInsertComment(planting: Planting): string {
   const filteredObject = Object.fromEntries(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     Object.entries(planting).filter(([ _, value, ]) => value !== undefined)
@@ -101,25 +101,35 @@ function buildInsertComment(planting: Planting): string {
   return `${JSON.stringify(filteredObject)}`;
 }
 
-async function updatePlanting(plantingId: string, plantingUpdate: PlantingUpdate) {
-  const query: QueryPayload = {
-    sql: queries.plantings.buildUpdateQuery(plantingUpdate),
-    params: rowMapper.plantings.update.toParams(plantingId, plantingUpdate),
-  };
+async function updatePlanting(plantingId: string, plantingUpdate: PlantingUpdate, updateComment?: string): Promise<void> {
+  const transaction: QueryPayload[] = [
+    {
+      sql: queries.plantings.buildUpdateQuery(plantingUpdate),
+      params: rowMapper.plantings.update.toParams(plantingId, plantingUpdate),
+    },
+  ];
+
+  if (updateComment) {
+    transaction.push(_getInsertStatusHistoryQueryAndParams(plantingId, 'COMMENT', updateComment));
+  }
 
   try {
-    await db.execQuery(query);
+    await db.execTransactionQuery(transaction);
   } catch (err) {
     throw new FeralError('Error updating planting', ensureError(err))
-      .withDebugParams({ query, });
+      .withDebugParams({ transaction, });
   }
 }
 
-async function insertStatusHistory(plantingId: string, status: string, comment: string): Promise<void> {
-  const query: QueryPayload = {
+function _getInsertStatusHistoryQueryAndParams(plantingId: string, status: string, comment: string): QueryPayload {
+  return {
     sql: queries.plantingStatusHistory.insert,
     params: rowMapper.plantingStatusHistory.insert.toParams(plantingId, status, comment),
   };
+}
+
+async function insertStatusHistory(plantingId: string, status: string, comment: string): Promise<void> {
+  const query: QueryPayload = _getInsertStatusHistoryQueryAndParams(plantingId, status, comment);
 
   try {
     await db.execQuery(query);

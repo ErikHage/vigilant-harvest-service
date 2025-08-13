@@ -7,6 +7,7 @@ import constants from '../../../util/constants';
 export class RetireAction implements PlantingAction {
   async performAction(currentPlanting: Planting, plantingActionRequest: PerformActionRequest): Promise<Planting> {
     try {
+      // TODO do in a transaction
       await datasource.updatePlanting(plantingActionRequest.plantingId, {
         status: constants.plantings.statuses.retired,
         ...plantingActionRequest.retireActionData,
