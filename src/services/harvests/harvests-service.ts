@@ -12,7 +12,7 @@ import {
 import datasource from './harvests-mysql-datasource';
 import { ensureError, FeralError } from '../../errors';
 import { getLogger } from '../../logging';
-import harvestStats from './harvest-stats';
+import stats from './stats';
 
 const logger = getLogger('harvests-service');
 
@@ -84,7 +84,7 @@ async function searchHarvests(request: HarvestSearchRequest): Promise<Harvest[]>
 async function getHarvestStats(request: HarvestStatsRequest): Promise<HarvestStats> {
   try {
     const harvests: HydratedHarvest[] = await datasource.getHydratedHarvestsByYear(request.year);
-    return harvestStats.calculate(harvests);
+    return stats.calculate(harvests, request.type);
   } catch (err) {
     const error = new FeralError('Error getting harvest stats', ensureError(err))
       .withDebugParams({ request, });

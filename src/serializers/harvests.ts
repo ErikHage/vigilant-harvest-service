@@ -9,6 +9,7 @@ import {
   HarvestSummaryResponse
 } from '../services/harvests/types';
 import { BadRequestError } from '../errors/common';
+import { StatsType, StatsTypeUtils } from '../types/stats-type';
 
 const insert = {
   fromRequest: (req: Request): HarvestRequest[] => {
@@ -75,6 +76,7 @@ const search = {
 const stats = {
   fromRequest: (req: Request): HarvestStatsRequest => {
     return {
+      type: parseStatsRequestType(req.query.type as string),
       year: parseInt(req.query.year as string),
     };
   },
@@ -89,6 +91,14 @@ const stats = {
     };
   },
 };
+
+function parseStatsRequestType(rawType: string): StatsType {
+  const parsedType = StatsTypeUtils.parse(rawType);
+  if (parsedType) {
+    return parsedType;
+  }
+  throw new BadRequestError(`Invalid stats type: ${rawType}`);
+}
 
 export default {
   insert,

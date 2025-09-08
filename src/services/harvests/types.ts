@@ -1,4 +1,5 @@
 import { RowDataPacket } from 'mysql2';
+import { StatsType } from '../../types/stats-type';
 
 export interface HarvestRequest {
   harvestId: string | undefined,
@@ -74,6 +75,7 @@ export interface HarvestSearchRequest {
 }
 
 export interface HarvestStatsRequest {
+  type: StatsType,
   year: number, // int
 }
 
