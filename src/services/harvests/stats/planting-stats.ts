@@ -39,12 +39,14 @@ function calculatePlantingStat(plantingId: string, harvests: HydratedHarvest[]):
   const plantId = harvests.length > 0 ? harvests[0]!.plantId : 'Unknown';
   const plantName = harvests.length > 0 ? harvests[0]!.plantName : 'Unknown';
   const plantingName = harvests.length > 0 ? harvests[0]!.plantingName : 'Unknown';
+  const plotName = harvests.length > 0 ? harvests[0]!.plotName : 'Unknown';
 
   return {
     plantingId,
     plantingName,
     plantId,
     plantName,
+    plotName,
     totalQuantity,
     averageHarvestPerDay: totalQuantity / numberOfDays,
     firstHarvest: harvestDates.firstHarvestDate,

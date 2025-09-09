@@ -35,6 +35,7 @@ export interface HydratedHarvest {
   plantingName?: string,
   plantId: string,
   plantName: string,
+  plotName: string,
   quantity: number, //int
   harvestDate: Date,
 }
@@ -42,7 +43,10 @@ export interface HydratedHarvest {
 export interface HydratedHarvestRow extends RowDataPacket {
   harvest_id: string,
   planting_id: string,
+  planting_name: string,
+  plant_id: string,
   plant_name: string,
+  plot_name: string,
   quantity: number, //int
   date_created: string,
 }
@@ -104,6 +108,7 @@ export interface ItemStats {
   plantingName?: string,
   plantId: string,
   plantName: string,
+  plotName: string,
   totalQuantity: number, // int
   averageHarvestPerDay: number // int
   firstHarvest: Date | null,

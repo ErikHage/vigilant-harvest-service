@@ -24,6 +24,7 @@ function fromHydratedRow(row: HydratedHarvestRow): HydratedHarvest {
     plantingName: row.planting_name,
     plantId: row.plant_id,
     plantName: row.plant_name,
+    plotName: row.plot_name,
     quantity: row.quantity,
     harvestDate: mysqlUtils.dbDateStringToJsDate(row.date_created),
   }

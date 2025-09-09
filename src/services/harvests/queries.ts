@@ -29,13 +29,15 @@ const searchHarvests: string =
    ORDER BY h.date_created DESC`;
 
 const getHydratedHarvestsByYear: string =
-  `SELECT h.harvest_id, h.planting_id, p.planting_name, pl.plant_id,
+  `SELECT h.harvest_id, h.planting_id, p.planting_name, pl.plant_id, pt.friendly_name as plot_name,
           pl.friendly_name AS plant_name, h.quantity, h.date_created
      FROM harvests h
      JOIN plantings p
        ON h.planting_id = p.planting_id
      JOIN plants pl
        ON p.plant_id = pl.plant_id
+     Join plots pt
+       ON p.plot_id = pt.plot_id
     WHERE p.planting_year = ?
    ORDER BY h.date_created DESC`;
 
