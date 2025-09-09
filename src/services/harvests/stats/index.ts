@@ -1,4 +1,4 @@
-import { HarvestPlantingStats, HarvestStats, HydratedHarvest } from '../types';
+import { ItemStats, HarvestStats, HydratedHarvest } from '../types';
 import { StatsType } from '../../../types/stats-type';
 import { BadRequestError } from '../../../errors/common';
 import { mapHarvestsToDates, findFirstAndLast, calculateNumberOfDays } from './shared';
@@ -9,7 +9,7 @@ function calculate(harvests: HydratedHarvest[], statsType: StatsType): HarvestSt
   const harvestDates = findFirstAndLast(harvestsByDate);
   const numberOfDays = calculateNumberOfDays(harvestDates.firstHarvestDate, harvestDates.lastHarvestDate);
 
-  let stats: Map<string, HarvestPlantingStats>;
+  let stats: ItemStats[];
   if (statsType === StatsType.Planting) {
     stats = plantingStats.calculate(harvests);
   } else {
@@ -21,7 +21,8 @@ function calculate(harvests: HydratedHarvest[], statsType: StatsType): HarvestSt
     firstHarvestDate: harvestDates.firstHarvestDate,
     lastHarvestDate: harvestDates.lastHarvestDate,
     numberOfDays,
-    plantingStats: stats,
+    statsType,
+    stats,
   };
 }
 

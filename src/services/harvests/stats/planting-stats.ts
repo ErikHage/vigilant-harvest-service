@@ -1,14 +1,14 @@
-import { HarvestPlantingStats, HydratedHarvest } from '../types';
+import { ItemStats, HydratedHarvest } from '../types';
 import { mapHarvestsToDates, findFirstAndLast, calculateNumberOfDays } from './shared';
 
-function calculate(harvests: HydratedHarvest[]) {
+function calculate(harvests: HydratedHarvest[]): ItemStats[] {
   const harvestsByPlanting: Map<string, HydratedHarvest[]> = mapHarvestsToPlantings(harvests);
   return calculatePlantingStats(harvestsByPlanting);
 }
 
 function mapHarvestsToPlantings(harvests: HydratedHarvest[]): Map<string, HydratedHarvest[]> {
   return harvests.reduce((harvestsByPlanting, harvest) => {
-    const plantingId = harvest.plantingId;
+    const plantingId = harvest.plantingId!; // only optional to share logic with plant stats, will be defined
 
     if (!harvestsByPlanting.has(plantingId)) {
       harvestsByPlanting.set(plantingId, []);
@@ -20,17 +20,13 @@ function mapHarvestsToPlantings(harvests: HydratedHarvest[]): Map<string, Hydrat
   }, new Map<string, HydratedHarvest[]>());
 }
 
-function calculatePlantingStats(harvestsByPlanting: Map<string, HydratedHarvest[]>): Map<string, HarvestPlantingStats> {
-  const result = new Map<string, HarvestPlantingStats>();
-
-  for (const plantingId of harvestsByPlanting.keys()) {
-    result.set(plantingId, calculatePlantingStat(plantingId, harvestsByPlanting.get(plantingId)!))
-  }
-
-  return result;
+function calculatePlantingStats(harvestsByPlanting: Map<string, HydratedHarvest[]>): ItemStats[] {
+  return Array.from(harvestsByPlanting.entries()).map(([ plantingId, harvests, ]) => {
+    return calculatePlantingStat(plantingId, harvests);
+  });
 }
 
-function calculatePlantingStat(plantingId: string, harvests: HydratedHarvest[]): HarvestPlantingStats {
+function calculatePlantingStat(plantingId: string, harvests: HydratedHarvest[]): ItemStats {
   const harvestsByDate = mapHarvestsToDates(harvests);
   const harvestDates = findFirstAndLast(harvestsByDate);
   const numberOfDays = calculateNumberOfDays(harvestDates.firstHarvestDate, harvestDates.lastHarvestDate);
@@ -40,10 +36,14 @@ function calculatePlantingStat(plantingId: string, harvests: HydratedHarvest[]):
     totalQuantity += harvest.quantity;
   });
 
+  const plantId = harvests.length > 0 ? harvests[0]!.plantId : 'Unknown';
   const plantName = harvests.length > 0 ? harvests[0]!.plantName : 'Unknown';
+  const plantingName = harvests.length > 0 ? harvests[0]!.plantingName : 'Unknown';
 
   return {
     plantingId,
+    plantingName,
+    plantId,
     plantName,
     totalQuantity,
     averageHarvestPerDay: totalQuantity / numberOfDays,

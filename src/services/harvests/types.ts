@@ -31,7 +31,9 @@ export interface HarvestRow extends RowDataPacket {
 
 export interface HydratedHarvest {
   harvestId: string,
-  plantingId: string,
+  plantingId?: string,
+  plantingName?: string,
+  plantId: string,
   plantName: string,
   quantity: number, //int
   harvestDate: Date,
@@ -84,7 +86,8 @@ export interface HarvestStats {
   lastHarvestDate: Date | null,
   numberOfHarvests: number, // int
   numberOfDays: number, // int
-  plantingStats: Map<string, HarvestPlantingStats>,
+  statsType: StatsType,
+  stats: ItemStats[],
 }
 
 export interface HarvestStatsResponse {
@@ -92,11 +95,14 @@ export interface HarvestStatsResponse {
   lastHarvestDate: Date | null,
   numberOfHarvests: number, // int
   numberOfDays: number, // int
-  plantingStats: HarvestPlantingStats[],
+  statsType: StatsType,
+  stats: ItemStats[],
 }
 
-export interface HarvestPlantingStats {
-  plantingId: string,
+export interface ItemStats {
+  plantingId?: string,
+  plantingName?: string,
+  plantId: string,
   plantName: string,
   totalQuantity: number, // int
   averageHarvestPerDay: number // int
