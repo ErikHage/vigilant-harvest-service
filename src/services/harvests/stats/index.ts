@@ -1,8 +1,8 @@
 import { ItemStats, HarvestStats, HydratedHarvest } from '../types';
 import { StatsType } from '../../../types/stats-type';
-import { BadRequestError } from '../../../errors/common';
 import { mapHarvestsToDates, findFirstAndLast, calculateNumberOfDays } from './shared';
 import plantingStats from './planting-stats';
+import plantStats from './plant-stats';
 
 function calculate(harvests: HydratedHarvest[], statsType: StatsType): HarvestStats {
   const harvestsByDate: Map<string, HydratedHarvest[]> = mapHarvestsToDates(harvests);
@@ -12,8 +12,8 @@ function calculate(harvests: HydratedHarvest[], statsType: StatsType): HarvestSt
   let stats: ItemStats[];
   if (statsType === StatsType.Planting) {
     stats = plantingStats.calculate(harvests);
-  } else {
-    throw new BadRequestError(`Stats type not currently supported: ${statsType}`);
+  } else { // statsType is guaranteed to be StatsType.Plant here
+    stats = plantStats.calculate(harvests);
   }
 
   return {

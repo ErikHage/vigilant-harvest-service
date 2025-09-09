@@ -108,7 +108,7 @@ export interface ItemStats {
   plantingName?: string,
   plantId: string,
   plantName: string,
-  plotName: string,
+  plotName?: string,
   totalQuantity: number, // int
   averageHarvestPerDay: number // int
   firstHarvest: Date | null,
