@@ -1,7 +1,7 @@
 import { v4 as uuidV4 } from 'uuid';
 
 import {
-  Planting,
+  Planting, PlantingPlantingYearRow,
   PlantingRow,
   PlantingStatusHistoryRecord,
   PlantingStatusHistoryRow,
@@ -161,15 +161,20 @@ async function getPlantingById(plantingId: string): Promise<Planting> {
     sql: queries.plantingStatusHistory.getByPlantingId,
     params: [ plantingId, ],
   };
+  const yearsQuery = {
+    sql: queries.yearMapping.getById,
+    params: [ plantingId, ],
+  }
 
   const results: PlantingRow[] = await db.execQuery<PlantingRow[]>(query);
   const historyResults: PlantingStatusHistoryRow[] = await db.execQuery(historyQuery);
+  const years: PlantingPlantingYearRow[] = await db.execQuery(yearsQuery);
 
   if (results.length < 1) {
     throw new RowNotFoundError('Planting not found', { plantingId, })
   }
 
-  return rowMapper.plantings.fromRow(results[0]!, historyResults);
+  return rowMapper.plantings.fromRow(results[0]!, historyResults, years);
 }
 
 async function getPlantingStatusHistoryByPlantingId(plantingId: string): Promise<PlantingStatusHistoryRecord[]> {
@@ -191,7 +196,7 @@ async function getPlantingsByYear(plantingYear: number): Promise<Planting[]> {
 
   const results: PlantingRow[] = await db.execQuery<PlantingRow[]>(query);
 
-  return results.map(plantingRow => rowMapper.plantings.fromRow(plantingRow, []));
+  return results.map(plantingRow => rowMapper.plantings.fromRow(plantingRow, [], []));
 }
 
 async function getPlantings(): Promise<Planting[]> {
@@ -202,7 +207,7 @@ async function getPlantings(): Promise<Planting[]> {
 
   const results: PlantingRow[] = await db.execQuery<PlantingRow[]>(query);
 
-  return results.map(plantingRow => rowMapper.plantings.fromRow(plantingRow, []));
+  return results.map(plantingRow => rowMapper.plantings.fromRow(plantingRow, [], []));
 }
 
 async function getPlantingsBreakdown(): Promise<Map<number, PlantingsBreakdown>> {

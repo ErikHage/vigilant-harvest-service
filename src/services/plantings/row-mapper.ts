@@ -1,4 +1,11 @@
-import { Planting, PlantingRow, PlantingStatusHistoryRecord, PlantingStatusHistoryRow, PlantingUpdate } from './types';
+import {
+  Planting,
+  PlantingPlantingYearRow,
+  PlantingRow,
+  PlantingStatusHistoryRecord,
+  PlantingStatusHistoryRow,
+  PlantingUpdate
+} from './types';
 import { PlantingsBreakdown, PlantingsBreakdownRow } from '../planting-years/types';
 
 import mysqlUtils from '../../database/mysql-utils';
@@ -78,12 +85,17 @@ const plantings = {
     },
   },
 
-  fromRow: function (row: PlantingRow, historyRows: PlantingStatusHistoryRow[] | undefined): Planting {
+  fromRow: function (
+    row: PlantingRow,
+    historyRows: PlantingStatusHistoryRow[] | undefined,
+    plantingYears: PlantingPlantingYearRow[] | undefined): Planting
+  {
     return {
       plantingId: row.planting_id,
       plotId: row.plot_id,
       plantId: row.plant_id,
       plantingYear: row.planting_year,
+      plantingYears: plantingYears?.map(yearRow => yearRow.planting_year) ?? [ row.planting_year, ],
       name: row.planting_name,
       seedSource: row.seed_source,
       lotNumber: row.lot_number,

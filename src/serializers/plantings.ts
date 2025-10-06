@@ -136,6 +136,7 @@ export default {
     plotId: planting.plotId,
     plantId: planting.plantId,
     plantingYear: planting.plantingYear,
+    plantingYears: planting.plantingYears,
     name: planting.name,
     seedSource: planting.seedSource,
     lotNumber: planting.lotNumber,

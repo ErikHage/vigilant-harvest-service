@@ -16,6 +16,7 @@ export class DeleteAction implements PlantingAction {
       plantingId: '-1',
       plantId: '-1',
       plantingYear: 1,
+      plantingYears: [ 1, ],
       name: 'Deleted',
       currentStatus: 'DELETED',
       notes: '',

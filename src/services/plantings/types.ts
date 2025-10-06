@@ -57,6 +57,7 @@ export interface PlantingResponse {
   plantId: string,
   numberTransplanted?: number, // int
   plantingYear: number, // int
+  plantingYears: number[], // int
   name: string,
   seedSource?: string,
   lotNumber?: string,
@@ -78,6 +79,7 @@ export interface Planting {
   plantId: string,
   numberTransplanted?: number, // int
   plantingYear: number, // int
+  plantingYears: number[], // int
   name: string,
   seedSource?: string,
   lotNumber?: string,
@@ -160,4 +162,9 @@ export interface PlantingStatusHistoryRow extends RowDataPacket {
   comment: string,
   date_created: Date,
   date_modified: Date,
+}
+
+export interface PlantingPlantingYearRow extends RowDataPacket {
+  planting_id: string,
+  planting_year: number,
 }

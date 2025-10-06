@@ -1,10 +1,10 @@
 import { PlantingUpdate } from './types';
 
 const allPlantingFields: string =
-  `planting_id,
+  `p.planting_id,
 plot_id,
 plant_id,
-planting_year,
+p.planting_year,
 planting_name,
 seed_source,
 lot_number,
@@ -101,15 +101,17 @@ const plantings = {
   },
 
   getById: `SELECT ${allPlantingFields}
-            FROM plantings
+            FROM plantings p
             WHERE planting_id = ?`,
 
   getByYear: `SELECT ${allPlantingFields}
-              FROM plantings
-              WHERE planting_year = ?`,
+              FROM plantings p
+              JOIN planting_planting_years ppy
+                ON ppy.planting_id = p.planting_id
+              WHERE ppy.planting_year = ?`,
 
   getAll: `SELECT ${allPlantingFields}
-           FROM plantings`,
+           FROM plantings p`,
 
   getStatusBreakdowns: `SELECT planting_year,
                                current_status AS planting_status,
@@ -130,6 +132,11 @@ const yearMapping = {
            planting_year
     FROM planting_planting_years
     WHERE planting_id = ? -- original planting_id'`,
+
+  getById: `
+    SELECT planting_id, planting_year
+      FROM planting_planting_years
+     WHERE planting_id = (?)`,
 };
 
 const plantingStatusHistory = {

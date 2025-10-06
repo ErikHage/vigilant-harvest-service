@@ -17,6 +17,7 @@ async function createPlanting(createPlantingRequest: CreatePlantingRequest): Pro
       plantingId: uuidV4(),
       plantId: createPlantingRequest.plantId,
       plantingYear: createPlantingRequest.plantingYear,
+      plantingYears: [ createPlantingRequest.plantingYear, ],
       name: createPlantingRequest.name,
       leadTimeWeeks: createPlantingRequest.leadTimeWeeks,
       seedSource: createPlantingRequest.seedSource,
