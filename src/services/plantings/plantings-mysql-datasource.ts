@@ -23,6 +23,10 @@ async function insertPlanting(planting: Planting): Promise<Planting> {
       sql: queries.plantings.insert,
       params: rowMapper.plantings.insert.toParams(planting),
     },
+    {
+      sql: queries.yearMapping.insert,
+      params: rowMapper.yearMapping.insert.toParams(planting),
+    },
     _getInsertStatusHistoryQueryAndParams(planting.plantingId, constants.plantings.statuses.created, _buildInsertComment(planting)),
   ];
 
@@ -44,15 +48,23 @@ async function splitPlanting(sourcePlantingId: string, splits: SplitData[]): Pro
   for (const split of splits) {
     const newId = uuidV4();
 
+    // copy the planting
     transaction.push({
       sql: queries.plantings.clone,
       params: [ newId, split.name, sourcePlantingId, ],
     });
+    // copy the history
     transaction.push({
       sql: queries.plantingStatusHistory.clone,
       params: [ newId, sourcePlantingId, ],
     });
+    // copy planting years
+    transaction.push({
+      sql: queries.yearMapping.clone,
+      params: [ newId, sourcePlantingId, ],
+    });
 
+    // update existing record's count
     const updateQuery = queries.plantings.buildUpdateQuery({
       status: sourcePlanting.currentStatus,
       numberSown: sourceCount,
@@ -61,6 +73,7 @@ async function splitPlanting(sourcePlantingId: string, splits: SplitData[]): Pro
       sql: updateQuery,
       params: [ sourcePlanting.currentStatus, sourceCount - split.count, sourcePlantingId, ],
     });
+    // update split record's count
     transaction.push({
       sql: updateQuery,
       params: [ sourcePlanting.currentStatus, split.count, newId, ],

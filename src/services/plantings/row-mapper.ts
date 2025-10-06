@@ -102,6 +102,17 @@ const plantings = {
   },
 };
 
+const yearMapping = {
+  insert: {
+    toParams: function (planting: Planting): Array<string | number> {
+      return [
+        planting.plantingId,
+        planting.plantingYear,
+      ];
+    },
+  },
+};
+
 const plantingStatusHistory = {
   insert: {
     toParams: function (plantingId: string, status: string, comment: string): Array<string> {
@@ -127,5 +138,6 @@ const plantingStatusHistory = {
 
 export default {
   plantings,
+  yearMapping,
   plantingStatusHistory,
 }

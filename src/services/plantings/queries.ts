@@ -120,6 +120,18 @@ const plantings = {
   deleteById: 'DELETE FROM plantings WHERE planting_id = ?',
 };
 
+const yearMapping = {
+  insert: 'INSERT INTO planting_planting_years (planting_id, planting_year) ' +
+    'VALUES (?, ?)',
+
+  clone: `
+    INSERT INTO planting_planting_years (planting_id, planting_year)
+    SELECT ?, -- new planting_id
+           planting_year
+    FROM planting_planting_years
+    WHERE planting_id = ? -- original planting_id'`,
+};
+
 const plantingStatusHistory = {
   insert: `
     INSERT INTO planting_status_history (planting_id, planting_status, \`comment\`)
@@ -144,5 +156,6 @@ const plantingStatusHistory = {
 
 export default {
   plantings,
+  yearMapping,
   plantingStatusHistory,
 }
