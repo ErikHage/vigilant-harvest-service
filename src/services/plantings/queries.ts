@@ -2,22 +2,22 @@ import { PlantingUpdate } from './types';
 
 const allPlantingFields: string =
   `p.planting_id,
-plot_id,
-plant_id,
+p.plot_id,
+p.plant_id,
 p.planting_year,
-planting_name,
-seed_source,
-lot_number,
-lead_time_weeks,
-sow_date,
-sow_type,
-number_sown,
-transplant_date,
-number_transplanted,
-current_status,
-notes,
-date_created,
-date_modified
+p.planting_name,
+p.seed_source,
+p.lot_number,
+p.lead_time_weeks,
+p.sow_date,
+p.sow_type,
+p.number_sown,
+p.transplant_date,
+p.number_transplanted,
+p.current_status,
+p.notes,
+p.date_created,
+p.date_modified
 `;
 
 const allPlantingHistoryFields: string =
