@@ -4,7 +4,7 @@ const allPlantingFields: string =
   `p.planting_id,
 p.plot_id,
 p.plant_id,
-p.planting_year,
+p.current_planting_year,
 p.planting_name,
 p.seed_source,
 p.lot_number,
@@ -33,7 +33,7 @@ const plantings = {
   insert: `
     INSERT into plantings (planting_id,
                            plant_id,
-                           planting_year,
+                           current_planting_year,
                            planting_name,
                            seed_source,
                            lot_number,
@@ -53,7 +53,7 @@ const plantings = {
                            transplant_date,
                            current_status,
                            number_transplanted,
-                           planting_year,
+                           current_planting_year,
                            planting_name,
                            seed_source,
                            lot_number,
@@ -68,7 +68,7 @@ const plantings = {
            transplant_date,
            current_status,
            number_transplanted,
-           planting_year,
+           current_planting_year,
            ?, -- new planting_name
            seed_source,
            lot_number,
@@ -113,11 +113,11 @@ const plantings = {
   getAll: `SELECT ${allPlantingFields}
            FROM plantings p`,
 
-  getStatusBreakdowns: `SELECT planting_year,
+  getStatusBreakdowns: `SELECT current_planting_year,
                                current_status AS planting_status,
                                count(*) AS status_count
                           FROM plantings
-                         GROUP BY planting_year, current_status`,
+                         GROUP BY current_planting_year, current_status`,
 
   deleteById: 'DELETE FROM plantings WHERE planting_id = ?',
 };

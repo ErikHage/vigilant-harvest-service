@@ -20,7 +20,7 @@ const getHarvestSummary: string =
      JOIN planting_planting_years ppy
        ON p.planting_id = ppy.planting_id
     WHERE ppy.planting_year = ?
-    GROUP BY p.planting_year, h.planting_id`;
+    GROUP BY ppy.planting_year, h.planting_id`;
 
 const searchHarvests: string =
   `SELECT h.harvest_id, h.planting_id, h.quantity, h.date_created

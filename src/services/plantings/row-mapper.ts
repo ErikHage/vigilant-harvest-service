@@ -17,7 +17,7 @@ const plantings = {
       return [
         planting.plantingId,
         planting.plantId,
-        planting.plantingYear,
+        planting.currentPlantingYear,
         planting.name,
         planting.seedSource ?? null,
         planting.lotNumber ?? null,
@@ -94,7 +94,7 @@ const plantings = {
       plantingId: row.planting_id,
       plotId: row.plot_id,
       plantId: row.plant_id,
-      plantingYear: row.planting_year,
+      currentPlantingYear: row.current_planting_year,
       plantingYears: plantingYears?.map(yearRow => yearRow.planting_year) ?? [ row.planting_year, ],
       name: row.planting_name,
       seedSource: row.seed_source,
@@ -119,7 +119,7 @@ const yearMapping = {
     toParams: function (planting: Planting): Array<string | number> {
       return [
         planting.plantingId,
-        planting.plantingYear,
+        planting.currentPlantingYear,
       ];
     },
   },

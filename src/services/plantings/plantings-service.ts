@@ -16,7 +16,7 @@ async function createPlanting(createPlantingRequest: CreatePlantingRequest): Pro
     const planting: Planting = {
       plantingId: uuidV4(),
       plantId: createPlantingRequest.plantId,
-      plantingYear: createPlantingRequest.plantingYear,
+      currentPlantingYear: createPlantingRequest.plantingYear,
       plantingYears: [ createPlantingRequest.plantingYear, ],
       name: createPlantingRequest.name,
       leadTimeWeeks: createPlantingRequest.leadTimeWeeks,
