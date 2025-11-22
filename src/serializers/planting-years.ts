@@ -3,6 +3,12 @@ import { Request } from 'express';
 import { PlantingYearRequest, PlantingYear, PlantingYearResponse } from '../services/planting-years/types';
 
 export default {
+  get: {
+    fromRequest(req: Request): number {
+      return parseInt(req.params.plantingYear!);
+    },
+  },
+
   fromRequest: (req: Request): PlantingYearRequest => ({
     plantingYear: req.body.plantingYear,
     lastFrostDate: req.body.lastFrostDate,

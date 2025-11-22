@@ -23,6 +23,7 @@ const buildRouter = (): Express => {
 
   apiRouter.put('/planting-years', plantingYearHandlers.insertPlantingYear);
   apiRouter.get('/planting-years', plantingYearHandlers.getPlantingYears);
+  apiRouter.get('/planting-years/:plantingYear', plantingYearHandlers.getPlantingYear);
 
   apiRouter.put('/plots', plotHandlers.upsertPlot);
   apiRouter.get('/plots/:plotId', plotHandlers.getPlotById);

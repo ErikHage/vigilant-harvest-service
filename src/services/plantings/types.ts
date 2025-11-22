@@ -126,6 +126,10 @@ export interface PlantingUpdate {
   notes?: string,
 }
 
+export interface PlantingIdRow extends RowDataPacket {
+  planting_id: string,
+}
+
 export interface PlantingRow extends RowDataPacket  {
   planting_id: string,
   plot_id: string,

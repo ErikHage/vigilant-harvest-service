@@ -1,7 +1,7 @@
 import { v4 as uuidV4 } from 'uuid';
 
 import {
-  Planting, PlantingPlantingYearRow,
+  Planting, PlantingIdRow, PlantingPlantingYearRow,
   PlantingRow,
   PlantingStatusHistoryRecord,
   PlantingStatusHistoryRow,
@@ -199,6 +199,17 @@ async function getPlantingsByYear(plantingYear: number): Promise<Planting[]> {
   return results.map(plantingRow => rowMapper.plantings.fromRow(plantingRow, [], []));
 }
 
+async function getPlantingIdsToCarryForward(plantingYear: number): Promise<string[]> {
+  const query: QueryPayload = {
+    sql: queries.plantings.getCarryForward,
+    params: [ plantingYear, ],
+  };
+
+  const results: PlantingIdRow[] = await db.execQuery<PlantingIdRow[]>(query);
+
+  return results.map(plantingRow => plantingRow.planting_id);
+}
+
 async function getPlantings(): Promise<Planting[]> {
   const query: QueryPayload = {
     sql: queries.plantings.getAll,
@@ -237,6 +248,7 @@ export default {
   getPlantingById,
   getPlantingsBreakdown,
   getPlantingsByYear,
+  getPlantingIdsToCarryForward,
   getPlantings,
   deletePlantingById,
 

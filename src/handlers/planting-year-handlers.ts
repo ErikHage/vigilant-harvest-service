@@ -23,7 +23,20 @@ async function getPlantingYears(request: Request, response: Response) {
     .send(plantingYearsResponse);
 }
 
+async function getPlantingYear(request: Request, response: Response) {
+  const year = plantingYearSerializers.get.fromRequest(request);
+
+  const plantingYear = await plantingYearsService.getPlantingYear(year);
+
+  const plantingYearResponse = plantingYearSerializers.toResponse(plantingYear);
+
+  response
+    .status(200)
+    .send(plantingYearResponse);
+}
+
 export default {
   insertPlantingYear: tryDecorator.decorate(insertPlantingYear),
   getPlantingYears: tryDecorator.decorate(getPlantingYears),
+  getPlantingYear: tryDecorator.decorate(getPlantingYear),
 }

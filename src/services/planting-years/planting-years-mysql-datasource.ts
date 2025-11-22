@@ -2,17 +2,31 @@ import { PlantingYear, PlantingYearRow } from './types';
 import { QueryPayload } from '../../database/types';
 
 import queries from './queries';
-import db from '../../database'
+import plantingQueries from '../plantings/queries';
+import db, { RowNotFoundError } from '../../database';
 import rowMapper from './row-mapper';
 
-async function insertPlantingYear(planting: PlantingYear): Promise<PlantingYear> {
-  const query: QueryPayload = {
-    sql: queries.plantingYears.insert,
-    params: rowMapper.plantingYears.insert.toParams(planting),
-  };
+async function insertPlantingYear(plantingYear: PlantingYear, carryForwardPlantingIds: string[]): Promise<PlantingYear> {
+  const plantingPlantingYearQueries: QueryPayload[] = [];
 
-  await db.execQuery(query);
-  return planting;
+  for (const plantingId of carryForwardPlantingIds) {
+    plantingPlantingYearQueries.push({
+      sql: plantingQueries.yearMapping.insert,
+      params: [ plantingId, plantingYear.plantingYear, ],
+    });
+  }
+
+  const queriesToRun: QueryPayload[] = [
+    {
+      sql: queries.plantingYears.insert,
+      params: rowMapper.plantingYears.insert.toParams(plantingYear),
+    },
+    ...plantingPlantingYearQueries,
+  ];
+
+  await db.execTransactionQuery(queriesToRun);
+
+  return plantingYear;
 }
 
 async function getPlantingYears(): Promise<PlantingYear[]> {
@@ -26,7 +40,23 @@ async function getPlantingYears(): Promise<PlantingYear[]> {
   return results.map(rowMapper.plantingYears.fromRow);
 }
 
+async function getPlantingYear(year: number): Promise<PlantingYear> {
+  const query: QueryPayload = {
+    sql: queries.plantingYears.getByYear,
+    params: [ year, ],
+  };
+
+  const results: PlantingYearRow[] = await db.execQuery<PlantingYearRow[]>(query);
+
+  if (results.length != 1) {
+    throw new RowNotFoundError('Planting year not found', { year, });
+  }
+
+  return rowMapper.plantingYears.fromRow(results[0]!);
+}
+
 export default {
   insertPlantingYear,
   getPlantingYears,
+  getPlantingYear,
 }

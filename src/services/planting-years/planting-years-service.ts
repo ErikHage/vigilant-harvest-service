@@ -6,13 +6,16 @@ import { ensureError, FeralError } from '../../errors';
 
 async function insertPlantingYear(plantingYearRequest: PlantingYearRequest): Promise<PlantingYear> {
   try {
+    const carryForwardPlantingIds: string[] = await plantingsDatasource
+      .getPlantingIdsToCarryForward(plantingYearRequest.plantingYear);
+
     const plantingYear: PlantingYear = {
       plantingYear: plantingYearRequest.plantingYear,
       lastFrostDate: plantingYearRequest.lastFrostDate,
       targetPlantingDate: plantingYearRequest.targetPlantingDate,
     };
 
-    return await datasource.insertPlantingYear(plantingYear);
+    return await datasource.insertPlantingYear(plantingYear, carryForwardPlantingIds);
   } catch (err) {
     throw new FeralError('Error inserting planting year', ensureError(err))
       .withDebugParams(plantingYearRequest);
@@ -46,7 +49,16 @@ async function getPlantingYears(): Promise<PlantingYear[]> {
   return results;
 }
 
+async function getPlantingYear(year: number): Promise<PlantingYear> {
+  try {
+    return await datasource.getPlantingYear(year);
+  } catch (err) {
+    throw new FeralError('Error getting planting year ' + year, ensureError(err));
+  }
+}
+
 export default {
   insertPlantingYear,
   getPlantingYears,
+  getPlantingYear,
 }

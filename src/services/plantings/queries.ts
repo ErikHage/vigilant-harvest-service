@@ -110,6 +110,16 @@ const plantings = {
                 ON ppy.planting_id = p.planting_id
               WHERE ppy.planting_year = ?`,
 
+  getCarryForward: `SELECT p.planting_id
+                      FROM plantings p
+                      JOIN planting_planting_years ppy
+                        ON ppy.planting_id = p.planting_id
+                      JOIN plants pl
+                        ON pl.plant_id = p.plant_id
+                     WHERE ppy.planting_year = ?
+                       AND pl.lifespan_type = 'perennial'
+                       AND p.current_status != 'retired'`,
+
   getAll: `SELECT ${allPlantingFields}
            FROM plantings p`,
 
