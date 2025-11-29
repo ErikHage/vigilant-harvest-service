@@ -7,7 +7,7 @@ import { ensureError, FeralError } from '../../errors';
 async function insertPlantingYear(plantingYearRequest: PlantingYearRequest): Promise<PlantingYear> {
   try {
     const carryForwardPlantingIds: string[] = await plantingsDatasource
-      .getPlantingIdsToCarryForward(plantingYearRequest.plantingYear);
+      .getPlantingIdsToCarryForward(plantingYearRequest.previousPlantingYear);
 
     const plantingYear: PlantingYear = {
       plantingYear: plantingYearRequest.plantingYear,

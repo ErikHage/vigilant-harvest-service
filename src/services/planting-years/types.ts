@@ -1,6 +1,7 @@
 import { RowDataPacket } from 'mysql2';
 
 export interface PlantingYearRequest {
+  previousPlantingYear: number, // int
   plantingYear: number, // int
   lastFrostDate: Date,
   targetPlantingDate: Date,

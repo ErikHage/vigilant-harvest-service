@@ -207,7 +207,11 @@ async function getPlantingIdsToCarryForward(plantingYear: number): Promise<strin
 
   const results: PlantingIdRow[] = await db.execQuery<PlantingIdRow[]>(query);
 
-  return results.map(plantingRow => plantingRow.planting_id);
+  const ids = results.map(plantingRow => plantingRow.planting_id);
+
+  console.log('carryForwardPlantingIds in plantings ds', ids);
+
+  return ids;
 }
 
 async function getPlantings(): Promise<Planting[]> {
