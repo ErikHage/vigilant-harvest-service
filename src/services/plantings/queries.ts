@@ -117,8 +117,7 @@ const plantings = {
                       JOIN plants pl
                         ON pl.plant_id = p.plant_id
                      WHERE ppy.planting_year = ?
-                       AND pl.lifespan_type = 'perennial'
-                       AND p.current_status != 'retired'`,
+                       AND p.current_status = 'planted'`,
 
   getAll: `SELECT ${allPlantingFields}
            FROM plantings p`,
