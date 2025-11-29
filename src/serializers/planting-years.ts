@@ -11,8 +11,8 @@ export default {
 
   fromRequest: (req: Request): PlantingYearRequest => ({
     plantingYear: req.body.plantingYear,
-    lastFrostDate: req.body.lastFrostDate,
-    targetPlantingDate: req.body.targetPlantingDate,
+    lastFrostDate: new Date(req.body.lastFrostDate),
+    targetPlantingDate: new Date(req.body.targetPlantingDate),
   }),
 
   toResponse: (planting: PlantingYear): PlantingYearResponse => ({
