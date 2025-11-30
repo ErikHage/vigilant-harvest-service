@@ -9,16 +9,12 @@ import rowMapper from './row-mapper';
 async function insertPlantingYear(plantingYear: PlantingYear, carryForwardPlantingIds: string[]): Promise<PlantingYear> {
   const plantingPlantingYearQueries: QueryPayload[] = [];
 
-  console.log('carryForwardPlantingIds', carryForwardPlantingIds);
-
   for (const plantingId of carryForwardPlantingIds) {
     plantingPlantingYearQueries.push({
       sql: plantingQueries.yearMapping.insert,
       params: [ plantingId, plantingYear.plantingYear, ],
     });
   }
-
-  console.log('plantingPlantingYearQueries', plantingPlantingYearQueries);
 
   const queriesToRun: QueryPayload[] = [
     {

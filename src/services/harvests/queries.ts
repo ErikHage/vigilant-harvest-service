@@ -13,23 +13,15 @@ const getHarvestByPlantingIdAndDate: string =
       AND date_created = ?`;
 
 const getHarvestSummary: string =
-  `SELECT ppy.planting_year, h.planting_id, SUM(h.quantity) as quantity
+  `SELECT h.planting_year, h.planting_id, SUM(h.quantity) as quantity
      FROM harvests h
-     JOIN plantings p
-       ON h.planting_id = p.planting_id
-     JOIN planting_planting_years ppy
-       ON p.planting_id = ppy.planting_id
-    WHERE ppy.planting_year = ?
-    GROUP BY ppy.planting_year, h.planting_id`;
+    WHERE h.planting_year = ?
+    GROUP BY h.planting_year, h.planting_id`;
 
 const searchHarvests: string =
   `SELECT h.harvest_id, h.planting_id, h.quantity, h.date_created
      FROM harvests h
-     JOIN plantings p
-       ON h.planting_id = p.planting_id
-     JOIN planting_planting_years ppy
-          ON p.planting_id = ppy.planting_id
-    WHERE ppy.planting_year = ?
+    WHERE h.planting_year = ?
    ORDER BY h.date_created DESC`;
 
 const getHydratedHarvestsByYear: string =
@@ -38,13 +30,11 @@ const getHydratedHarvestsByYear: string =
      FROM harvests h
      JOIN plantings p
        ON h.planting_id = p.planting_id
-     JOIN planting_planting_years ppy
-       ON p.planting_id = ppy.planting_id
      JOIN plants pl
        ON p.plant_id = pl.plant_id
      Join plots pt
        ON p.plot_id = pt.plot_id
-    WHERE ppy.planting_year = ?
+    WHERE h.planting_year = ?
    ORDER BY h.date_created DESC`;
 
 const deleteById: string = 'DELETE FROM harvests WHERE harvest_id = ?';

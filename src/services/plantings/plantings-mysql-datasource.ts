@@ -209,8 +209,6 @@ async function getPlantingIdsToCarryForward(plantingYear: number): Promise<strin
 
   const ids = results.map(plantingRow => plantingRow.planting_id);
 
-  console.log('carryForwardPlantingIds in plantings ds', ids);
-
   return ids;
 }
 
