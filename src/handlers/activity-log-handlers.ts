@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import activityLogService from '../services/activity-log/activity-log-service';
 import activityLogSerializers from '../serializers/activity-log';
 import tryDecorator from '../middleware/try-decorator';
+import httpStatus from '../util/http-status';
 
 async function upsertActivityLogEntry(request: Request, response: Response) {
   const activityLogEntryRequest = activityLogSerializers.activityLogEntries.upsert.fromRequest(request);
@@ -11,7 +12,7 @@ async function upsertActivityLogEntry(request: Request, response: Response) {
   const activityLogEntryResponse = activityLogSerializers.activityLogEntries.toResponse(activityLogEntry);
 
   response
-    .status(activityLogEntryRequest.entryId === undefined ? 201 : 200)
+    .status(activityLogEntryRequest.entryId === undefined ? httpStatus.CREATED : httpStatus.OK)
     .send(activityLogEntryResponse);
 }
 
@@ -23,7 +24,7 @@ async function getActivityLogEntries(request: Request, response: Response) {
   const activityLogEntriesResponse = activityLogEntries.map(activityLogSerializers.activityLogEntries.toResponse);
 
   response
-    .status(200)
+    .status(httpStatus.OK)
     .send(activityLogEntriesResponse);
 }
 

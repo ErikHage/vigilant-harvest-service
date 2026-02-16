@@ -3,13 +3,14 @@ import { Request, Response } from 'express';
 import plantingYearSerializers from '../serializers/planting-years';
 import plantingYearsService from '../services/planting-years/planting-years-service';
 import tryDecorator from '../middleware/try-decorator';
+import httpStatus from '../util/http-status';
 
 async function insertPlantingYear(request: Request, response: Response) {
   const plantingRequest = plantingYearSerializers.fromRequest(request);
 
   await plantingYearsService.insertPlantingYear(plantingRequest);
 
-  response.sendStatus(201);
+  response.sendStatus(httpStatus.CREATED);
 }
 
 async function getPlantingYears(request: Request, response: Response) {
@@ -19,7 +20,7 @@ async function getPlantingYears(request: Request, response: Response) {
   const plantingYearsResponse = plantingYears.map(plantingYearSerializers.toResponse);
 
   response
-    .status(200)
+    .status(httpStatus.OK)
     .send(plantingYearsResponse);
 }
 
@@ -31,7 +32,7 @@ async function getPlantingYear(request: Request, response: Response) {
   const plantingYearResponse = plantingYearSerializers.toResponse(plantingYear);
 
   response
-    .status(200)
+    .status(httpStatus.OK)
     .send(plantingYearResponse);
 }
 

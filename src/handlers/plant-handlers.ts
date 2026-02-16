@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import plantSerializers from '../serializers/plants';
 import plantsService from '../services/plants/plants-service';
 import tryDecorator from '../middleware/try-decorator';
+import httpStatus from '../util/http-status';
 
 async function upsertPlant(request: Request, response: Response) {
   const plantRequest = plantSerializers.fromRequest(request);
@@ -11,7 +12,7 @@ async function upsertPlant(request: Request, response: Response) {
   const plantResponse = plantSerializers.toResponse(planting);
 
   response
-    .status(plantRequest.plantId === undefined ? 201 : 200)
+    .status(plantRequest.plantId === undefined ? httpStatus.CREATED : httpStatus.OK)
     .send(plantResponse);
 }
 
@@ -19,32 +20,32 @@ async function getPlantById(request: Request, response: Response) {
   const { plantId, } = request.params;
 
   if (plantId === undefined) {
-    response.status(400).send('plantId required');
+    response.status(httpStatus.BAD_REQUEST).send('plantId required');
   }
 
   const plant = await plantsService.getPlantById(plantId!);
   const plantResponse = plantSerializers.toResponse(plant);
 
-  response.status(200).send(plantResponse);
+  response.status(httpStatus.OK).send(plantResponse);
 }
 
 async function getPlants(request: Request, response: Response) {
   const plants = await plantsService.getPlants();
   const plantsResponse = plants.map(plantSerializers.toResponse);
 
-  response.status(200).send(plantsResponse);
+  response.status(httpStatus.OK).send(plantsResponse);
 }
 
 async function deletePlantById(request: Request, response: Response) {
   const { plantId, } = request.params;
 
   if (plantId === undefined) {
-    response.sendStatus(400);
+    response.sendStatus(httpStatus.BAD_REQUEST);
   }
 
   await plantsService.deletePlantById(plantId!);
 
-  response.sendStatus(200);
+  response.sendStatus(httpStatus.OK);
 }
 
 export default {

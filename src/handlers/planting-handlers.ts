@@ -4,6 +4,7 @@ import plantingSerializers from '../serializers/plantings';
 import plantingsService from '../services/plantings/plantings-service';
 import { PerformActionRequest, Planting, PlantingResponse, PlantingUpdateRequest } from '../services/plantings/types';
 import tryDecorator from '../middleware/try-decorator';
+import httpStatus from '../util/http-status';
 
 async function createPlanting(request: Request, response: Response) {
   const plantingRequest = plantingSerializers.insert.fromRequest(request);
@@ -12,7 +13,7 @@ async function createPlanting(request: Request, response: Response) {
   const plantingResponse = plantingSerializers.toResponse(planting);
 
   response
-    .status(201)
+    .status(httpStatus.CREATED)
     .send(plantingResponse)
 }
 
@@ -23,7 +24,7 @@ async function performPlantingAction(request: Request, response: Response) {
   const plantingResponse: PlantingResponse = plantingSerializers.toResponse(planting);
 
   response
-    .status(200)
+    .status(httpStatus.OK)
     .send(plantingResponse)
 }
 
@@ -31,7 +32,7 @@ async function updatePlanting(request: Request, response: Response) {
   const { plantingId, } = request.params;
 
   if (plantingId === undefined) {
-    response.status(400).send('plantingId required');
+    response.status(httpStatus.BAD_REQUEST).send('plantingId required');
   }
 
   const plantingUpdateRequest: PlantingUpdateRequest = plantingSerializers.update.fromRequest(request);
@@ -40,7 +41,7 @@ async function updatePlanting(request: Request, response: Response) {
   const plantingResponse: PlantingResponse = plantingSerializers.toResponse(planting);
 
   response
-    .status(200)
+    .status(httpStatus.OK)
     .send(plantingResponse)
 }
 
@@ -48,13 +49,13 @@ async function getPlantingById(request: Request, response: Response) {
   const { plantingId, } = request.params;
 
   if (plantingId === undefined) {
-    response.status(400).send('plantingId required');
+    response.status(httpStatus.BAD_REQUEST).send('plantingId required');
   }
 
   const planting = await plantingsService.getPlantingById(plantingId!);
   const plantingResponse = plantingSerializers.toResponse(planting);
 
-  response.status(200).send(plantingResponse);
+  response.status(httpStatus.OK).send(plantingResponse);
 }
 
 async function getPlantings(request: Request, response: Response) {
@@ -70,19 +71,19 @@ async function getPlantings(request: Request, response: Response) {
 
   const plantingsResponse = plantings.map(plantingSerializers.toResponse);
 
-  response.status(200).send(plantingsResponse);
+  response.status(httpStatus.OK).send(plantingsResponse);
 }
 
 async function deletePlantingById(request: Request, response: Response) {
   const { plantingId, } = request.params;
 
   if (plantingId === undefined) {
-    response.sendStatus(400);
+    response.sendStatus(httpStatus.BAD_REQUEST);
   }
 
   await plantingsService.deletePlantingById(plantingId!);
 
-  response.sendStatus(200);
+  response.sendStatus(httpStatus.OK);
 }
 
 

@@ -10,6 +10,7 @@ import {
   HarvestSummaryRequest
 } from '../services/harvests/types';
 import tryDecorator from '../middleware/try-decorator';
+import httpStatus from '../util/http-status';
 
 async function upsertHarvests(request: Request, response: Response) {
   const harvestRequests: HarvestRequest[] = harvestSerializers.insert.fromRequest(request);
@@ -17,7 +18,7 @@ async function upsertHarvests(request: Request, response: Response) {
   const harvests: Harvest[] = await harvestsService.upsertHarvests(harvestRequests);
   const harvestsResponse: HarvestResponse[] = harvests.map(harvestSerializers.insert.toResponse);
 
-  response.status(201).send(harvestsResponse);
+  response.status(httpStatus.CREATED).send(harvestsResponse);
 }
 
 async function getHarvestSummary(request: Request, response: Response) {
@@ -26,7 +27,7 @@ async function getHarvestSummary(request: Request, response: Response) {
   const harvests = await harvestsService.getHarvestSummary(params);
   const harvestsResponse = harvests.map(harvestSerializers.summary.toResponse);
 
-  response.status(200).send(harvestsResponse);
+  response.status(httpStatus.OK).send(harvestsResponse);
 }
 
 async function searchHarvests(request: Request, response: Response) {
@@ -35,7 +36,7 @@ async function searchHarvests(request: Request, response: Response) {
   const harvests = await harvestsService.searchHarvests(params);
   const harvestsResponse = harvests.map(harvestSerializers.search.toResponse);
 
-  response.status(200).send(harvestsResponse);
+  response.status(httpStatus.OK).send(harvestsResponse);
 }
 
 async function getHarvestStats(request: Request, response: Response) {
@@ -44,19 +45,19 @@ async function getHarvestStats(request: Request, response: Response) {
   const stats: HarvestStats = await harvestsService.getHarvestStats(params);
   const statsResponse = harvestSerializers.stats.toResponse(stats);
 
-  response.status(200).send(statsResponse);
+  response.status(httpStatus.OK).send(statsResponse);
 }
 
 async function deleteHarvestById(request: Request, response: Response) {
   const { harvestId, } = request.params;
 
   if (harvestId === undefined) {
-    response.status(400).send('harvestId required');
+    response.status(httpStatus.BAD_REQUEST).send('harvestId required');
   }
 
   await harvestsService.deleteHarvestById(harvestId!);
 
-  response.sendStatus(200);
+  response.sendStatus(httpStatus.OK);
 }
 
 export default {

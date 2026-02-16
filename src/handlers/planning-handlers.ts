@@ -2,12 +2,13 @@ import { Request, Response } from 'express';
 import planningSerializers from '../serializers/planning';
 import planningService from '../services/planning/planning-service';
 import tryDecorator from '../middleware/try-decorator';
+import httpStatus from '../util/http-status';
 
 async function getPlanningDetailsByYear(request: Request, response: Response) {
   const { plantingYear, } = request.params;
 
   if (plantingYear === undefined) {
-    response.status(400).send('plantingYear required');
+    response.status(httpStatus.BAD_REQUEST).send('plantingYear required');
     return;
   }
 
@@ -15,7 +16,7 @@ async function getPlanningDetailsByYear(request: Request, response: Response) {
   try {
     plantingYearNumber = parseInt(plantingYear!, 10);
   } catch (err) {
-    response.status(400).send('plantingYear must be a number');
+    response.status(httpStatus.BAD_REQUEST).send('plantingYear must be a number');
     return;
   }
 
@@ -23,7 +24,7 @@ async function getPlanningDetailsByYear(request: Request, response: Response) {
   const planningDetailsResponse = planningSerializers.planningDetails.toResponse(planningDetails);
 
   response
-    .status(200)
+    .status(httpStatus.OK)
     .send(planningDetailsResponse);
 }
 

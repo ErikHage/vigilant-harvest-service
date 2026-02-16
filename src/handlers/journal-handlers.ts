@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import journalService from '../services/journal/journal-service';
 import journalSerializers from '../serializers/journal';
 import tryDecorator from '../middleware/try-decorator';
+import httpStatus from '../util/http-status';
 
 async function upsertJournalEntry(request: Request, response: Response) {
   const journalEntryRequest = journalSerializers.journalEntries.upsert.fromRequest(request);
@@ -11,7 +12,7 @@ async function upsertJournalEntry(request: Request, response: Response) {
   const journalEntryResponse = journalSerializers.journalEntries.toResponse(journalEntry);
 
   response
-    .status(journalEntryRequest.entryId === undefined ? 201 : 200)
+    .status(journalEntryRequest.entryId === undefined ? httpStatus.CREATED : httpStatus.OK)
     .send(journalEntryResponse);
 }
 
@@ -22,7 +23,7 @@ async function getJournalEntries(request: Request, response: Response) {
   const journalEntriesResponse = journalEntries.map(journalSerializers.journalEntries.toResponse);
 
   response
-    .status(200)
+    .status(httpStatus.OK)
     .send(journalEntriesResponse);
 }
 
