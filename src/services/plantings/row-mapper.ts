@@ -10,6 +10,7 @@ import { PlantingsBreakdown, PlantingsBreakdownRow } from '../planting-years/typ
 
 import mysqlUtils from '../../database/mysql-utils';
 import constants from '../../util/constants';
+import { PlanningPlanting, PlanningPlantingRow } from '../planning/types';
 
 const plantings = {
   insert: {
@@ -82,6 +83,19 @@ const plantings = {
 
         return acc;
       }, new Map<number, PlantingsBreakdown>());
+    },
+  },
+
+  planning: {
+    fromRow: function (row: PlanningPlantingRow): PlanningPlanting {
+      return {
+        plantingId: row.planting_id,
+        plantingName: row.planting_name,
+        plantId: row.plant_id,
+        plantName: row.plant_name,
+        currentStatus: row.current_status,
+        leadTimeDays: row.lead_time_weeks ? row.lead_time_weeks * 7 : undefined,
+      };
     },
   },
 

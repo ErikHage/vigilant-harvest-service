@@ -1,6 +1,7 @@
 import { Request } from 'express';
 
 import { PlantingYearRequest, PlantingYear, PlantingYearResponse } from '../services/planting-years/types';
+import { UTCDate } from '@date-fns/utc';
 
 export default {
   get: {
@@ -12,8 +13,8 @@ export default {
   fromRequest: (req: Request): PlantingYearRequest => ({
     previousPlantingYear: req.body.previousPlantingYear,
     plantingYear: req.body.plantingYear,
-    lastFrostDate: new Date(req.body.lastFrostDate),
-    targetPlantingDate: new Date(req.body.targetPlantingDate),
+    lastFrostDate: new UTCDate(req.body.lastFrostDate),
+    targetPlantingDate: new UTCDate(req.body.targetPlantingDate),
   }),
 
   toResponse: (planting: PlantingYear): PlantingYearResponse => ({

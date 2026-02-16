@@ -13,8 +13,13 @@ function nullableDateToDbString(date?: Date): string | null {
   return format(date, mysqlFormat);
 }
 
-function dbDateStringToJsDate(dateString: string): Date {
-  return new Date(dateString);
+function dbDateStringToJsDate(dateString: string, stripUtc = false): Date {
+  if (stripUtc) {
+    const [ year, month, day, ] = dateString.split('-').map(Number);
+    return new Date(year!, month! - 1, day);
+  } else {
+    return new Date(dateString);
+  }
 }
 
 function booleanToDbInt(val: boolean): number {

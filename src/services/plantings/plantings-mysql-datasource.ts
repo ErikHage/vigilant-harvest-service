@@ -16,6 +16,7 @@ import rowMapper from './row-mapper';
 import { ensureError, FeralError } from '../../errors';
 import constants from '../../util/constants';
 import { PlantingsBreakdown, PlantingsBreakdownRow } from '../planting-years/types';
+import { PlanningPlanting, PlanningPlantingRow } from '../planning/types';
 
 async function insertPlanting(planting: Planting): Promise<Planting> {
   const transaction: QueryPayload[] = [
@@ -223,6 +224,17 @@ async function getPlantings(): Promise<Planting[]> {
   return results.map(plantingRow => rowMapper.plantings.fromRow(plantingRow, [], []));
 }
 
+async function getPlanningPlantings(year: number, status: string): Promise<PlanningPlanting[]> {
+  const query: QueryPayload = {
+    sql: queries.plantings.getPlanningPlantings,
+    params: [ year, status, ],
+  };
+
+  const results: PlanningPlantingRow[] = await db.execQuery<PlanningPlantingRow[]>(query);
+
+  return results.map(row => rowMapper.plantings.planning.fromRow(row));
+}
+
 async function getPlantingsBreakdown(): Promise<Map<number, PlantingsBreakdown>> {
   const query: QueryPayload = {
     sql: queries.plantings.getStatusBreakdowns,
@@ -252,6 +264,7 @@ export default {
   getPlantingsByYear,
   getPlantingIdsToCarryForward,
   getPlantings,
+  getPlanningPlantings,
   deletePlantingById,
 
   insertStatusHistory,

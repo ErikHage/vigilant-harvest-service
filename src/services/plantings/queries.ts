@@ -128,6 +128,18 @@ const plantings = {
                           FROM plantings
                          GROUP BY current_planting_year, current_status`,
 
+  getPlanningPlantings: `SELECT p.planting_id,
+                                p.planting_name,
+                                pl.plant_id,
+                                pl.friendly_name as plant_name,
+                                p.current_status,
+                                p.lead_time_weeks
+                           FROM plantings p
+                           JOIN plants pl
+                             ON pl.plant_id = p.plant_id
+                          WHERE p.current_planting_year = ?
+                            AND p.current_status = ?`,
+
   deleteById: 'DELETE FROM plantings WHERE planting_id = ?',
 };
 

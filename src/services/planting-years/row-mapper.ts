@@ -15,8 +15,8 @@ const plantingYears = {
   fromRow: function(row: PlantingYearRow): PlantingYear {
     return {
       plantingYear: row.planting_year,
-      lastFrostDate: row.last_frost_date,
-      targetPlantingDate: row.target_planting_date,
+      lastFrostDate: mysqlUtils.dbDateStringToJsDate(row.last_frost_date, true),
+      targetPlantingDate: mysqlUtils.dbDateStringToJsDate(row.target_planting_date, true),
     };
   },
 };

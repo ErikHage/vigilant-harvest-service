@@ -5,6 +5,7 @@ import plotHandlers from '../handlers/plot-handlers';
 import plantingHandlers from '../handlers/planting-handlers';
 import plantingYearHandlers from '../handlers/planting-year-handlers';
 import plantHandlers from '../handlers/plant-handlers';
+import planningHandlers from '../handlers/planning-handlers';
 import harvestHandlers from '../handlers/harvest-handlers';
 import journalHandlers from '../handlers/journal-handlers';
 import activityLogHandlers from '../handlers/activity-log-handlers';
@@ -36,6 +37,8 @@ const buildRouter = (): Express => {
   apiRouter.get('/plantings/:plantingId', plantingHandlers.getPlantingById);
   apiRouter.get('/plantings', plantingHandlers.getPlantings);
   apiRouter.delete('/plantings/:plantingId', plantingHandlers.deletePlantingById);
+
+  apiRouter.get('/planning/:plantingYear', planningHandlers.getPlanningDetailsByYear);
 
   apiRouter.put('/plants', plantHandlers.upsertPlant);
   apiRouter.get('/plants/:plantId', plantHandlers.getPlantById);
