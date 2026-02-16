@@ -37,19 +37,21 @@ async function getPlanningStageItems(plantingYear: PlantingYear, targetPlantingD
     plantingYear.plantingYear,
     constants.plantings.statuses.created);
 
-  return plantings.map(planting => {
-    const plannedActionDay = planting.leadTimeDays ? targetPlantingDay - planting.leadTimeDays : undefined
-    const daysUntilAction = plannedActionDay ? plannedActionDay - currentDay : undefined
+  return plantings
+    .map(planting => {
+      const plannedActionDay = planting.leadTimeDays ? targetPlantingDay - planting.leadTimeDays : undefined
+      const daysUntilAction = plannedActionDay ? plannedActionDay - currentDay : undefined
 
-    return {
-      plantingId: planting.plantingId,
-      plantingName: planting.plantingName,
-      plantId: planting.plantId,
-      plantName: planting.plantName,
-      plannedActionDay,
-      daysUntilAction,
-    }
-  });
+      return {
+        plantingId: planting.plantingId,
+        plantingName: planting.plantingName,
+        plantId: planting.plantId,
+        plantName: planting.plantName,
+        plannedActionDay,
+        daysUntilAction,
+      }
+    })
+    .sort(sortByDaysUntilAction);
 }
 
 async function getPropagationStageItems(plantingYear: PlantingYear, targetPlantingDay: number, currentDay: number): Promise<PlanningInstance[]> {
@@ -57,14 +59,28 @@ async function getPropagationStageItems(plantingYear: PlantingYear, targetPlanti
     plantingYear.plantingYear,
     constants.plantings.statuses.started);
 
-  return plantings.map(planting => ({
-    plantingId: planting.plantingId,
-    plantingName: planting.plantingName,
-    plantId: planting.plantId,
-    plantName: planting.plantName,
-    plannedActionDay: targetPlantingDay,
-    daysUntilAction: targetPlantingDay - currentDay,
-  }));
+  return plantings
+    .map(planting => ({
+      plantingId: planting.plantingId,
+      plantingName: planting.plantingName,
+      plantId: planting.plantId,
+      plantName: planting.plantName,
+      plannedActionDay: targetPlantingDay,
+      daysUntilAction: targetPlantingDay - currentDay,
+    }))
+    .sort(sortByDaysUntilAction);
+}
+
+function sortByDaysUntilAction(a: PlanningInstance, b: PlanningInstance) {
+  const aVal = a.daysUntilAction;
+  const bVal = b.daysUntilAction;
+
+  // push nulls/undefined to bottom
+  if (aVal == null && bVal == null) return 0;
+  if (aVal == null) return 1;
+  if (bVal == null) return -1;
+
+  return aVal - bVal;
 }
 
 function getCurrentDayOfYear(): number {
