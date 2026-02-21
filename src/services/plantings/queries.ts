@@ -133,12 +133,12 @@ const plantings = {
                           FROM plantings
                          GROUP BY current_planting_year, current_status`,
 
-  // TODO add target_planting_date
   getPlanningPlantings: `SELECT p.planting_id,
                                 p.planting_name,
                                 pl.plant_id,
                                 pl.friendly_name as plant_name,
                                 p.current_status,
+                                p.target_planting_date,
                                 p.lead_time_weeks
                            FROM plantings p
                            JOIN plants pl

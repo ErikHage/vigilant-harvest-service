@@ -32,13 +32,14 @@ async function getPlanningDetailsForYear(year: number): Promise<PlanningDetails>
   }
 }
 
-async function getPlanningStageItems(plantingYear: PlantingYear, targetPlantingDay: number, currentDay: number): Promise<PlanningInstance[]> {
+async function getPlanningStageItems(plantingYear: PlantingYear, defaultTargetPlantingDay: number, currentDay: number): Promise<PlanningInstance[]> {
   const plantings: PlanningPlanting[] = await plantingsMysqlDatasource.getPlanningPlantings(
     plantingYear.plantingYear,
     constants.plantings.statuses.created);
 
   return plantings
     .map(planting => {
+      const targetPlantingDay = planting.targetPlantingDate ? getDayOfYearFromDate(planting.targetPlantingDate) : defaultTargetPlantingDay;
       const plannedActionDay = planting.leadTimeDays ? targetPlantingDay - planting.leadTimeDays : undefined
       const daysUntilAction = plannedActionDay ? plannedActionDay - currentDay : undefined
 
@@ -54,20 +55,24 @@ async function getPlanningStageItems(plantingYear: PlantingYear, targetPlantingD
     .sort(sortByDaysUntilAction);
 }
 
-async function getPropagationStageItems(plantingYear: PlantingYear, targetPlantingDay: number, currentDay: number): Promise<PlanningInstance[]> {
+async function getPropagationStageItems(plantingYear: PlantingYear, defaultTargetPlantingDay: number, currentDay: number): Promise<PlanningInstance[]> {
   const plantings: PlanningPlanting[] = await plantingsMysqlDatasource.getPlanningPlantings(
     plantingYear.plantingYear,
     constants.plantings.statuses.started);
 
   return plantings
-    .map(planting => ({
-      plantingId: planting.plantingId,
-      plantingName: planting.plantingName,
-      plantId: planting.plantId,
-      plantName: planting.plantName,
-      plannedActionDay: targetPlantingDay,
-      daysUntilAction: targetPlantingDay - currentDay,
-    }))
+    .map(planting => {
+      const targetPlantingDay = planting.targetPlantingDate ? getDayOfYearFromDate(planting.targetPlantingDate) : defaultTargetPlantingDay;
+
+      return {
+        plantingId: planting.plantingId,
+        plantingName: planting.plantingName,
+        plantId: planting.plantId,
+        plantName: planting.plantName,
+        plannedActionDay: targetPlantingDay,
+        daysUntilAction: targetPlantingDay - currentDay,
+      };
+    })
     .sort(sortByDaysUntilAction);
 }
 

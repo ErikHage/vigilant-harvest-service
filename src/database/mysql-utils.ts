@@ -22,6 +22,13 @@ function dbDateStringToJsDate(dateString: string, stripUtc = false): Date {
   }
 }
 
+function nullableDbDateStringToJsDate(dateString: string, stripUtc = false): Date | null {
+  if (!dateString) {
+    return null;
+  }
+  return dbDateStringToJsDate(dateString, stripUtc);
+}
+
 function booleanToDbInt(val: boolean): number {
   return val ? 1 : 0;
 }
@@ -41,6 +48,7 @@ export default {
   dateToDbString,
   nullableDateToDbString,
   dbDateStringToJsDate,
+  nullableDbDateStringToJsDate,
   booleanToDbInt,
   nullableBooleanToDbInt,
   dbIntToBoolean,

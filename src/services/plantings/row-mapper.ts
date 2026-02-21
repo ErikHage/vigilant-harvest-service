@@ -96,6 +96,7 @@ const plantings = {
         plantId: row.plant_id,
         plantName: row.plant_name,
         currentStatus: row.current_status,
+        targetPlantingDate: mysqlUtils.nullableDbDateStringToJsDate(row.target_planting_date) ?? undefined,
         leadTimeDays: row.lead_time_weeks ? row.lead_time_weeks * 7 : undefined,
       };
     },

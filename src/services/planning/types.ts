@@ -6,6 +6,7 @@ export interface PlanningPlanting {
   plantId: string,
   plantName: string,
   currentStatus: string,
+  targetPlantingDate?: Date,
   leadTimeDays?: number, // int
 }
 
@@ -15,10 +16,8 @@ export interface PlanningPlantingRow extends RowDataPacket {
   plantId: string,
   plantName: string,
   currentStatus: string,
+  targetPlantingDate?: string,
   leadTimeWeeks?: number // int
-  // TODO add target planting date to override the target planting date on planting year
-  // sowDate?: Date,
-  // transplantDate?: Date,
 }
 
 export interface PlanningInstance {
