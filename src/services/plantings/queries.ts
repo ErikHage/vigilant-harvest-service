@@ -8,6 +8,7 @@ p.current_planting_year,
 p.planting_name,
 p.seed_source,
 p.lot_number,
+p.target_planting_date,
 p.lead_time_weeks,
 p.sow_date,
 p.sow_type,
@@ -37,15 +38,17 @@ const plantings = {
                            planting_name,
                            seed_source,
                            lot_number,
+                           target_planting_date,
                            lead_time_weeks,
                            current_status,
                            notes)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 
   clone: `
     INSERT INTO plantings (planting_id,
                            plot_id,
                            plant_id,
+                           target_planting_date,
                            lead_time_weeks,
                            sow_date,
                            sow_type,
@@ -61,6 +64,7 @@ const plantings = {
     SELECT ?, -- new planting_id
            plot_id,
            plant_id,
+           target_planting_date,
            lead_time_weeks,
            sow_date,
            sow_type,
@@ -87,6 +91,7 @@ const plantings = {
     if (plantingUpdate.seedSource) queryParts.push('seed_source = ?');
     if (plantingUpdate.lotNumber) queryParts.push('lot_number = ?');
     if (plantingUpdate.plotId) queryParts.push('plot_id = ?');
+    if (plantingUpdate.targetPlantingDate) queryParts.push('target_planting_date = ?');
     if (plantingUpdate.leadTimeWeeks) queryParts.push('lead_time_weeks = ?');
     if (plantingUpdate.numberSown) queryParts.push('number_sown = ?');
     if (plantingUpdate.sowDate) queryParts.push('sow_date = ?');
@@ -128,6 +133,7 @@ const plantings = {
                           FROM plantings
                          GROUP BY current_planting_year, current_status`,
 
+  // TODO add target_planting_date
   getPlanningPlantings: `SELECT p.planting_id,
                                 p.planting_name,
                                 pl.plant_id,

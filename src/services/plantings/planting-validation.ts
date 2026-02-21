@@ -6,10 +6,10 @@ const { plantings: { statuses, }, } = constants;
 
 const allowedUpdateFields = {
   [statuses.created]: [
-    'name', 'seedSource', 'lotNumber', 'plantId', 'leadTimeWeeks',
+    'name', 'seedSource', 'lotNumber', 'plantId', 'targetPlantingDate', 'leadTimeWeeks',
   ],
   [statuses.started]: [
-    'name', 'seedSource', 'lotNumber', 'sowDate', 'numberSown',
+    'name', 'seedSource', 'lotNumber', 'sowDate', 'numberSown', 'targetPlantingDate',
   ],
   [statuses.planted]: [
     'name', 'seedSource', 'lotNumber', 'plotId', 'transplantDate', 'numberTransplanted',

@@ -22,6 +22,7 @@ const plantings = {
         planting.name,
         planting.seedSource ?? null,
         planting.lotNumber ?? null,
+        mysqlUtils.nullableDateToDbString(planting.targetPlantingDate),
         planting.leadTimeWeeks ?? null,
         planting.currentStatus,
         planting.notes ?? null,
@@ -40,6 +41,7 @@ const plantings = {
       if (plantingUpdate.seedSource) params.push(plantingUpdate.seedSource);
       if (plantingUpdate.lotNumber) params.push(plantingUpdate.lotNumber);
       if (plantingUpdate.plotId) params.push(plantingUpdate.plotId);
+      if (plantingUpdate.targetPlantingDate) params.push(mysqlUtils.dateToDbString(plantingUpdate.targetPlantingDate));
       if (plantingUpdate.leadTimeWeeks) params.push(plantingUpdate.leadTimeWeeks);
       if (plantingUpdate.numberSown) params.push(plantingUpdate.numberSown);
       if (plantingUpdate.sowDate) params.push(mysqlUtils.dateToDbString(plantingUpdate.sowDate));
@@ -113,6 +115,7 @@ const plantings = {
       name: row.planting_name,
       seedSource: row.seed_source,
       lotNumber: row.lot_number,
+      targetPlantingDate: row.target_planting_date,
       leadTimeWeeks: row.lead_time_weeks,
       sowDate: row.sow_date,
       sowType: row.sow_type,

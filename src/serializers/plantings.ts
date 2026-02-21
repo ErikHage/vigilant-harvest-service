@@ -23,6 +23,7 @@ const insert = {
     name: req.body.name,
     seedSource: req.body.seedSource,
     lotNumber: req.body.lotNumber,
+    targetPlantingDate: req.body.targetPlantingDate ? new Date(req.body.targetPlantingDate) : undefined,
     leadTimeWeeks: req.body.leadTimeWeeks,
   }),
 };
@@ -50,6 +51,7 @@ const update = {
     lotNumber: req.body.lotNumber,
     plotId: req.body.plotId,
     numberTransplanted: req.body.numberTransplanted,
+    targetPlantingDate: req.body.targetPlantingDate ? new Date(req.body.targetPlantingDate) : undefined,
     leadTimeWeeks: req.body.leadTimeWeeks,
     sowDate: req.body.sowDate ? new Date(req.body.sowDate) : undefined,
     sowType: req.body.sowType,
@@ -140,6 +142,7 @@ export default {
     name: planting.name,
     seedSource: planting.seedSource,
     lotNumber: planting.lotNumber,
+    targetPlantingDate: planting.targetPlantingDate,
     leadTimeWeeks: planting.leadTimeWeeks,
     sowDate: planting.sowDate,
     sowType: planting.sowType,
