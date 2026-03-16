@@ -70,9 +70,19 @@ const getAll: string = `SELECT ${allPlantFields} FROM plants`;
 
 const deleteById: string = 'DELETE FROM plants WHERE plant_id = ?';
 
+const categories = {
+  getAll:
+    'SELECT c.category_id, s.subcategory_id, c.category_name, s.subcategory_name ' +
+    '  FROM plant_categories c ' +
+    '  JOIN plant_subcategories s ' +
+    '    ON c.category_id = s.category_id',
+};
+
 export default {
   upsertPlant,
   getById,
   getAll,
   deleteById,
+
+  categories,
 }

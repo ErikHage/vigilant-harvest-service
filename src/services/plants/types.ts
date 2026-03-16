@@ -113,3 +113,34 @@ export interface Plant {
   dateCreated?: Date,
   dateModified?: Date,
 }
+
+export interface CategorySubcategoryRow extends RowDataPacket {
+  category_id: number, // int
+  category_name: string,
+  subcategory_id: number, // int
+  subcategory_name: string
+}
+
+export interface PlantSubcategory {
+  categoryId: number, // int
+  subcategoryId: number, // int
+  subcategoryName: string,
+}
+
+export interface PlantCategory {
+  categoryId: number, // int
+  categoryName: string,
+  subcategories: PlantSubcategory[],
+}
+
+export interface PlantSubcategoryResponse {
+  categoryId: number, // int
+  subcategoryId: number, // int
+  subcategoryName: string,
+}
+
+export interface PlantCategoryResponse {
+  categoryId: number, // int
+  categoryName: string,
+  subcategories: PlantSubcategoryResponse[],
+}

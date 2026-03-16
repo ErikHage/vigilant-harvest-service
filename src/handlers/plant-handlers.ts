@@ -48,9 +48,18 @@ async function deletePlantById(request: Request, response: Response) {
   response.sendStatus(httpStatus.OK);
 }
 
+async function getCategories(request: Request, response: Response) {
+  const categories = await plantsService.getCategories();
+  const categoriesResponse = categories.map(plantSerializers.categories.toResponse);
+
+  response.status(httpStatus.OK).send(categoriesResponse);
+}
+
 export default {
   upsertPlant: tryDecorator.decorate(upsertPlant),
   getPlantById: tryDecorator.decorate(getPlantById),
   getPlants: tryDecorator.decorate(getPlants),
   deletePlantById: tryDecorator.decorate(deletePlantById),
+
+  getCategories: tryDecorator.decorate(getCategories),
 }

@@ -1,6 +1,6 @@
 import { v4 as uuidV4 } from 'uuid';
 
-import { Plant, PlantRequest } from './types';
+import { Plant, PlantCategory, PlantRequest } from './types';
 
 import datasource from '../plants/plants-mysql-datasource';
 import { ensureError, FeralError } from '../../errors';
@@ -54,9 +54,19 @@ async function deletePlantById(plantId: string): Promise<void> {
   }
 }
 
+async function getCategories(): Promise<PlantCategory[]> {
+  try {
+    return await datasource.getCategories();
+  } catch (err) {
+    throw new FeralError('Error getting all plant categories', ensureError(err));
+  }
+}
+
 export default {
   upsertPlant,
   getPlantById,
   getPlants,
   deletePlantById,
+
+  getCategories,
 }

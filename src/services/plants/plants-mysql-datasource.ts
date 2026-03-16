@@ -1,4 +1,4 @@
-import { Plant, PlantRow } from './types';
+import { CategorySubcategoryRow, Plant, PlantCategory, PlantRow } from './types';
 import { QueryPayload } from '../../database/types';
 
 import queries from './queries';
@@ -52,9 +52,22 @@ async function deletePlantById(plantId: string): Promise<void> {
   await db.execQuery(query);
 }
 
+async function getCategories(): Promise<PlantCategory[]> {
+  const query = {
+    sql: queries.categories.getAll,
+    params: [],
+  };
+
+  const results = await db.execQuery<CategorySubcategoryRow[]>(query);
+
+  return rowMapper.categories.fromCategorySubcategoryRows(results);
+}
+
 export default {
   upsertPlant,
   getPlantById,
   getPlants,
   deletePlantById,
+
+  getCategories,
 }

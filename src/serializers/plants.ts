@@ -1,6 +1,12 @@
 import { Request } from 'express';
 
-import { Plant, PlantRequest, PlantResponse } from '../services/plants/types';
+import {
+  Plant,
+  PlantCategory,
+  PlantCategoryResponse,
+  PlantRequest,
+  PlantResponse
+} from '../services/plants/types';
 
 function capitalizeFirstLetter(str: string): string {
   if (!str) {
@@ -9,8 +15,8 @@ function capitalizeFirstLetter(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-export default {
-  fromRequest: (req: Request): PlantRequest => ({
+function fromRequest(req: Request): PlantRequest {
+  return {
     plantId: req.body.plantId,
     category: req.body.category,
     friendlyName: req.body.friendlyName,
@@ -48,9 +54,11 @@ export default {
       shelfStability: req.body.harvesting?.shelfStability,
       harvestInstructions: req.body.harvesting?.harvestInstructions,
     },
-  }),
+  };
+}
 
-  toResponse: (plant: Plant): PlantResponse => ({
+function toResponse(plant: Plant): PlantResponse {
+  return {
     plantId: plant.plantId,
     category: plant.category,
     friendlyName: plant.friendlyName,
@@ -64,5 +72,26 @@ export default {
     harvesting: plant.harvesting,
     dateCreated: plant.dateCreated!,
     dateModified: plant.dateModified!,
-  }),
+  };
+}
+
+const categories = {
+  toResponse: function(category: PlantCategory): PlantCategoryResponse {
+    return {
+      categoryId: category.categoryId,
+      categoryName: category.categoryName,
+      subcategories : category.subcategories.map(subcategory => ({
+        categoryId: subcategory.categoryId,
+        subcategoryId: subcategory.subcategoryId,
+        subcategoryName: subcategory.subcategoryName,
+      })),
+    };
+  },
+};
+
+export default {
+  fromRequest,
+  toResponse,
+
+  categories,
 }

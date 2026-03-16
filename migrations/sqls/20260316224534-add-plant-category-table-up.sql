@@ -1,0 +1,22 @@
+START TRANSACTION;
+
+CREATE TABLE IF NOT EXISTS plant_categories (
+  category_id   INTEGER UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  category_name VARCHAR(255) NOT NULL,
+  date_created  TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
+
+  UNIQUE KEY uk_plant_category_category_name ( category_name )
+);
+
+CREATE TABLE IF NOT EXISTS plant_subcategories (
+  subcategory_id   INTEGER UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  category_id      INTEGER UNSIGNED NOT NULL,
+  subcategory_name VARCHAR(255) NOT NULL,
+  date_created     TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  date_modified    TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
+
+  UNIQUE KEY uk_plant_subcategory_subcategory_name ( subcategory_name )
+);
+
+COMMIT;

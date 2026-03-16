@@ -1,4 +1,4 @@
-import { Plant, PlantRow } from './types';
+import { CategorySubcategoryRow, Plant, PlantRow } from './types';
 import mysqlUtils from '../../database/mysql-utils';
 
 function fromRow(row: PlantRow): Plant {
@@ -77,7 +77,32 @@ const insert = {
   ]),
 };
 
+const categories = {
+  fromCategorySubcategoryRows: function(rows: CategorySubcategoryRow[]){
+    const categoryMap = new Map();
+
+    for (const row of rows) {
+      if (!categoryMap.has(row.category_id)) {
+        categoryMap.set(row.category_id, {
+          categoryId: row.category_id,
+          categoryName: row.category_name,
+          subcategories: [],
+        });
+      }
+
+      categoryMap.get(row.category_id).subcategories.push({
+        subcategoryId: row.subcategory_id,
+        subcategoryName: row.subcategory_name,
+      });
+    }
+
+    return Array.from(categoryMap.values());
+  },
+};
+
 export default {
   insert,
   fromRow,
+
+  categories,
 }
