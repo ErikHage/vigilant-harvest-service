@@ -34,18 +34,13 @@ export interface PlanningDetails {
   targetPlantingDay: number, // int (day of year)
   currentDay: number, // int (day of year)
 
-  planning: {
+  toStart: {
     plantings: PlanningInstance[],
   },
 
-  propagation: {
+  toPlant: {
     plantings: PlanningInstance[],
   },
-
-  // no support for this stage right now
-  // production: {
-  //   plantings: PlanningInstance[],
-  // },
 }
 
 export interface PlanningInstanceResponse {
@@ -62,11 +57,11 @@ export interface PlanningDetailsResponse {
   targetPlantingDay: number, // int (day of year)
   currentDay: number, // int (day of year)
 
-  planning: {
+  toStart: {
     plantings: PlanningInstanceResponse[],
   },
 
-  propagation: {
+  toPlant: {
     plantings: PlanningInstanceResponse[],
   },
 }

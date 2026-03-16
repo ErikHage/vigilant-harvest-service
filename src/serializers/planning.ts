@@ -22,11 +22,11 @@ export default {
       plantingYear: planningDetails.plantingYear,
       targetPlantingDay: planningDetails.targetPlantingDay,
       currentDay: planningDetails.currentDay,
-      planning: {
-        plantings: planningDetails.planning.plantings.map(toPlanningInstanceResponse),
+      toStart: {
+        plantings: planningDetails.toStart.plantings.map(toPlanningInstanceResponse),
       },
-      propagation: {
-        plantings: planningDetails.propagation.plantings.map(toPlanningInstanceResponse),
+      toPlant: {
+        plantings: planningDetails.toPlant.plantings.map(toPlanningInstanceResponse),
       },
     }),
   },

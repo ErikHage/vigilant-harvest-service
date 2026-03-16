@@ -12,18 +12,27 @@ async function getPlanningDetailsForYear(year: number): Promise<PlanningDetails>
     const currentDay = getCurrentDayOfYear();
     const plantingYear = await plantingYearsMysqlDatasource.getPlantingYear(year);
     const targetPlantingDay = getDayOfYearFromDate(plantingYear.targetPlantingDate);
-    const planningInstances = await getPlanningStageItems(plantingYear, targetPlantingDay, currentDay);
-    const propagationInstances = await getPropagationStageItems(plantingYear, targetPlantingDay, currentDay);
+
+    const createdStatusPlantings: PlanningPlanting[] = await plantingsMysqlDatasource.getPlanningPlantings(
+      plantingYear.plantingYear,
+      constants.plantings.statuses.created);
+
+    const directSowPlanningInstances = getDirectSowPlanningItems(createdStatusPlantings, targetPlantingDay, currentDay);
+    const indoorSowPlanningInstances = getIndoorSowPlanningItems(createdStatusPlantings, targetPlantingDay, currentDay);
+    const startedInstances = await getPropagationStageItems(plantingYear, targetPlantingDay, currentDay);
 
     return {
       plantingYear: year,
       targetPlantingDay,
       currentDay,
-      planning: {
-        plantings: planningInstances,
+      toStart: {
+        plantings: indoorSowPlanningInstances
+          .sort(sortByDaysUntilAction),
       },
-      propagation: {
-        plantings: propagationInstances,
+      toPlant: {
+        plantings: directSowPlanningInstances
+          .concat(startedInstances)
+          .sort(sortByDaysUntilAction),
       },
     }
   } catch (err) {
@@ -32,12 +41,27 @@ async function getPlanningDetailsForYear(year: number): Promise<PlanningDetails>
   }
 }
 
-async function getPlanningStageItems(plantingYear: PlantingYear, defaultTargetPlantingDay: number, currentDay: number): Promise<PlanningInstance[]> {
-  const plantings: PlanningPlanting[] = await plantingsMysqlDatasource.getPlanningPlantings(
-    plantingYear.plantingYear,
-    constants.plantings.statuses.created);
-
+function getDirectSowPlanningItems(plantings: PlanningPlanting[], defaultTargetPlantingDay: number, currentDay: number): PlanningInstance[] {
   return plantings
+    .filter(hasNoLeadTime)
+    .map(planting => {
+      const targetPlantingDay = planting.targetPlantingDate ? getDayOfYearFromDate(planting.targetPlantingDate) : defaultTargetPlantingDay;
+      const daysUntilAction = targetPlantingDay - currentDay;
+
+      return {
+        plantingId: planting.plantingId,
+        plantingName: planting.plantingName,
+        plantId: planting.plantId,
+        plantName: planting.plantName,
+        plannedActionDay: targetPlantingDay,
+        daysUntilAction,
+      }
+    });
+}
+
+function getIndoorSowPlanningItems(plantings: PlanningPlanting[], defaultTargetPlantingDay: number, currentDay: number): PlanningInstance[] {
+   return plantings
+    .filter(hasDefinedLeadTime)
     .map(planting => {
       const targetPlantingDay = planting.targetPlantingDate ? getDayOfYearFromDate(planting.targetPlantingDate) : defaultTargetPlantingDay;
       const plannedActionDay = planting.leadTimeDays ? targetPlantingDay - planting.leadTimeDays : undefined
@@ -51,8 +75,7 @@ async function getPlanningStageItems(plantingYear: PlantingYear, defaultTargetPl
         plannedActionDay,
         daysUntilAction,
       }
-    })
-    .sort(sortByDaysUntilAction);
+    });
 }
 
 async function getPropagationStageItems(plantingYear: PlantingYear, defaultTargetPlantingDay: number, currentDay: number): Promise<PlanningInstance[]> {
@@ -72,8 +95,7 @@ async function getPropagationStageItems(plantingYear: PlantingYear, defaultTarge
         plannedActionDay: targetPlantingDay,
         daysUntilAction: targetPlantingDay - currentDay,
       };
-    })
-    .sort(sortByDaysUntilAction);
+    });
 }
 
 function sortByDaysUntilAction(a: PlanningInstance, b: PlanningInstance) {
@@ -95,6 +117,14 @@ function getCurrentDayOfYear(): number {
 
 function getDayOfYearFromDate(date: Date): number {
   return getDayOfYear(date);
+}
+
+function hasNoLeadTime(planting: PlanningPlanting) {
+  return planting.leadTimeDays === undefined || planting.leadTimeDays === 0;
+}
+
+function hasDefinedLeadTime(planting: PlanningPlanting) {
+  return planting.leadTimeDays !== undefined;
 }
 
 export default {
