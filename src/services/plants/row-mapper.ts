@@ -1,10 +1,13 @@
-import { CategorySubcategoryRow, Plant, PlantRow } from './types';
+import { CategorySubcategoryRow, Plant, PlantRow, PlantUpsertInstruction } from './types';
 import mysqlUtils from '../../database/mysql-utils';
 
 function fromRow(row: PlantRow): Plant {
   return {
     plantId: row.plant_id,
-    category: row.category,
+    category: row.category_name,
+    categoryId: row.category_id,
+    subcategory: row.subcategory_name,
+    subcategoryId: row.subcategory_id,
     tags: row.tags === '' ? [] : JSON.parse(row.tags),
     description: row.plant_description,
     friendlyName: row.friendly_name,
@@ -46,9 +49,9 @@ function fromRow(row: PlantRow): Plant {
 }
 
 const insert = {
-  toParams: (plant: Plant): Array<string | number | null> => ([
+  toParams: (plant: PlantUpsertInstruction): Array<string | number | null> => ([
     plant.plantId,
-    plant.category,
+    plant.subcategoryId,
     JSON.stringify(plant.tags),
     plant.description,
     plant.friendlyName,

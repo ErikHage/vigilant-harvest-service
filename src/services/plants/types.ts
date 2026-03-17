@@ -38,7 +38,7 @@ interface HarvestingInfo {
 
 export interface PlantRequest {
   plantId: string | undefined,
-  category: string,
+  subcategoryId: number,
   friendlyName: string,
   lifespanType: string,
   tags: Array<string>,
@@ -53,6 +53,9 @@ export interface PlantRequest {
 export interface PlantResponse {
   plantId: string,
   category: string,
+  categoryId: number,
+  subcategory: string,
+  subcategoryId: number,
   friendlyName: string,
   lifespanType: string,
   tags: Array<string>,
@@ -68,7 +71,8 @@ export interface PlantResponse {
 
 export interface PlantRow extends RowDataPacket {
   plant_id: string,
-  category: string,
+  category_name: string,
+  subcategory_name: string,
   friendly_name: string,
   lifespan_type: string,
   tags: string, // JSON string
@@ -101,6 +105,25 @@ export interface PlantRow extends RowDataPacket {
 export interface Plant {
   plantId: string,
   category: string,
+  categoryId: number,
+  subcategory: string,
+  subcategoryId: number,
+  friendlyName: string,
+  lifespanType: string,
+  tags: Array<string>,
+  description: string,
+  taxonomy: Taxonomy,
+  sowing: SowingInfo,
+  planting: PlantingInfo,
+  growing: GrowingInfo,
+  harvesting: HarvestingInfo,
+  dateCreated?: Date,
+  dateModified?: Date,
+}
+
+export interface PlantUpsertInstruction {
+  plantId: string,
+  subcategoryId: number,
   friendlyName: string,
   lifespanType: string,
   tags: Array<string>,

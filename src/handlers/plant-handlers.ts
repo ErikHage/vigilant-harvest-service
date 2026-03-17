@@ -6,14 +6,23 @@ import tryDecorator from '../middleware/try-decorator';
 import httpStatus from '../util/http-status';
 
 async function upsertPlant(request: Request, response: Response) {
-  const plantRequest = plantSerializers.fromRequest(request);
+  // TODO move to a separate validator step
+  if (request.body.subcategoryId == null) {
+    response
+      .status(httpStatus.BAD_REQUEST)
+      .send({
+        message: 'Subcategory is required',
+      });
+  } else {
+    const plantRequest = plantSerializers.fromRequest(request);
 
-  const planting = await plantsService.upsertPlant(plantRequest);
-  const plantResponse = plantSerializers.toResponse(planting);
+    const planting = await plantsService.upsertPlant(plantRequest);
+    const plantResponse = plantSerializers.toResponse(planting);
 
-  response
-    .status(plantRequest.plantId === undefined ? httpStatus.CREATED : httpStatus.OK)
-    .send(plantResponse);
+    response
+      .status(plantRequest.plantId === undefined ? httpStatus.CREATED : httpStatus.OK)
+      .send(plantResponse);
+  }
 }
 
 async function getPlantById(request: Request, response: Response) {
@@ -21,12 +30,12 @@ async function getPlantById(request: Request, response: Response) {
 
   if (plantId === undefined) {
     response.status(httpStatus.BAD_REQUEST).send('plantId required');
+  } else {
+    const plant = await plantsService.getPlantById(plantId!);
+    const plantResponse = plantSerializers.toResponse(plant);
+
+    response.status(httpStatus.OK).send(plantResponse);
   }
-
-  const plant = await plantsService.getPlantById(plantId!);
-  const plantResponse = plantSerializers.toResponse(plant);
-
-  response.status(httpStatus.OK).send(plantResponse);
 }
 
 async function getPlants(request: Request, response: Response) {
@@ -41,11 +50,11 @@ async function deletePlantById(request: Request, response: Response) {
 
   if (plantId === undefined) {
     response.sendStatus(httpStatus.BAD_REQUEST);
+  } else {
+    await plantsService.deletePlantById(plantId!);
+
+    response.sendStatus(httpStatus.OK);
   }
-
-  await plantsService.deletePlantById(plantId!);
-
-  response.sendStatus(httpStatus.OK);
 }
 
 async function getCategories(request: Request, response: Response) {

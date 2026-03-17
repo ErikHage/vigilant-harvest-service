@@ -1,0 +1,3 @@
+ALTER TABLE plants
+  ADD COLUMN subcategory_id INTEGER UNSIGNED NOT NULL DEFAULT 0
+  AFTER plant_id;

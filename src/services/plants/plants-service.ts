@@ -1,15 +1,15 @@
 import { v4 as uuidV4 } from 'uuid';
 
-import { Plant, PlantCategory, PlantRequest } from './types';
+import { Plant, PlantCategory, PlantRequest, PlantUpsertInstruction } from './types';
 
 import datasource from '../plants/plants-mysql-datasource';
 import { ensureError, FeralError } from '../../errors';
 
 async function upsertPlant(plantRequest: PlantRequest): Promise<Plant> {
   try {
-    const plant: Plant = {
+    const plant: PlantUpsertInstruction = {
       plantId: plantRequest.plantId || uuidV4(),
-      category: plantRequest.category,
+      subcategoryId: plantRequest.subcategoryId,
       friendlyName: plantRequest.friendlyName,
       lifespanType: plantRequest.lifespanType,
       tags: plantRequest.tags,

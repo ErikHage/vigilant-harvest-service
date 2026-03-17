@@ -1,42 +1,45 @@
 const allPlantFields =
-`plant_id,
-category,
-tags,
-plant_description,
-friendly_name,
-lifespan_type,
-family,
-genus,
-species,
-indoor_sowing,
-direct_sowing,
-germination_days_range,
-germination_temp_range,
-sowing_notes,
-planting_depth_inches,
-plant_spacing_inches,
-row_spacing_inches,
-planting_instructions,
-required_sun,
-days_to_maturity,
-is_climbing,
-climbing_height_feet,
-plant_size,
-growing_notes,
-fruit_size,
-shelf_stability,
-harvest_instructions,
-date_created,
-date_modified`;
+`p.plant_id,
+c.category_name,
+c.category_id,
+s.subcategory_name,
+s.subcategory_id,
+p.tags,
+p.plant_description,
+p.friendly_name,
+p.lifespan_type,
+p.family,
+p.genus,
+p.species,
+p.indoor_sowing,
+p.direct_sowing,
+p.germination_days_range,
+p.germination_temp_range,
+p.sowing_notes,
+p.planting_depth_inches,
+p.plant_spacing_inches,
+p.row_spacing_inches,
+p.planting_instructions,
+p.required_sun,
+p.days_to_maturity,
+p.is_climbing,
+p.climbing_height_feet,
+p.plant_size,
+p.growing_notes,
+p.fruit_size,
+p.shelf_stability,
+p.harvest_instructions,
+p.date_created,
+p.date_modified`;
 
 const upsertPlant: string = `
-  INSERT into plants (plant_id, category, tags, plant_description, friendly_name, lifespan_type, family, genus, species,
+  INSERT into plants (plant_id, subcategory_id, tags, plant_description, friendly_name, lifespan_type, family, genus, species,
   indoor_sowing, direct_sowing, germination_days_range, germination_temp_range, sowing_notes, planting_depth_inches,
   plant_spacing_inches, row_spacing_inches, planting_instructions, required_sun, days_to_maturity, is_climbing,
   climbing_height_feet, plant_size, growing_notes, fruit_size, shelf_stability, harvest_instructions)
   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
   ON DUPLICATE KEY
-  UPDATE category =               VALUES(category),
+  UPDATE subcategory_id =         VALUES(subcategory_id),
          tags =                   VALUES(tags),
          plant_description =      VALUES(plant_description),
          friendly_name =          VALUES(friendly_name),
@@ -64,9 +67,22 @@ const upsertPlant: string = `
          harvest_instructions =   VALUES(harvest_instructions)
 `;
 
-const getById: string = `SELECT ${allPlantFields} FROM plants WHERE plant_id = ?`;
+const getById: string =
+  `SELECT ${allPlantFields} ` +
+  '  FROM plants p' +
+  '  JOIN plant_subcategories s' +
+  '    ON s.subcategory_id = p.subcategory_id ' +
+  '  JOIN plant_categories c' +
+  '    ON c.category_id = s.category_id' +
+  ' WHERE plant_id = ?';
 
-const getAll: string = `SELECT ${allPlantFields} FROM plants`;
+const getAll: string =
+  `SELECT ${allPlantFields} ` +
+  '  FROM plants p' +
+  '  JOIN plant_subcategories s' +
+  '    ON s.subcategory_id = p.subcategory_id ' +
+  '  JOIN plant_categories c' +
+  '    ON c.category_id = s.category_id';
 
 const deleteById: string = 'DELETE FROM plants WHERE plant_id = ?';
 

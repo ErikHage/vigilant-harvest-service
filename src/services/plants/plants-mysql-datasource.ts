@@ -1,12 +1,11 @@
-import { CategorySubcategoryRow, Plant, PlantCategory, PlantRow } from './types';
+import { CategorySubcategoryRow, Plant, PlantCategory, PlantRow, PlantUpsertInstruction } from './types';
 import { QueryPayload } from '../../database/types';
 
 import queries from './queries';
 import db, { RowNotFoundError } from '../../database'
 import rowMapper from './row-mapper';
 
-
-async function upsertPlant(plant: Plant): Promise<Plant> {
+async function upsertPlant(plant: PlantUpsertInstruction): Promise<Plant> {
   const query: QueryPayload = {
     sql: queries.upsertPlant,
     params: rowMapper.insert.toParams(plant),
@@ -14,7 +13,7 @@ async function upsertPlant(plant: Plant): Promise<Plant> {
 
   await db.execQuery(query);
 
-  return plant;
+  return getPlantById(plant.plantId!);
 }
 
 async function getPlantById(plantId: string): Promise<Plant> {

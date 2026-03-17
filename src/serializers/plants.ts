@@ -18,7 +18,7 @@ function capitalizeFirstLetter(str: string): string {
 function fromRequest(req: Request): PlantRequest {
   return {
     plantId: req.body.plantId,
-    category: req.body.category,
+    subcategoryId: req.body.subcategoryId,
     friendlyName: req.body.friendlyName,
     lifespanType: req.body.lifespanType?.toLowerCase() ?? 'annual',
     tags: req.body.tags ?? [],
@@ -61,6 +61,9 @@ function toResponse(plant: Plant): PlantResponse {
   return {
     plantId: plant.plantId,
     category: plant.category,
+    categoryId: plant.categoryId,
+    subcategory: plant.subcategory,
+    subcategoryId: plant.subcategoryId,
     friendlyName: plant.friendlyName,
     lifespanType: capitalizeFirstLetter(plant.lifespanType),
     tags: plant.tags,
