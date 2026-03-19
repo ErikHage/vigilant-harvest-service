@@ -45,7 +45,9 @@ const buildRouter = (): Express => {
   apiRouter.get('/plants', plantHandlers.getPlants);
   apiRouter.delete('/plants/:plantId', plantHandlers.deletePlantById);
 
+  apiRouter.post('/plant-categories', plantHandlers.insertCategory);
   apiRouter.get('/plant-categories', plantHandlers.getCategories);
+  apiRouter.post('/plant-categories/:categoryId/plant-subcategories', plantHandlers.insertSubcategory);
 
   apiRouter.put('/harvests', harvestHandlers.upsertHarvests);
   apiRouter.get('/harvests/summary', harvestHandlers.getHarvestSummary);

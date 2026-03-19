@@ -1,9 +1,17 @@
-import { CategorySubcategoryRow, Plant, PlantCategory, PlantRow, PlantUpsertInstruction } from './types';
+import {
+  CategorySubcategoryRow,
+  Plant,
+  PlantCategory,
+  PlantCategoryRequest,
+  PlantRow, PlantSubcategory, PlantSubcategoryRequest,
+  PlantUpsertInstruction
+} from './types';
 import { QueryPayload } from '../../database/types';
 
 import queries from './queries';
 import db, { RowNotFoundError } from '../../database'
 import rowMapper from './row-mapper';
+import { ResultSetHeader } from 'mysql2';
 
 async function upsertPlant(plant: PlantUpsertInstruction): Promise<Plant> {
   const query: QueryPayload = {
@@ -51,6 +59,43 @@ async function deletePlantById(plantId: string): Promise<void> {
   await db.execQuery(query);
 }
 
+async function insertCategory(category: PlantCategoryRequest): Promise<PlantCategory> {
+  const { categoryName, } = category;
+
+  const query = {
+    sql: queries.categories.insertCategory,
+    params: [
+      categoryName,
+    ],
+  };
+
+  const header = await db.execQuery<ResultSetHeader>(query);
+
+  return {
+    categoryId: header.insertId,
+    categoryName: category.categoryName,
+    subcategories: [],
+  };
+}
+
+async function insertSubcategory(subcategory: PlantSubcategoryRequest): Promise<PlantSubcategory> {
+  const query = {
+    sql: queries.categories.insertSubcategory,
+    params: [
+      subcategory.subcategoryName,
+      subcategory.categoryId,
+    ],
+  };
+
+  const header = await db.execQuery<ResultSetHeader>(query);
+
+  return {
+    subcategoryId: header.insertId,
+    subcategoryName: subcategory.subcategoryName,
+    categoryId: subcategory.categoryId,
+  };
+}
+
 async function getCategories(): Promise<PlantCategory[]> {
   const query = {
     sql: queries.categories.getAll,
@@ -68,5 +113,7 @@ export default {
   getPlants,
   deletePlantById,
 
+  insertCategory,
+  insertSubcategory,
   getCategories,
 }

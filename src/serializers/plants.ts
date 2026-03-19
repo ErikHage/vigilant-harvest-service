@@ -2,10 +2,10 @@ import { Request } from 'express';
 
 import {
   Plant,
-  PlantCategory,
+  PlantCategory, PlantCategoryRequest,
   PlantCategoryResponse,
   PlantRequest,
-  PlantResponse
+  PlantResponse, PlantSubcategory, PlantSubcategoryRequest, PlantSubcategoryResponse
 } from '../services/plants/types';
 
 function capitalizeFirstLetter(str: string): string {
@@ -79,7 +79,13 @@ function toResponse(plant: Plant): PlantResponse {
 }
 
 const categories = {
-  toResponse: function(category: PlantCategory): PlantCategoryResponse {
+  fromCategoryRequest: function(req: Request): PlantCategoryRequest {
+    return {
+      categoryName: req.body.categoryName,
+    };
+  },
+
+  toCategoryResponse: function(category: PlantCategory): PlantCategoryResponse {
     return {
       categoryId: category.categoryId,
       categoryName: category.categoryName,
@@ -88,6 +94,21 @@ const categories = {
         subcategoryId: subcategory.subcategoryId,
         subcategoryName: subcategory.subcategoryName,
       })),
+    };
+  },
+
+  fromSubcategoryRequest: function(req: Request): PlantSubcategoryRequest {
+    return {
+      categoryId: parseInt(req.params.categoryId!),
+      subcategoryName: req.body.subcategoryName,
+    };
+  },
+
+  toSubcategoryResponse: function(subcategory: PlantSubcategory): PlantSubcategoryResponse {
+    return {
+      categoryId: subcategory.categoryId,
+      subcategoryId: subcategory.subcategoryId,
+      subcategoryName: subcategory.subcategoryName,
     };
   },
 };

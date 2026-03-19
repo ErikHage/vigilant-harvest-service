@@ -87,10 +87,16 @@ const getAll: string =
 const deleteById: string = 'DELETE FROM plants WHERE plant_id = ?';
 
 const categories = {
+  insertCategory:
+    'INSERT INTO plant_categories (category_name) VALUES (?)',
+
+  insertSubcategory:
+    'INSERT INTO plant_subcategories (subcategory_name, category_id) VALUES (?, ?)',
+
   getAll:
     'SELECT c.category_id, s.subcategory_id, c.category_name, s.subcategory_name ' +
     '  FROM plant_categories c ' +
-    '  JOIN plant_subcategories s ' +
+    '  LEFT OUTER JOIN plant_subcategories s ' +
     '    ON c.category_id = s.category_id',
 };
 

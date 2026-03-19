@@ -140,14 +140,12 @@ export interface PlantUpsertInstruction {
 export interface CategorySubcategoryRow extends RowDataPacket {
   category_id: number, // int
   category_name: string,
-  subcategory_id: number, // int
-  subcategory_name: string
+  subcategory_id?: number, // int
+  subcategory_name?: string
 }
 
-export interface PlantSubcategory {
-  categoryId: number, // int
-  subcategoryId: number, // int
-  subcategoryName: string,
+export interface PlantCategoryRequest {
+  categoryName: string,
 }
 
 export interface PlantCategory {
@@ -156,14 +154,25 @@ export interface PlantCategory {
   subcategories: PlantSubcategory[],
 }
 
-export interface PlantSubcategoryResponse {
+export interface PlantCategoryResponse {
+  categoryId: number, // int
+  categoryName: string,
+  subcategories: PlantSubcategoryResponse[],
+}
+
+export interface PlantSubcategoryRequest {
+  categoryId: number, // int
+  subcategoryName: string,
+}
+
+export interface PlantSubcategory {
   categoryId: number, // int
   subcategoryId: number, // int
   subcategoryName: string,
 }
 
-export interface PlantCategoryResponse {
+export interface PlantSubcategoryResponse {
   categoryId: number, // int
-  categoryName: string,
-  subcategories: PlantSubcategoryResponse[],
+  subcategoryId: number, // int
+  subcategoryName: string,
 }

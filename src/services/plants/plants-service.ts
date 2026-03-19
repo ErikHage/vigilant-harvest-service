@@ -1,6 +1,13 @@
 import { v4 as uuidV4 } from 'uuid';
 
-import { Plant, PlantCategory, PlantRequest, PlantUpsertInstruction } from './types';
+import {
+  Plant,
+  PlantCategory,
+  PlantCategoryRequest,
+  PlantRequest, PlantSubcategory,
+  PlantSubcategoryRequest,
+  PlantUpsertInstruction
+} from './types';
 
 import datasource from '../plants/plants-mysql-datasource';
 import { ensureError, FeralError } from '../../errors';
@@ -54,6 +61,22 @@ async function deletePlantById(plantId: string): Promise<void> {
   }
 }
 
+async function insertCategory(categoryRequest: PlantCategoryRequest): Promise<PlantCategory> {
+  try {
+    return await datasource.insertCategory(categoryRequest);
+  } catch (err) {
+    throw new FeralError('Error inserting plant category', ensureError(err));
+  }
+}
+
+async function insertSubcategory(subcategoryRequest: PlantSubcategoryRequest): Promise<PlantSubcategory> {
+  try {
+    return await datasource.insertSubcategory(subcategoryRequest);
+  } catch (err) {
+    throw new FeralError('Error inserting plant subcategory', ensureError(err));
+  }
+}
+
 async function getCategories(): Promise<PlantCategory[]> {
   try {
     return await datasource.getCategories();
@@ -68,5 +91,7 @@ export default {
   getPlants,
   deletePlantById,
 
+  insertCategory,
+  insertSubcategory,
   getCategories,
 }

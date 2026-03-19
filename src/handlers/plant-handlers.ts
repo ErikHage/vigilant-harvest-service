@@ -57,11 +57,33 @@ async function deletePlantById(request: Request, response: Response) {
   }
 }
 
+async function insertCategory(request: Request, response: Response) {
+  const plantCategoryRequest = plantSerializers.categories.fromCategoryRequest(request);
+
+  const plantCategory = await plantsService.insertCategory(plantCategoryRequest);
+  const plantCategoryResponse = plantSerializers.categories.toCategoryResponse(plantCategory);
+
+  response
+    .status(httpStatus.CREATED)
+    .send(plantCategoryResponse);
+}
+
 async function getCategories(request: Request, response: Response) {
   const categories = await plantsService.getCategories();
-  const categoriesResponse = categories.map(plantSerializers.categories.toResponse);
+  const categoriesResponse = categories.map(plantSerializers.categories.toCategoryResponse);
 
   response.status(httpStatus.OK).send(categoriesResponse);
+}
+
+async function insertSubcategory(request: Request, response: Response) {
+  const plantSubcategoryRequest = plantSerializers.categories.fromSubcategoryRequest(request);
+
+  const plantSubcategory = await plantsService.insertSubcategory(plantSubcategoryRequest);
+  const plantSubcategoryResponse = plantSerializers.categories.toSubcategoryResponse(plantSubcategory);
+
+  response
+    .status(httpStatus.CREATED)
+    .send(plantSubcategoryResponse);
 }
 
 export default {
@@ -70,5 +92,8 @@ export default {
   getPlants: tryDecorator.decorate(getPlants),
   deletePlantById: tryDecorator.decorate(deletePlantById),
 
+  insertCategory: tryDecorator.decorate(insertCategory),
   getCategories: tryDecorator.decorate(getCategories),
+
+  insertSubcategory: tryDecorator.decorate(insertSubcategory),
 }

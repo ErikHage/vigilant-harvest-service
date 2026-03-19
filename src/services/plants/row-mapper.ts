@@ -93,10 +93,12 @@ const categories = {
         });
       }
 
-      categoryMap.get(row.category_id).subcategories.push({
-        subcategoryId: row.subcategory_id,
-        subcategoryName: row.subcategory_name,
-      });
+      if (row.subcategory_id != null) {
+        categoryMap.get(row.category_id).subcategories.push({
+          subcategoryId: row.subcategory_id,
+          subcategoryName: row.subcategory_name,
+        });
+      }
     }
 
     return Array.from(categoryMap.values());
