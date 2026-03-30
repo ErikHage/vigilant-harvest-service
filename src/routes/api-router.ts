@@ -8,6 +8,7 @@ import plantHandlers from '../handlers/plant-handlers';
 import planningHandlers from '../handlers/planning-handlers';
 import harvestHandlers from '../handlers/harvest-handlers';
 import journalHandlers from '../handlers/journal-handlers';
+import scheduleHandlers from '../handlers/schedule-handlers';
 import activityLogHandlers from '../handlers/activity-log-handlers';
 import logRequests from '../middleware/log-requests';
 import attachActor from '../middleware/attach-actor';
@@ -57,6 +58,10 @@ const buildRouter = (): Express => {
 
   apiRouter.put('/journal', journalHandlers.upsertJournalEntry);
   apiRouter.get('/journal/:plantingYear', journalHandlers.getJournalEntries);
+
+  apiRouter.post('/activity-schedules', scheduleHandlers.createSchedule);
+  apiRouter.get('/activity-schedules', scheduleHandlers.listSchedules);
+  apiRouter.post('/activity-schedules/:scheduleId', scheduleHandlers.addScheduleItem);
 
   apiRouter.put('/activity-log', activityLogHandlers.upsertActivityLogEntry);
   apiRouter.get('/activity-log/:plantingYear', activityLogHandlers.getActivityLogEntries);
