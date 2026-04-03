@@ -23,6 +23,14 @@ async function listSchedules(request: Request, response: Response): Promise<void
     .send(activitySchedulesResponse);
 }
 
+async function getScheduleById(request: Request, response: Response): Promise<void> {
+  const activityScheduleId = request.params.activityScheduleId!;
+  const activitySchedule = await schedulesService.getScheduleById(activityScheduleId);
+
+  response.status(httpStatus.OK)
+    .send(schedulesSerializer.schedules.toResponse(activitySchedule));
+}
+
 async function addScheduleItem(request: Request, response: Response): Promise<void> {
   const scheduleItemRequest = schedulesSerializer.scheduleItems.fromCreateRequest(request);
   const scheduleItem = await schedulesService.addScheduleItem(scheduleItemRequest);
@@ -36,6 +44,7 @@ async function addScheduleItem(request: Request, response: Response): Promise<vo
 export default {
   createSchedule: tryDecorator.decorate(createSchedule),
   listSchedules: tryDecorator.decorate(listSchedules),
+  getScheduleById: tryDecorator.decorate(getScheduleById),
 
   addScheduleItem: tryDecorator.decorate(addScheduleItem),
 };

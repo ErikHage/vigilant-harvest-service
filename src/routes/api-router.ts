@@ -61,7 +61,8 @@ const buildRouter = (): Express => {
 
   apiRouter.post('/activity-schedules', scheduleHandlers.createSchedule);
   apiRouter.get('/activity-schedules', scheduleHandlers.listSchedules);
-  apiRouter.post('/activity-schedules/:scheduleId', scheduleHandlers.addScheduleItem);
+  apiRouter.get('/activity-schedules/:activityScheduleId', scheduleHandlers.getScheduleById);
+  apiRouter.post('/activity-schedules/:activityScheduleId', scheduleHandlers.addScheduleItem);
 
   apiRouter.put('/activity-log', activityLogHandlers.upsertActivityLogEntry);
   apiRouter.get('/activity-log/:plantingYear', activityLogHandlers.getActivityLogEntries);

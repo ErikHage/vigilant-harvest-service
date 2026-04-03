@@ -1,12 +1,14 @@
 import { QueryPayload } from '../../database/types';
 import queries from '../schedules/queries';
 import rowMapper from '../schedules/row-mapper';
-import db from '../../database';
+import db, { RowNotFoundError } from '../../database';
 import {
   ActivitySchedule,
   ActivityScheduleCreateRequest,
   ActivityScheduleItem,
-  ActivityScheduleItemCreateRequest, ActivityScheduleRow
+  ActivityScheduleItemCreateRequest,
+  ActivityScheduleItemRow,
+  ActivityScheduleRow
 } from './types';
 
 async function insertSchedule(activityScheduleId: string, schedule: ActivityScheduleCreateRequest): Promise<ActivitySchedule> {
@@ -35,6 +37,27 @@ async function listSchedules(): Promise<ActivitySchedule[]> {
   return results.map(rowMapper.schedules.list.fromRow);
 }
 
+async function getScheduleById(activityScheduleId: string): Promise<ActivitySchedule> {
+  const query: QueryPayload = {
+    sql: queries.schedules.getById,
+    params: [ activityScheduleId, ],
+  };
+  const itemsQuery: QueryPayload = {
+    sql: queries.scheduleItems.getByActivityScheduleId,
+    params: [ activityScheduleId, ],
+  };
+
+  const scheduleResults: ActivityScheduleRow[] = await db.execQuery<ActivityScheduleRow[]>(query);
+
+  if (scheduleResults.length === 1) {
+    throw new RowNotFoundError('Activity schedule not found', { activityScheduleId, });
+  }
+
+  const itemResults: ActivityScheduleItemRow[] = await db.execQuery<ActivityScheduleItemRow[]>(itemsQuery);
+
+  return rowMapper.schedules.getById.fromRows(scheduleResults[0]!, itemResults);
+}
+
 async function insertScheduleItem(entryId: string, scheduleItem: ActivityScheduleItemCreateRequest): Promise<ActivityScheduleItem> {
   const query: QueryPayload = {
     sql: queries.scheduleItems.insert,
@@ -52,6 +75,7 @@ async function insertScheduleItem(entryId: string, scheduleItem: ActivitySchedul
 export default {
   insertSchedule,
   listSchedules,
+  getScheduleById,
 
   insertScheduleItem,
 }

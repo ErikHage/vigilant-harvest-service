@@ -19,6 +19,15 @@ async function createSchedule(scheduleRequest: ActivityScheduleCreateRequest): P
   }
 }
 
+async function getScheduleById(activityScheduleId: string): Promise<ActivitySchedule> {
+  try {
+    return await datasource.getScheduleById(activityScheduleId);
+  } catch (err) {
+    throw new FeralError('Error fetching schedule by id', ensureError(err))
+      .withDebugParams({ activityScheduleId, });
+  }
+}
+
 async function listSchedules(): Promise<ActivitySchedule[]> {
   try {
     return await datasource.listSchedules();
@@ -40,6 +49,7 @@ async function addScheduleItem(scheduleItemRequest: ActivityScheduleItemCreateRe
 export default {
   createSchedule,
   listSchedules,
+  getScheduleById,
 
   addScheduleItem,
 }
