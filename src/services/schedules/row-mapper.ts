@@ -4,6 +4,7 @@ import {
   ActivityScheduleItemCreateRequest, ActivityScheduleItemRow,
   ActivityScheduleRow
 } from './types';
+import mysqlUtils from '../../database/mysql-utils';
 
 const scheduleItems = {
   insert: {
@@ -14,8 +15,8 @@ const scheduleItems = {
         scheduleItem.activityType,
         scheduleItem.subType,
         scheduleItem.recurrenceRule,
-        scheduleItem.startDate,
-        scheduleItem.endDate,
+        mysqlUtils.dateToDbString(new Date(scheduleItem.startDate)),
+        mysqlUtils.dateToDbString(new Date(scheduleItem.endDate)),
         scheduleItem.notes,
       ];
     },
@@ -28,8 +29,8 @@ const scheduleItems = {
       activityType: row.activity_type,
       subType: row.sub_type,
       recurrenceRule: row.recurrence_rule,
-      startDate: row.start_date,
-      endDate: row.end_date,
+      startDate: mysqlUtils.dbDateStringToJsDate(row.start_date),
+      endDate: mysqlUtils.dbDateStringToJsDate(row.end_date),
       notes: row.notes,
     };
   },

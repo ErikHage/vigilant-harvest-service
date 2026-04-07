@@ -22,6 +22,11 @@ const scheduleItems = {
     'INSERT INTO activity_schedule_items (activity_schedule_id, entry_id, activity_type, sub_type, recurrence_rule, start_date, end_date, notes) ' +
     'VALUES (?,?,?,?,?,?,?,?)',
 
+  getByEntryId:
+    `SELECT ${allScheduleItemFields} ` +
+    '  FROM activity_schedule_items ' +
+    ' WHERE entry_id = ?',
+
   getByActivityScheduleId:
     `SELECT ${allScheduleItemFields} ` +
     '  FROM activity_schedule_items ' +

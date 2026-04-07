@@ -41,8 +41,8 @@ export interface ActivityScheduleItem {
   activityType: string,
   subType: string,
   recurrenceRule: string,
-  startDate: string,
-  endDate: string,
+  startDate: Date,
+  endDate: Date,
   notes: string,
 }
 

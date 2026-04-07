@@ -49,13 +49,28 @@ async function getScheduleById(activityScheduleId: string): Promise<ActivitySche
 
   const scheduleResults: ActivityScheduleRow[] = await db.execQuery<ActivityScheduleRow[]>(query);
 
-  if (scheduleResults.length === 1) {
+  if (scheduleResults.length !== 1) {
     throw new RowNotFoundError('Activity schedule not found', { activityScheduleId, });
   }
 
   const itemResults: ActivityScheduleItemRow[] = await db.execQuery<ActivityScheduleItemRow[]>(itemsQuery);
 
   return rowMapper.schedules.getById.fromRows(scheduleResults[0]!, itemResults);
+}
+
+async function getScheduleItemById(entryId: string): Promise<ActivityScheduleItem> {
+  const query = {
+    sql: queries.scheduleItems.getByEntryId,
+    params: [ entryId, ],
+  };
+
+  const results: ActivityScheduleItemRow[] = await db.execQuery<ActivityScheduleItemRow[]>(query);
+
+  if (results.length !== 1) {
+    throw new RowNotFoundError('Activity schedule item not found', { entryId, });
+  }
+
+  return rowMapper.scheduleItems.fromRow(results[0]!);
 }
 
 async function insertScheduleItem(entryId: string, scheduleItem: ActivityScheduleItemCreateRequest): Promise<ActivityScheduleItem> {
@@ -66,10 +81,7 @@ async function insertScheduleItem(entryId: string, scheduleItem: ActivitySchedul
 
   await db.execQuery(query);
 
-  return {
-    ...scheduleItem,
-    entryId,
-  };
+  return await getScheduleItemById(entryId);
 }
 
 export default {
@@ -78,4 +90,5 @@ export default {
   getScheduleById,
 
   insertScheduleItem,
+  getScheduleItemById,
 }

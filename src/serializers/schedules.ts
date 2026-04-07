@@ -26,8 +26,8 @@ const scheduleItems = {
       activityType: scheduleItem.activityType,
       subType: scheduleItem.subType,
       recurrenceRule: scheduleItem.recurrenceRule,
-      startDate: scheduleItem.startDate,
-      endDate: scheduleItem.endDate,
+      startDate: scheduleItem.startDate.toISOString(),
+      endDate: scheduleItem.endDate.toISOString(),
       notes: scheduleItem.notes,
     };
   },
