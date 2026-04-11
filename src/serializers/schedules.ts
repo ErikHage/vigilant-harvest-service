@@ -3,7 +3,7 @@ import {
   ActivitySchedule,
   ActivityScheduleCreateRequest, ActivityScheduleItem,
   ActivityScheduleItemCreateRequest, ActivityScheduleItemResponse,
-  ActivityScheduleResponse
+  ActivityScheduleResponse, ActivityScheduleUpdateRequest
 } from '../services/schedules/types';
 
 const scheduleItems = {
@@ -36,6 +36,14 @@ const scheduleItems = {
 const schedules = {
   fromCreateRequest: function(req: Request): ActivityScheduleCreateRequest {
     return {
+      name: req.body.name,
+      description: req.body.description,
+    };
+  },
+
+  fromUpdateRequest: function(req: Request): ActivityScheduleUpdateRequest {
+    return {
+      activityScheduleId: req.params.activityScheduleId!,
       name: req.body.name,
       description: req.body.description,
     };

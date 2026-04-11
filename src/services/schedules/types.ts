@@ -5,6 +5,12 @@ export interface ActivityScheduleCreateRequest {
   description: string,
 }
 
+export interface ActivityScheduleUpdateRequest {
+  activityScheduleId: string,
+  name: string,
+  description: string,
+}
+
 export interface ActivitySchedule {
   activityScheduleId: string,
   name: string,

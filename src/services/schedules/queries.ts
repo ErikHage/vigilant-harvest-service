@@ -15,6 +15,12 @@ const schedules = {
     `SELECT ${allScheduleFields} ` +
     '  FROM activity_schedules ' +
     ' WHERE activity_schedule_id = ?',
+
+  update:
+    'UPDATE activity_schedules ' +
+    '   SET name = ?, ' +
+    '       description = ? ' +
+    ' WHERE activity_schedule_id = ?',
 };
 
 const scheduleItems = {

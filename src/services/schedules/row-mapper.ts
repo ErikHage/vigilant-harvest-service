@@ -2,7 +2,7 @@ import {
   ActivitySchedule,
   ActivityScheduleCreateRequest, ActivityScheduleItem,
   ActivityScheduleItemCreateRequest, ActivityScheduleItemRow,
-  ActivityScheduleRow
+  ActivityScheduleRow, ActivityScheduleUpdateRequest
 } from './types';
 import mysqlUtils from '../../database/mysql-utils';
 
@@ -43,6 +43,16 @@ const schedules = {
         activityScheduleId,
         schedule.name,
         schedule.description,
+      ];
+    },
+  },
+
+  update: {
+    toParams: function(scheduleUpdateRequest: ActivityScheduleUpdateRequest): Array<string> {
+      return [
+        scheduleUpdateRequest.name,
+        scheduleUpdateRequest.description,
+        scheduleUpdateRequest.activityScheduleId,
       ];
     },
   },

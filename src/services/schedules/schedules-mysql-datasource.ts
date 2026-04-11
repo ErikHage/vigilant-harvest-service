@@ -8,7 +8,7 @@ import {
   ActivityScheduleItem,
   ActivityScheduleItemCreateRequest,
   ActivityScheduleItemRow,
-  ActivityScheduleRow
+  ActivityScheduleRow, ActivityScheduleUpdateRequest
 } from './types';
 
 async function insertSchedule(activityScheduleId: string, schedule: ActivityScheduleCreateRequest): Promise<ActivitySchedule> {
@@ -58,6 +58,17 @@ async function getScheduleById(activityScheduleId: string): Promise<ActivitySche
   return rowMapper.schedules.getById.fromRows(scheduleResults[0]!, itemResults);
 }
 
+async function updateSchedule(scheduleUpdateRequest: ActivityScheduleUpdateRequest): Promise<ActivitySchedule> {
+  const query: QueryPayload = {
+    sql: queries.schedules.update,
+    params: rowMapper.schedules.update.toParams(scheduleUpdateRequest),
+  };
+
+  await db.execQuery(query);
+
+  return await getScheduleById(scheduleUpdateRequest.activityScheduleId);
+}
+
 async function getScheduleItemById(entryId: string): Promise<ActivityScheduleItem> {
   const query = {
     sql: queries.scheduleItems.getByEntryId,
@@ -88,6 +99,7 @@ export default {
   insertSchedule,
   listSchedules,
   getScheduleById,
+  updateSchedule,
 
   insertScheduleItem,
   getScheduleItemById,

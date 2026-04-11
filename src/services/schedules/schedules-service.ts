@@ -6,15 +6,15 @@ import {
   ActivitySchedule,
   ActivityScheduleCreateRequest,
   ActivityScheduleItem,
-  ActivityScheduleItemCreateRequest
+  ActivityScheduleItemCreateRequest, ActivityScheduleUpdateRequest
 } from './types';
 
 async function createSchedule(scheduleRequest: ActivityScheduleCreateRequest): Promise<ActivitySchedule> {
   try {
     const activityScheduleId = uuidV4();
-    return await datasource.insertSchedule(activityScheduleId, scheduleRequest)
+    return await datasource.insertSchedule(activityScheduleId, scheduleRequest);
   } catch (err) {
-    throw new FeralError('Error upserting schedule', ensureError(err))
+    throw new FeralError('Error inserting schedule', ensureError(err))
       .withDebugParams(scheduleRequest);
   }
 }
@@ -36,6 +36,15 @@ async function listSchedules(): Promise<ActivitySchedule[]> {
   }
 }
 
+async function updateSchedule(scheduleUpdateRequest: ActivityScheduleUpdateRequest): Promise<ActivitySchedule> {
+  try {
+    return await datasource.updateSchedule(scheduleUpdateRequest);
+  } catch (err) {
+    throw new FeralError('Error updating schedule', ensureError(err))
+      .withDebugParams(scheduleUpdateRequest);
+  }
+}
+
 async function addScheduleItem(scheduleItemRequest: ActivityScheduleItemCreateRequest): Promise<ActivityScheduleItem> {
   try {
     const entryId = uuidV4();
@@ -50,6 +59,7 @@ export default {
   createSchedule,
   listSchedules,
   getScheduleById,
+  updateSchedule,
 
   addScheduleItem,
 }
