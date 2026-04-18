@@ -7,7 +7,7 @@ import {
   ActivityScheduleCreateRequest,
   ActivityScheduleItem,
   ActivityScheduleItemCreateRequest,
-  ActivityScheduleItemRow,
+  ActivityScheduleItemRow, ActivityScheduleItemUpdateRequest,
   ActivityScheduleRow, ActivityScheduleUpdateRequest
 } from './types';
 
@@ -95,6 +95,17 @@ async function insertScheduleItem(entryId: string, scheduleItem: ActivitySchedul
   return await getScheduleItemById(entryId);
 }
 
+async function updateScheduleItem(scheduleItem: ActivityScheduleItemUpdateRequest): Promise<ActivityScheduleItem> {
+  const query: QueryPayload = {
+    sql: queries.scheduleItems.update,
+    params: rowMapper.scheduleItems.update.toParams(scheduleItem),
+  }
+
+  await db.execQuery(query);
+
+  return await getScheduleItemById(scheduleItem.entryId);
+}
+
 export default {
   insertSchedule,
   listSchedules,
@@ -103,4 +114,5 @@ export default {
 
   insertScheduleItem,
   getScheduleItemById,
+  updateScheduleItem,
 }

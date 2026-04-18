@@ -37,6 +37,16 @@ const scheduleItems = {
     `SELECT ${allScheduleItemFields} ` +
     '  FROM activity_schedule_items ' +
     ' WHERE activity_schedule_id = ?',
+
+  update:
+    'UPDATE activity_schedule_items ' +
+    '   SET activity_type = ?, ' +
+    '       sub_type = ?, ' +
+    '       recurrence_rule = ?, ' +
+    '       start_date = ?, ' +
+    '       end_date = ?, ' +
+    '       notes = ? ' +
+    ' WHERE entry_id = ?',
 };
 
 export default {

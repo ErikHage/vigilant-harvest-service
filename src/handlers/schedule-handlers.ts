@@ -51,6 +51,16 @@ async function addScheduleItem(request: Request, response: Response): Promise<vo
     .send(scheduleItemResponse);
 }
 
+async function updateScheduleItem(request: Request, response: Response): Promise<void> {
+  const scheduleItemRequest = schedulesSerializer.scheduleItems.fromUpdateRequest(request);
+  const scheduleItem = await schedulesService.updateScheduleItem(scheduleItemRequest);
+  const scheduleItemResponse = schedulesSerializer.scheduleItems.toResponse(scheduleItem);
+
+  response
+    .status(httpStatus.OK)
+    .send(scheduleItemResponse);
+}
+
 export default {
   createSchedule: tryDecorator.decorate(createSchedule),
   listSchedules: tryDecorator.decorate(listSchedules),
@@ -58,4 +68,5 @@ export default {
   updateSchedule: tryDecorator.decorate(updateSchedule),
 
   addScheduleItem: tryDecorator.decorate(addScheduleItem),
+  updateScheduleItem: tryDecorator.decorate(updateScheduleItem),
 };

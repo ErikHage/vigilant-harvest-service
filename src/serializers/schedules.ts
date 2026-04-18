@@ -2,7 +2,7 @@ import { Request } from 'express';
 import {
   ActivitySchedule,
   ActivityScheduleCreateRequest, ActivityScheduleItem,
-  ActivityScheduleItemCreateRequest, ActivityScheduleItemResponse,
+  ActivityScheduleItemCreateRequest, ActivityScheduleItemResponse, ActivityScheduleItemUpdateRequest,
   ActivityScheduleResponse, ActivityScheduleUpdateRequest
 } from '../services/schedules/types';
 
@@ -10,6 +10,18 @@ const scheduleItems = {
   fromCreateRequest: function(req: Request): ActivityScheduleItemCreateRequest {
     return {
       activityScheduleId: req.params.activityScheduleId!,
+      activityType: req.body.activityType,
+      subType: req.body.subType,
+      recurrenceRule: req.body.recurrenceRule,
+      startDate: req.body.startDate,
+      endDate: req.body.endDate,
+      notes: req.body.notes,
+    };
+  },
+
+  fromUpdateRequest: function(req: Request): ActivityScheduleItemUpdateRequest {
+    return {
+      entryId: req.params.entryId!,
       activityType: req.body.activityType,
       subType: req.body.subType,
       recurrenceRule: req.body.recurrenceRule,

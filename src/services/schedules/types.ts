@@ -41,6 +41,16 @@ export interface ActivityScheduleItemCreateRequest {
   notes: string,
 }
 
+export interface ActivityScheduleItemUpdateRequest {
+  entryId: string,
+  activityType: string,
+  subType: string,
+  recurrenceRule: string,
+  startDate: string,
+  endDate: string,
+  notes: string,
+}
+
 export interface ActivityScheduleItem {
   activityScheduleId: string,
   entryId: string,

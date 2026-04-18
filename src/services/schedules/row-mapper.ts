@@ -1,7 +1,7 @@
 import {
   ActivitySchedule,
   ActivityScheduleCreateRequest, ActivityScheduleItem,
-  ActivityScheduleItemCreateRequest, ActivityScheduleItemRow,
+  ActivityScheduleItemCreateRequest, ActivityScheduleItemRow, ActivityScheduleItemUpdateRequest,
   ActivityScheduleRow, ActivityScheduleUpdateRequest
 } from './types';
 import mysqlUtils from '../../database/mysql-utils';
@@ -19,6 +19,20 @@ const scheduleItems = {
         mysqlUtils.dateToDbString(new Date(scheduleItem.endDate)),
         scheduleItem.notes,
       ];
+    },
+  },
+
+  update: {
+    toParams: function(scheduleItem: ActivityScheduleItemUpdateRequest): Array<string | number> {
+      return [
+        scheduleItem.activityType,
+        scheduleItem.subType,
+        scheduleItem.recurrenceRule,
+        mysqlUtils.dateToDbString(new Date(scheduleItem.startDate)),
+        mysqlUtils.dateToDbString(new Date(scheduleItem.endDate)),
+        scheduleItem.notes,
+        scheduleItem.entryId,
+      ]
     },
   },
 

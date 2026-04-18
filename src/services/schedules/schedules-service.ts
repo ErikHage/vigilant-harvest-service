@@ -6,7 +6,7 @@ import {
   ActivitySchedule,
   ActivityScheduleCreateRequest,
   ActivityScheduleItem,
-  ActivityScheduleItemCreateRequest, ActivityScheduleUpdateRequest
+  ActivityScheduleItemCreateRequest, ActivityScheduleItemUpdateRequest, ActivityScheduleUpdateRequest
 } from './types';
 
 async function createSchedule(scheduleRequest: ActivityScheduleCreateRequest): Promise<ActivitySchedule> {
@@ -55,6 +55,15 @@ async function addScheduleItem(scheduleItemRequest: ActivityScheduleItemCreateRe
   }
 }
 
+async function updateScheduleItem(scheduleItemUpdateRequest: ActivityScheduleItemUpdateRequest): Promise<ActivityScheduleItem> {
+  try {
+    return await datasource.updateScheduleItem(scheduleItemUpdateRequest);
+  } catch (err) {
+    throw new FeralError('Error updating schedule item', ensureError(err))
+      .withDebugParams(scheduleItemUpdateRequest);
+  }
+}
+
 export default {
   createSchedule,
   listSchedules,
@@ -62,4 +71,5 @@ export default {
   updateSchedule,
 
   addScheduleItem,
+  updateScheduleItem,
 }
