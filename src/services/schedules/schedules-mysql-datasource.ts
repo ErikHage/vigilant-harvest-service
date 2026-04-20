@@ -6,7 +6,7 @@ import {
   ActivitySchedule,
   ActivityScheduleCreateRequest,
   ActivityScheduleItem,
-  ActivityScheduleItemCreateRequest,
+  ActivityScheduleItemCreateRequest, ActivityScheduleItemDeleteRequest,
   ActivityScheduleItemRow, ActivityScheduleItemUpdateRequest,
   ActivityScheduleRow, ActivityScheduleUpdateRequest
 } from './types';
@@ -106,6 +106,15 @@ async function updateScheduleItem(scheduleItem: ActivityScheduleItemUpdateReques
   return await getScheduleItemById(scheduleItem.entryId);
 }
 
+async function deleteScheduleItem(scheduleItem: ActivityScheduleItemDeleteRequest): Promise<void> {
+  const query: QueryPayload = {
+    sql: queries.scheduleItems.delete,
+    params: rowMapper.scheduleItems.delete.toParams(scheduleItem),
+  }
+
+  await db.execQuery(query);
+}
+
 export default {
   insertSchedule,
   listSchedules,
@@ -115,4 +124,5 @@ export default {
   insertScheduleItem,
   getScheduleItemById,
   updateScheduleItem,
+  deleteScheduleItem,
 }

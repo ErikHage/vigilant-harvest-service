@@ -1,37 +1,51 @@
 import {
   ActivitySchedule,
-  ActivityScheduleCreateRequest, ActivityScheduleItem,
-  ActivityScheduleItemCreateRequest, ActivityScheduleItemRow, ActivityScheduleItemUpdateRequest,
-  ActivityScheduleRow, ActivityScheduleUpdateRequest
+  ActivityScheduleCreateRequest,
+  ActivityScheduleItem,
+  ActivityScheduleItemCreateRequest,
+  ActivityScheduleItemDeleteRequest,
+  ActivityScheduleItemRow,
+  ActivityScheduleItemUpdateRequest,
+  ActivityScheduleRow,
+  ActivityScheduleUpdateRequest
 } from './types';
 import mysqlUtils from '../../database/mysql-utils';
 
 const scheduleItems = {
   insert: {
-    toParams: function(entryId: string, scheduleItem: ActivityScheduleItemCreateRequest): Array<string | number> {
+    toParams: function(entryId: string, createRequest: ActivityScheduleItemCreateRequest): Array<string | number> {
       return [
-        scheduleItem.activityScheduleId,
+        createRequest.activityScheduleId,
         entryId,
-        scheduleItem.activityType,
-        scheduleItem.subType,
-        scheduleItem.recurrenceRule,
-        mysqlUtils.dateToDbString(new Date(scheduleItem.startDate)),
-        mysqlUtils.dateToDbString(new Date(scheduleItem.endDate)),
-        scheduleItem.notes,
+        createRequest.activityType,
+        createRequest.subType,
+        createRequest.recurrenceRule,
+        mysqlUtils.dateToDbString(new Date(createRequest.startDate)),
+        mysqlUtils.dateToDbString(new Date(createRequest.endDate)),
+        createRequest.notes,
       ];
     },
   },
 
   update: {
-    toParams: function(scheduleItem: ActivityScheduleItemUpdateRequest): Array<string | number> {
+    toParams: function(updateRequest: ActivityScheduleItemUpdateRequest): Array<string | number> {
       return [
-        scheduleItem.activityType,
-        scheduleItem.subType,
-        scheduleItem.recurrenceRule,
-        mysqlUtils.dateToDbString(new Date(scheduleItem.startDate)),
-        mysqlUtils.dateToDbString(new Date(scheduleItem.endDate)),
-        scheduleItem.notes,
-        scheduleItem.entryId,
+        updateRequest.activityType,
+        updateRequest.subType,
+        updateRequest.recurrenceRule,
+        mysqlUtils.dateToDbString(new Date(updateRequest.startDate)),
+        mysqlUtils.dateToDbString(new Date(updateRequest.endDate)),
+        updateRequest.notes,
+        updateRequest.entryId,
+      ]
+    },
+  },
+
+  delete: {
+    toParams: function(deleteRequest: ActivityScheduleItemDeleteRequest): Array<string | number> {
+      return [
+        deleteRequest.activityScheduleId,
+        deleteRequest.entryId,
       ]
     },
   },

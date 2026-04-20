@@ -47,6 +47,12 @@ const scheduleItems = {
     '       end_date = ?, ' +
     '       notes = ? ' +
     ' WHERE entry_id = ?',
+
+  delete:
+    'DELETE ' +
+    '  FROM activity_schedule_items ' +
+    ' WHERE activity_schedule_id = ? ' +
+    '   AND entry_id = ?',
 };
 
 export default {

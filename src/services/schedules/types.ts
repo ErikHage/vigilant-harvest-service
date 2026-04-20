@@ -51,6 +51,11 @@ export interface ActivityScheduleItemUpdateRequest {
   notes: string,
 }
 
+export interface ActivityScheduleItemDeleteRequest {
+  activityScheduleId: string,
+  entryId: string,
+}
+
 export interface ActivityScheduleItem {
   activityScheduleId: string,
   entryId: string,

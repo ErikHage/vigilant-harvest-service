@@ -6,7 +6,10 @@ import {
   ActivitySchedule,
   ActivityScheduleCreateRequest,
   ActivityScheduleItem,
-  ActivityScheduleItemCreateRequest, ActivityScheduleItemUpdateRequest, ActivityScheduleUpdateRequest
+  ActivityScheduleItemCreateRequest,
+  ActivityScheduleItemDeleteRequest,
+  ActivityScheduleItemUpdateRequest,
+  ActivityScheduleUpdateRequest
 } from './types';
 
 async function createSchedule(scheduleRequest: ActivityScheduleCreateRequest): Promise<ActivitySchedule> {
@@ -64,6 +67,15 @@ async function updateScheduleItem(scheduleItemUpdateRequest: ActivityScheduleIte
   }
 }
 
+async function deleteScheduleItem(scheduleItemDeleteRequest: ActivityScheduleItemDeleteRequest): Promise<void> {
+  try {
+    await datasource.deleteScheduleItem(scheduleItemDeleteRequest);
+  } catch (err) {
+    throw new FeralError('Error deleting schedule item', ensureError(err))
+      .withDebugParams(scheduleItemDeleteRequest);
+  }
+}
+
 export default {
   createSchedule,
   listSchedules,
@@ -72,4 +84,5 @@ export default {
 
   addScheduleItem,
   updateScheduleItem,
+  deleteScheduleItem,
 }

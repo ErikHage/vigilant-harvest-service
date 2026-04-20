@@ -61,6 +61,14 @@ async function updateScheduleItem(request: Request, response: Response): Promise
     .send(scheduleItemResponse);
 }
 
+async function deleteScheduleItem(request: Request, response: Response): Promise<void> {
+  const deleteScheduleItemRequest = schedulesSerializer.scheduleItems.fromDeleteRequest(request);
+  await schedulesService.deleteScheduleItem(deleteScheduleItemRequest);
+
+  response
+    .sendStatus(httpStatus.NO_CONTENT);
+}
+
 export default {
   createSchedule: tryDecorator.decorate(createSchedule),
   listSchedules: tryDecorator.decorate(listSchedules),
@@ -69,4 +77,5 @@ export default {
 
   addScheduleItem: tryDecorator.decorate(addScheduleItem),
   updateScheduleItem: tryDecorator.decorate(updateScheduleItem),
+  deleteScheduleItem: tryDecorator.decorate(deleteScheduleItem),
 };

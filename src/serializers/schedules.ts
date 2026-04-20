@@ -1,9 +1,14 @@
 import { Request } from 'express';
 import {
   ActivitySchedule,
-  ActivityScheduleCreateRequest, ActivityScheduleItem,
-  ActivityScheduleItemCreateRequest, ActivityScheduleItemResponse, ActivityScheduleItemUpdateRequest,
-  ActivityScheduleResponse, ActivityScheduleUpdateRequest
+  ActivityScheduleCreateRequest,
+  ActivityScheduleItem,
+  ActivityScheduleItemCreateRequest,
+  ActivityScheduleItemDeleteRequest,
+  ActivityScheduleItemResponse,
+  ActivityScheduleItemUpdateRequest,
+  ActivityScheduleResponse,
+  ActivityScheduleUpdateRequest
 } from '../services/schedules/types';
 
 const scheduleItems = {
@@ -28,6 +33,13 @@ const scheduleItems = {
       startDate: req.body.startDate,
       endDate: req.body.endDate,
       notes: req.body.notes,
+    };
+  },
+
+  fromDeleteRequest: function(req: Request): ActivityScheduleItemDeleteRequest {
+    return {
+      activityScheduleId: req.params.activityScheduleId!,
+      entryId: req.params.entryId!,
     };
   },
 
