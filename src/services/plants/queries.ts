@@ -76,6 +76,15 @@ const getById: string =
   '    ON c.category_id = s.category_id' +
   ' WHERE plant_id = ?';
 
+const getByFriendlyName: string =
+  `SELECT ${allPlantFields} ` +
+  '  FROM plants p' +
+  '  JOIN plant_subcategories s' +
+  '    ON s.subcategory_id = p.subcategory_id ' +
+  '  JOIN plant_categories c' +
+  '    ON c.category_id = s.category_id' +
+  ' WHERE friendly_name = ?';
+
 const getAll: string =
   `SELECT ${allPlantFields} ` +
   '  FROM plants p' +
@@ -103,6 +112,7 @@ const categories = {
 export default {
   upsertPlant,
   getById,
+  getByFriendlyName,
   getAll,
   deleteById,
 

@@ -4,6 +4,7 @@ import plantSerializers from '../serializers/plants';
 import plantsService from '../services/plants/plants-service';
 import tryDecorator from '../middleware/try-decorator';
 import httpStatus from '../util/http-status';
+import { ValidationError } from '../errors/common';
 
 async function upsertPlant(request: Request, response: Response) {
   // TODO move to a separate validator step
@@ -16,12 +17,20 @@ async function upsertPlant(request: Request, response: Response) {
   } else {
     const plantRequest = plantSerializers.fromRequest(request);
 
-    const planting = await plantsService.upsertPlant(plantRequest);
-    const plantResponse = plantSerializers.toResponse(planting);
-
-    response
-      .status(plantRequest.plantId === undefined ? httpStatus.CREATED : httpStatus.OK)
-      .send(plantResponse);
+    try {
+      const planting = await plantsService.upsertPlant(plantRequest);
+      const plantResponse = plantSerializers.toResponse(planting);
+      response
+        .status(plantRequest.plantId === undefined ? httpStatus.CREATED : httpStatus.OK)
+        .send(plantResponse);
+    } catch (err) {
+      if (err instanceof ValidationError) {
+        response.status(httpStatus.BAD_REQUEST)
+          .send({ message: err.message, });
+      } else {
+        throw err;
+      }
+    }
   }
 }
 

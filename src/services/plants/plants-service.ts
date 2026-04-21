@@ -11,8 +11,15 @@ import {
 
 import datasource from '../plants/plants-mysql-datasource';
 import { ensureError, FeralError } from '../../errors';
+import { ValidationError } from '../../errors/common';
 
 async function upsertPlant(plantRequest: PlantRequest): Promise<Plant> {
+  const existingPlant: Plant | undefined = await datasource.getPlantByFriendlyName(plantRequest.friendlyName);
+
+  if (existingPlant) {
+    throw new ValidationError('Friendly Name already in use').withDebugParams({ friendlyName: plantRequest.friendlyName, });
+  }
+
   try {
     const plant: PlantUpsertInstruction = {
       plantId: plantRequest.plantId || uuidV4(),

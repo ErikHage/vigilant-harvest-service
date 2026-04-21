@@ -39,6 +39,21 @@ async function getPlantById(plantId: string): Promise<Plant> {
   return rowMapper.fromRow(results[0]!);
 }
 
+async function getPlantByFriendlyName(friendlyName: string): Promise<Plant | undefined> {
+  const query = {
+    sql: queries.getByFriendlyName,
+    params: [ friendlyName, ],
+  };
+
+  const results = await db.execQuery<PlantRow[]>(query);
+
+  if (results.length < 1) {
+    return undefined;
+  }
+
+  return rowMapper.fromRow(results[0]!);
+}
+
 async function getPlants(): Promise<Plant[]> {
   const query = {
     sql: queries.getAll,
@@ -110,6 +125,7 @@ async function getCategories(): Promise<PlantCategory[]> {
 export default {
   upsertPlant,
   getPlantById,
+  getPlantByFriendlyName,
   getPlants,
   deletePlantById,
 
