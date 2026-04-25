@@ -9,7 +9,6 @@ import {
   ActivityScheduleRow,
   ActivityScheduleUpdateRequest
 } from './types';
-import mysqlUtils from '../../database/mysql-utils';
 
 const scheduleItems = {
   insert: {
@@ -20,8 +19,10 @@ const scheduleItems = {
         createRequest.activityType,
         createRequest.subType,
         createRequest.recurrenceRule,
-        mysqlUtils.dateToDbString(new Date(createRequest.startDate)),
-        mysqlUtils.dateToDbString(new Date(createRequest.endDate)),
+        createRequest.startDate,
+        createRequest.startDateYearOffset,
+        createRequest.endDate,
+        createRequest.endDateYearOffset,
         createRequest.notes,
       ];
     },
@@ -33,11 +34,13 @@ const scheduleItems = {
         updateRequest.activityType,
         updateRequest.subType,
         updateRequest.recurrenceRule,
-        mysqlUtils.dateToDbString(new Date(updateRequest.startDate)),
-        mysqlUtils.dateToDbString(new Date(updateRequest.endDate)),
+        updateRequest.startDate,
+        updateRequest.startDateYearOffset,
+        updateRequest.endDate,
+        updateRequest.endDateYearOffset,
         updateRequest.notes,
         updateRequest.entryId,
-      ]
+      ];
     },
   },
 
@@ -57,8 +60,10 @@ const scheduleItems = {
       activityType: row.activity_type,
       subType: row.sub_type,
       recurrenceRule: row.recurrence_rule,
-      startDate: mysqlUtils.dbDateStringToJsDate(row.start_date),
-      endDate: mysqlUtils.dbDateStringToJsDate(row.end_date),
+      startDate: row.start_date,
+      startDateYearOffset: row.start_date_year_offset,
+      endDate: row.end_date,
+      endDateYearOffset: row.end_date_year_offset,
       notes: row.notes,
     };
   },

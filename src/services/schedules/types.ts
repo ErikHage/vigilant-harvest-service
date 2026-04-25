@@ -37,7 +37,9 @@ export interface ActivityScheduleItemCreateRequest {
   subType: string,
   recurrenceRule: string,
   startDate: string,
+  startDateYearOffset: number,
   endDate: string,
+  endDateYearOffset: number,
   notes: string,
 }
 
@@ -47,7 +49,9 @@ export interface ActivityScheduleItemUpdateRequest {
   subType: string,
   recurrenceRule: string,
   startDate: string,
+  startDateYearOffset: number,
   endDate: string,
+  endDateYearOffset: number,
   notes: string,
 }
 
@@ -62,8 +66,10 @@ export interface ActivityScheduleItem {
   activityType: string,
   subType: string,
   recurrenceRule: string,
-  startDate: Date,
-  endDate: Date,
+  startDate: string,
+  startDateYearOffset: number,
+  endDate: string,
+  endDateYearOffset: number,
   notes: string,
 }
 
@@ -74,7 +80,9 @@ export interface ActivityScheduleItemResponse {
   subType: string,
   recurrenceRule: string,
   startDate: string,
+  startDateYearOffset: number,
   endDate: string,
+  endDateYearOffset: number,
   notes: string,
 }
 
@@ -87,6 +95,8 @@ export interface ActivityScheduleItemRow extends RowDataPacket {
   sub_type: string,
   recurrence_rule: string,
   start_date: string,
+  start_date_year_offset: number,
   end_date: string,
+  end_date_year_offset: number,
   notes: string,
 }

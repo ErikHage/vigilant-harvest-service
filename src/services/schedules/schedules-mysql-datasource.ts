@@ -6,9 +6,12 @@ import {
   ActivitySchedule,
   ActivityScheduleCreateRequest,
   ActivityScheduleItem,
-  ActivityScheduleItemCreateRequest, ActivityScheduleItemDeleteRequest,
-  ActivityScheduleItemRow, ActivityScheduleItemUpdateRequest,
-  ActivityScheduleRow, ActivityScheduleUpdateRequest
+  ActivityScheduleItemCreateRequest,
+  ActivityScheduleItemDeleteRequest,
+  ActivityScheduleItemRow,
+  ActivityScheduleItemUpdateRequest,
+  ActivityScheduleRow,
+  ActivityScheduleUpdateRequest
 } from './types';
 
 async function insertSchedule(activityScheduleId: string, schedule: ActivityScheduleCreateRequest): Promise<ActivitySchedule> {

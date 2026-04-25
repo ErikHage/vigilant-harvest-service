@@ -19,7 +19,9 @@ const scheduleItems = {
       subType: req.body.subType,
       recurrenceRule: req.body.recurrenceRule,
       startDate: req.body.startDate,
+      startDateYearOffset: req.body.startDateYearOffset,
       endDate: req.body.endDate,
+      endDateYearOffset: req.body.endDateYearOffset,
       notes: req.body.notes,
     };
   },
@@ -31,7 +33,9 @@ const scheduleItems = {
       subType: req.body.subType,
       recurrenceRule: req.body.recurrenceRule,
       startDate: req.body.startDate,
+      startDateYearOffset: req.body.startDateYearOffset,
       endDate: req.body.endDate,
+      endDateYearOffset: req.body.endDateYearOffset,
       notes: req.body.notes,
     };
   },
@@ -50,8 +54,10 @@ const scheduleItems = {
       activityType: scheduleItem.activityType,
       subType: scheduleItem.subType,
       recurrenceRule: scheduleItem.recurrenceRule,
-      startDate: scheduleItem.startDate.toISOString(),
-      endDate: scheduleItem.endDate.toISOString(),
+      startDate: scheduleItem.startDate,
+      startDateYearOffset: scheduleItem.startDateYearOffset,
+      endDate: scheduleItem.endDate,
+      endDateYearOffset: scheduleItem.endDateYearOffset,
       notes: scheduleItem.notes,
     };
   },
