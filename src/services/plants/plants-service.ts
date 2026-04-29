@@ -17,7 +17,7 @@ async function upsertPlant(plantRequest: PlantRequest): Promise<Plant> {
   const existingPlant: Plant | undefined = await datasource.getPlantByFriendlyName(plantRequest.friendlyName);
 
   if (existingPlant) {
-    throw new ValidationError('Friendly Name already in use').withDebugParams({ friendlyName: plantRequest.friendlyName, });
+    throw new ValidationError('Friendly name already in use').withDebugParams({ friendlyName: plantRequest.friendlyName, });
   }
 
   try {

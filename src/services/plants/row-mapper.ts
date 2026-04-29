@@ -1,7 +1,9 @@
-import { CategorySubcategoryRow, Plant, PlantRow, PlantUpsertInstruction } from './types';
 import mysqlUtils from '../../database/mysql-utils';
+import { CategorySubcategoryRow, Plant, PlantRow, PlantUpsertInstruction } from './types';
+import { ActivityScheduleRow } from '../schedules/types';
+import scheduleMappers from '../schedules/row-mapper';
 
-function fromRow(row: PlantRow): Plant {
+function fromRow(row: PlantRow, activityScheduleRows: ActivityScheduleRow[]): Plant {
   return {
     plantId: row.plant_id,
     category: row.category_name,
@@ -12,6 +14,7 @@ function fromRow(row: PlantRow): Plant {
     description: row.plant_description,
     friendlyName: row.friendly_name,
     lifespanType: row.lifespan_type,
+    activitySchedules: activityScheduleRows.map(scheduleMappers.schedules.list.fromRow),
     dateCreated: row.date_created,
     dateModified: row.date_modified,
     taxonomy: {

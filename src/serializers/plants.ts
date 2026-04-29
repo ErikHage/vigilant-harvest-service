@@ -7,6 +7,7 @@ import {
   PlantRequest,
   PlantResponse, PlantSubcategory, PlantSubcategoryRequest, PlantSubcategoryResponse
 } from '../services/plants/types';
+import scheduleSerializer from './schedules';
 
 function capitalizeFirstLetter(str: string): string {
   if (!str) {
@@ -68,6 +69,7 @@ function toResponse(plant: Plant): PlantResponse {
     lifespanType: capitalizeFirstLetter(plant.lifespanType),
     tags: plant.tags,
     description: plant.description,
+    activitySchedules: plant.activitySchedules.map(scheduleSerializer.schedules.toResponse),
     taxonomy: plant.taxonomy,
     sowing: plant.sowing,
     planting: plant.planting,

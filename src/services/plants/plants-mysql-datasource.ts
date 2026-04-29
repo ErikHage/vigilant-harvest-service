@@ -12,6 +12,7 @@ import queries from './queries';
 import db, { RowNotFoundError } from '../../database'
 import rowMapper from './row-mapper';
 import { ResultSetHeader } from 'mysql2';
+import { ActivityScheduleRow } from '../schedules/types';
 
 async function upsertPlant(plant: PlantUpsertInstruction): Promise<Plant> {
   const query: QueryPayload = {
@@ -22,6 +23,15 @@ async function upsertPlant(plant: PlantUpsertInstruction): Promise<Plant> {
   await db.execQuery(query);
 
   return getPlantById(plant.plantId!);
+}
+
+async function getPlantSchedules(plantId: string): Promise<ActivityScheduleRow[]> {
+  const query = {
+    sql: queries.getSchedulesByPlantId,
+    params: [ plantId, ],
+  };
+
+  return await db.execQuery<ActivityScheduleRow[]>(query);
 }
 
 async function getPlantById(plantId: string): Promise<Plant> {
@@ -36,7 +46,9 @@ async function getPlantById(plantId: string): Promise<Plant> {
     throw new RowNotFoundError('Plant not found', { plantId, })
   }
 
-  return rowMapper.fromRow(results[0]!);
+  const scheduleResults = await getPlantSchedules(plantId);
+
+  return rowMapper.fromRow(results[0]!, scheduleResults);
 }
 
 async function getPlantByFriendlyName(friendlyName: string): Promise<Plant | undefined> {
@@ -51,7 +63,9 @@ async function getPlantByFriendlyName(friendlyName: string): Promise<Plant | und
     return undefined;
   }
 
-  return rowMapper.fromRow(results[0]!);
+  const scheduleResults = await getPlantSchedules(results[0]!.plantId);
+
+  return rowMapper.fromRow(results[0]!, scheduleResults);
 }
 
 async function getPlants(): Promise<Plant[]> {
@@ -62,7 +76,7 @@ async function getPlants(): Promise<Plant[]> {
 
   const results = await db.execQuery<PlantRow[]>(query);
 
-  return results.map(rowMapper.fromRow);
+  return results.map(r => rowMapper.fromRow(r, []));
 }
 
 async function deletePlantById(plantId: string): Promise<void> {

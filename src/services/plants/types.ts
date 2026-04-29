@@ -1,4 +1,5 @@
 import { RowDataPacket } from 'mysql2';
+import { ActivitySchedule, ActivityScheduleResponse } from '../schedules/types';
 
 interface Taxonomy {
   family: string,
@@ -60,6 +61,7 @@ export interface PlantResponse {
   lifespanType: string,
   tags: Array<string>,
   description: string,
+  activitySchedules: ActivityScheduleResponse[],
   taxonomy: Taxonomy,
   sowing: SowingInfo,
   planting: PlantingInfo,
@@ -112,6 +114,7 @@ export interface Plant {
   lifespanType: string,
   tags: Array<string>,
   description: string,
+  activitySchedules: ActivitySchedule[],
   taxonomy: Taxonomy,
   sowing: SowingInfo,
   planting: PlantingInfo,

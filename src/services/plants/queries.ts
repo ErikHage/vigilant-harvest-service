@@ -93,6 +93,13 @@ const getAll: string =
   '  JOIN plant_categories c' +
   '    ON c.category_id = s.category_id';
 
+const getSchedulesByPlantId: string =
+  'SELECT s.activity_schedule_id, s.name, s.description ' +
+  '  FROM plants_activity_schedules ps ' +
+  '  JOIN activity_schedules s ' +
+  '    ON ps.activity_schedule_id = s.activity_schedule_id ' +
+  ' WHERE ps.plant_id = ?';
+
 const deleteById: string = 'DELETE FROM plants WHERE plant_id = ?';
 
 const categories = {
@@ -111,9 +118,12 @@ const categories = {
 
 export default {
   upsertPlant,
+
   getById,
   getByFriendlyName,
   getAll,
+  getSchedulesByPlantId,
+
   deleteById,
 
   categories,
