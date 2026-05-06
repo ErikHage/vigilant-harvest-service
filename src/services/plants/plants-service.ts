@@ -16,7 +16,7 @@ import { ValidationError } from '../../errors/common';
 async function upsertPlant(plantRequest: PlantRequest): Promise<Plant> {
   const existingPlant: Plant | undefined = await datasource.getPlantByFriendlyName(plantRequest.friendlyName);
 
-  if (existingPlant) {
+  if (!plantRequest.plantId && existingPlant) {
     throw new ValidationError('Friendly name already in use').withDebugParams({ friendlyName: plantRequest.friendlyName, });
   }
 
