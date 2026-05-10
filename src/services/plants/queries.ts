@@ -67,6 +67,15 @@ const upsertPlant: string = `
          harvest_instructions =   VALUES(harvest_instructions)
 `;
 
+const assignSchedule =
+  'INSERT INTO plants_activity_schedules (plant_id, activity_schedule_id) ' +
+  'VALUES (?, ?)';
+
+const unassignSchedule =
+  'DELETE FROM plants_activity_schedules ' +
+  ' WHERE plant_id = ? ' +
+  '   AND activity_schedule_id = ?';
+
 const getById: string =
   `SELECT ${allPlantFields} ` +
   '  FROM plants p' +
@@ -118,6 +127,8 @@ const categories = {
 
 export default {
   upsertPlant,
+  assignSchedule,
+  unassignSchedule,
 
   getById,
   getByFriendlyName,

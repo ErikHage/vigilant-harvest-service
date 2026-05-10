@@ -3,7 +3,10 @@ import {
   Plant,
   PlantCategory,
   PlantCategoryRequest,
-  PlantRow, PlantSubcategory, PlantSubcategoryRequest,
+  PlantRow,
+  PlantScheduleAssignmentRequest,
+  PlantSubcategory,
+  PlantSubcategoryRequest,
   PlantUpsertInstruction
 } from './types';
 import { QueryPayload } from '../../database/types';
@@ -23,6 +26,24 @@ async function upsertPlant(plant: PlantUpsertInstruction): Promise<Plant> {
   await db.execQuery(query);
 
   return getPlantById(plant.plantId!);
+}
+
+async function updateScheduleAssignment(scheduleAssignmentRequest: PlantScheduleAssignmentRequest): Promise<Plant> {
+  const assignQueries: QueryPayload[] = scheduleAssignmentRequest.assign.map(activityScheduleId => ({
+    sql: queries.assignSchedule,
+    params: [ scheduleAssignmentRequest.plantId, activityScheduleId, ],
+  }));
+  const unassignQueries: QueryPayload[] = scheduleAssignmentRequest.unassign.map(activityScheduleId => ({
+    sql: queries.unassignSchedule,
+    params: [ scheduleAssignmentRequest.plantId, activityScheduleId, ],
+  }));
+
+  await db.execTransactionQuery([
+    ...assignQueries,
+    ...unassignQueries,
+  ]);
+
+  return await getPlantById(scheduleAssignmentRequest.plantId);
 }
 
 async function getPlantSchedules(plantId: string): Promise<ActivityScheduleRow[]> {
@@ -138,6 +159,7 @@ async function getCategories(): Promise<PlantCategory[]> {
 
 export default {
   upsertPlant,
+  updateScheduleAssignment,
   getPlantById,
   getPlantByFriendlyName,
   getPlants,

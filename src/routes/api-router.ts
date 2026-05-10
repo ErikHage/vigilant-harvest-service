@@ -42,6 +42,7 @@ const buildRouter = (): Express => {
   apiRouter.get('/planning/:plantingYear', planningHandlers.getPlanningDetailsByYear);
 
   apiRouter.put('/plants', plantHandlers.upsertPlant);
+  apiRouter.put('/plants/:plantId/activity-schedules', plantHandlers.updateScheduleAssignment);
   apiRouter.get('/plants/:plantId', plantHandlers.getPlantById);
   apiRouter.get('/plants', plantHandlers.getPlants);
   apiRouter.delete('/plants/:plantId', plantHandlers.deletePlantById);

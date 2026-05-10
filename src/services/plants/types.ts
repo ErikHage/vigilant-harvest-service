@@ -51,6 +51,12 @@ export interface PlantRequest {
   harvesting: HarvestingInfo,
 }
 
+export interface PlantScheduleAssignmentRequest {
+  plantId: string,
+  assign: string[], // activityScheduleId
+  unassign: string[], // activityScheduleId
+}
+
 export interface PlantResponse {
   plantId: string,
   category: string,

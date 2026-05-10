@@ -18,8 +18,8 @@ async function upsertPlant(request: Request, response: Response) {
     const plantRequest = plantSerializers.fromRequest(request);
 
     try {
-      const planting = await plantsService.upsertPlant(plantRequest);
-      const plantResponse = plantSerializers.toResponse(planting);
+      const plant = await plantsService.upsertPlant(plantRequest);
+      const plantResponse = plantSerializers.toResponse(plant);
       response
         .status(plantRequest.plantId === undefined ? httpStatus.CREATED : httpStatus.OK)
         .send(plantResponse);
@@ -32,6 +32,16 @@ async function upsertPlant(request: Request, response: Response) {
       }
     }
   }
+}
+
+async function updateScheduleAssignment(request: Request, response: Response) {
+  const scheduleAssignmentRequest = plantSerializers.fromScheduleAssignmentRequest(request);
+  const plant = await plantsService.updateScheduleAssignment(scheduleAssignmentRequest);
+  const plantResponse = plantSerializers.toResponse(plant);
+
+  response
+    .status(httpStatus.OK)
+    .send(plantResponse);
 }
 
 async function getPlantById(request: Request, response: Response) {
@@ -97,6 +107,7 @@ async function insertSubcategory(request: Request, response: Response) {
 
 export default {
   upsertPlant: tryDecorator.decorate(upsertPlant),
+  updateScheduleAssignment: tryDecorator.decorate(updateScheduleAssignment),
   getPlantById: tryDecorator.decorate(getPlantById),
   getPlants: tryDecorator.decorate(getPlants),
   deletePlantById: tryDecorator.decorate(deletePlantById),

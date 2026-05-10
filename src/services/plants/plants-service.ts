@@ -4,7 +4,7 @@ import {
   Plant,
   PlantCategory,
   PlantCategoryRequest,
-  PlantRequest, PlantSubcategory,
+  PlantRequest, PlantScheduleAssignmentRequest, PlantSubcategory,
   PlantSubcategoryRequest,
   PlantUpsertInstruction
 } from './types';
@@ -39,6 +39,15 @@ async function upsertPlant(plantRequest: PlantRequest): Promise<Plant> {
   } catch (err) {
     throw new FeralError('Error upserting plant', ensureError(err))
       .withDebugParams(plantRequest);
+  }
+}
+
+async function updateScheduleAssignment(scheduleAssignmentRequest: PlantScheduleAssignmentRequest): Promise<Plant> {
+  try {
+    return await datasource.updateScheduleAssignment(scheduleAssignmentRequest);
+  } catch (err) {
+    throw new FeralError('Error updating plant schedule assignment', ensureError(err))
+      .withDebugParams({ scheduleAssignmentRequest, });
   }
 }
 
@@ -94,6 +103,7 @@ async function getCategories(): Promise<PlantCategory[]> {
 
 export default {
   upsertPlant,
+  updateScheduleAssignment,
   getPlantById,
   getPlants,
   deletePlantById,

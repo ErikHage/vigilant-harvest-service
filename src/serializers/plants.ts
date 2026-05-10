@@ -5,7 +5,7 @@ import {
   PlantCategory, PlantCategoryRequest,
   PlantCategoryResponse,
   PlantRequest,
-  PlantResponse, PlantSubcategory, PlantSubcategoryRequest, PlantSubcategoryResponse
+  PlantResponse, PlantScheduleAssignmentRequest, PlantSubcategory, PlantSubcategoryRequest, PlantSubcategoryResponse
 } from '../services/plants/types';
 import scheduleSerializer from './schedules';
 
@@ -55,6 +55,14 @@ function fromRequest(req: Request): PlantRequest {
       shelfStability: req.body.harvesting?.shelfStability,
       harvestInstructions: req.body.harvesting?.harvestInstructions,
     },
+  };
+}
+
+function fromScheduleAssignmentRequest(req: Request): PlantScheduleAssignmentRequest {
+  return {
+    plantId: req.params.plantId!,
+    assign: req.body.assign,
+    unassign: req.body.unassign,
   };
 }
 
@@ -117,6 +125,8 @@ const categories = {
 
 export default {
   fromRequest,
+  fromScheduleAssignmentRequest,
+
   toResponse,
 
   categories,
