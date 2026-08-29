@@ -26,6 +26,8 @@ p.is_climbing,
 p.climbing_height_feet,
 p.plant_size,
 p.growing_notes,
+p.default_harvest_type_id,
+ht.harvest_type_name AS default_harvest_type_name,
 p.fruit_size,
 p.shelf_stability,
 p.harvest_instructions,
@@ -36,8 +38,8 @@ const upsertPlant: string = `
   INSERT into plants (plant_id, subcategory_id, tags, plant_description, friendly_name, lifespan_type, family, genus, species,
   indoor_sowing, direct_sowing, germination_days_range, germination_temp_range, sowing_notes, planting_depth_inches,
   plant_spacing_inches, row_spacing_inches, planting_instructions, required_sun, days_to_maturity, is_climbing,
-  climbing_height_feet, plant_size, growing_notes, fruit_size, shelf_stability, harvest_instructions)
-  VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+  climbing_height_feet, plant_size, growing_notes, default_harvest_type_id, fruit_size, shelf_stability, harvest_instructions)
+  VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
   ON DUPLICATE KEY
   UPDATE subcategory_id =         VALUES(subcategory_id),
          tags =                   VALUES(tags),
@@ -61,6 +63,7 @@ const upsertPlant: string = `
          is_climbing =            VALUES(is_climbing),
          climbing_height_feet =   VALUES(climbing_height_feet),
          plant_size =             VALUES(plant_size),
+         default_harvest_type_id = VALUES(default_harvest_type_id),
          fruit_size =             VALUES(fruit_size),
          growing_notes =          VALUES(growing_notes),
          shelf_stability =        VALUES(shelf_stability),
@@ -83,6 +86,8 @@ const getById: string =
   '    ON s.subcategory_id = p.subcategory_id ' +
   '  JOIN plant_categories c' +
   '    ON c.category_id = s.category_id' +
+  '  JOIN harvest_types ht' +
+  '    ON ht.harvest_type_id = p.default_harvest_type_id' +
   ' WHERE plant_id = ?';
 
 const getByFriendlyName: string =
@@ -92,6 +97,8 @@ const getByFriendlyName: string =
   '    ON s.subcategory_id = p.subcategory_id ' +
   '  JOIN plant_categories c' +
   '    ON c.category_id = s.category_id' +
+  '  JOIN harvest_types ht' +
+  '    ON ht.harvest_type_id = p.default_harvest_type_id' +
   ' WHERE friendly_name = ?';
 
 const getAll: string =
@@ -100,7 +107,9 @@ const getAll: string =
   '  JOIN plant_subcategories s' +
   '    ON s.subcategory_id = p.subcategory_id ' +
   '  JOIN plant_categories c' +
-  '    ON c.category_id = s.category_id';
+  '    ON c.category_id = s.category_id' +
+  '  JOIN harvest_types ht' +
+  '    ON ht.harvest_type_id = p.default_harvest_type_id';
 
 const getSchedulesByPlantId: string =
   'SELECT s.activity_schedule_id, s.name, s.description ' +

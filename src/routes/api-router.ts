@@ -7,6 +7,7 @@ import plantingYearHandlers from '../handlers/planting-year-handlers';
 import plantHandlers from '../handlers/plant-handlers';
 import planningHandlers from '../handlers/planning-handlers';
 import harvestHandlers from '../handlers/harvest-handlers';
+import harvestTypeHandlers from '../handlers/harvest-type-handlers';
 import journalHandlers from '../handlers/journal-handlers';
 import scheduleHandlers from '../handlers/schedule-handlers';
 import activityLogHandlers from '../handlers/activity-log-handlers';
@@ -50,6 +51,8 @@ const buildRouter = (): Express => {
   apiRouter.post('/plant-categories', plantHandlers.insertCategory);
   apiRouter.get('/plant-categories', plantHandlers.getCategories);
   apiRouter.post('/plant-categories/:categoryId/plant-subcategories', plantHandlers.insertSubcategory);
+
+  apiRouter.get('/harvest-types', harvestTypeHandlers.getHarvestTypes);
 
   apiRouter.put('/harvests', harvestHandlers.upsertHarvests);
   apiRouter.get('/harvests/summary', harvestHandlers.getHarvestSummary);

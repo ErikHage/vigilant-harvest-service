@@ -32,6 +32,8 @@ interface GrowingInfo {
 }
 
 interface HarvestingInfo {
+  defaultHarvestTypeId: number, // int
+  defaultHarvestType?: string, // the name, joined from harvest_types on read only
   fruitSize?: string,
   shelfStability?: string,
   harvestInstructions?: string,
@@ -103,6 +105,8 @@ export interface PlantRow extends RowDataPacket {
   climbing_height_feet: number,
   plant_size: string,
   growing_notes: string,
+  default_harvest_type_id: number, // int
+  default_harvest_type_name: string,
   fruit_size: string,
   shelf_stability: string,
   harvest_instructions: string,

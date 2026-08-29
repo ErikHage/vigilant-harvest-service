@@ -1,10 +1,11 @@
 import {
+  DefaultHarvestTypeRow,
   Harvest,
   HarvestRow,
   HarvestSearchRequest,
   HarvestSummary,
   HarvestSummaryRequest,
-  HarvestSummaryRow, HydratedHarvest, HydratedHarvestRow
+  HarvestSummaryRow, HarvestUpsertInstruction, HydratedHarvest, HydratedHarvestRow
 } from './types';
 import { QueryPayload } from '../../database/types';
 
@@ -12,7 +13,7 @@ import queries from './queries';
 import db from '../../database'
 import rowMapper from './row-mapper';
 
-async function upsertHarvests(harvests: Harvest[]): Promise<Harvest[]> {
+async function upsertHarvests(harvests: HarvestUpsertInstruction[]): Promise<Harvest[]> {
   const queriesToRun: QueryPayload[] = [];
 
   harvests.forEach(harvest => {
@@ -24,13 +25,51 @@ async function upsertHarvests(harvests: Harvest[]): Promise<Harvest[]> {
 
   await db.execTransactionQuery(queriesToRun);
 
-  return harvests;
+  // re-read rather than echoing the input: the upsert preserves an existing row's harvest_type_id,
+  // so the stored type is the authoritative one, and only the DB has the type name
+  const writtenHarvests = await Promise.all(harvests.map(harvest => getHarvestById(harvest.harvestId)));
+
+  return writtenHarvests.filter((harvest): harvest is Harvest => harvest !== null);
 }
 
-async function getHarvestByPlantingIdAndDate(plantingId: string, harvestDate: Date): Promise<Harvest | null> {
+async function getHarvestById(harvestId: string): Promise<Harvest | null> {
   const query = {
-    sql: queries.getHarvestByPlantingIdAndDate,
-    params: rowMapper.getByPlantingIdAndDate.toParams(plantingId, harvestDate),
+    sql: queries.getHarvestById,
+    params: [ harvestId, ],
+  };
+
+  const results = await db.execQuery<HarvestRow[]>(query);
+
+  if (results.length === 0) {
+    return null;
+  }
+
+  return rowMapper.fromRow(results[0]!);
+}
+
+async function getDefaultHarvestTypeIdByPlantingId(plantingId: string): Promise<number | null> {
+  const query = {
+    sql: queries.getDefaultHarvestTypeIdByPlantingId,
+    params: [ plantingId, ],
+  };
+
+  const results = await db.execQuery<DefaultHarvestTypeRow[]>(query);
+
+  if (results.length === 0) {
+    return null;
+  }
+
+  return results[0]!.default_harvest_type_id;
+}
+
+async function getHarvestByPlantingIdDateAndType(
+  plantingId: string,
+  harvestDate: Date,
+  harvestTypeId: number
+): Promise<Harvest | null> {
+  const query = {
+    sql: queries.getHarvestByPlantingIdDateAndType,
+    params: rowMapper.getByPlantingIdDateAndType.toParams(plantingId, harvestDate, harvestTypeId),
   };
 
   const results = await db.execQuery<HarvestRow[]>(query);
@@ -86,7 +125,9 @@ async function deleteHarvestById(harvestId: string): Promise<void> {
 
 export default {
   upsertHarvests,
-  getHarvestByPlantingIdAndDate,
+  getHarvestById,
+  getDefaultHarvestTypeIdByPlantingId,
+  getHarvestByPlantingIdDateAndType,
   getHarvestSummary,
   deleteHarvestById,
   searchHarvests,

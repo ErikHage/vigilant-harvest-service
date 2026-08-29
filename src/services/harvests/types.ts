@@ -13,6 +13,8 @@ export interface HarvestResponse {
   plantingId: string,
   quantity: number, //int
   harvestDate: Date,
+  harvestTypeId: number, //int
+  harvestType: string,
 }
 
 export interface Harvest {
@@ -20,6 +22,17 @@ export interface Harvest {
   plantingId: string,
   quantity: number, //int
   harvestDate: Date,
+  harvestTypeId: number, //int
+  harvestType: string,
+}
+
+// what the write path needs: the harvest type name is resolved by re-reading after the upsert
+export interface HarvestUpsertInstruction {
+  harvestId: string,
+  plantingId: string,
+  quantity: number, //int
+  harvestDate: Date,
+  harvestTypeId: number, //int
 }
 
 export interface HarvestRow extends RowDataPacket {
@@ -27,6 +40,8 @@ export interface HarvestRow extends RowDataPacket {
   planting_id: string,
   quantity: number, //int
   date_created: string,
+  harvest_type_id: number, //int
+  harvest_type_name: string,
 }
 
 export interface HydratedHarvest {
@@ -38,6 +53,8 @@ export interface HydratedHarvest {
   plotName: string,
   quantity: number, //int
   harvestDate: Date,
+  harvestTypeId: number, //int
+  harvestType: string,
 }
 
 export interface HydratedHarvestRow extends RowDataPacket {
@@ -49,6 +66,12 @@ export interface HydratedHarvestRow extends RowDataPacket {
   plot_name: string,
   quantity: number, //int
   date_created: string,
+  harvest_type_id: number, //int
+  harvest_type_name: string,
+}
+
+export interface DefaultHarvestTypeRow extends RowDataPacket {
+  default_harvest_type_id: number, //int
 }
 
 export interface HarvestSummaryRequest {
@@ -62,18 +85,24 @@ export interface HarvestSummary {
   plantingYear: number, //int
   plantingId: string,
   quantity: number, //int
+  harvestTypeId: number, //int
+  harvestType: string,
 }
 
 export interface HarvestSummaryRow extends RowDataPacket {
   planting_year: number, //int
   planting_id: string,
   quantity: string, //int, but SUM returns a decimal, which mysql2 represents as a string
+  harvest_type_id: number, //int
+  harvest_type_name: string,
 }
 
 export interface HarvestSummaryResponse {
   plantingYear: number, //int
   plantingId: string,
   quantity: number, //int
+  harvestTypeId: number, //int
+  harvestType: string,
 }
 
 export interface HarvestSearchRequest {
@@ -109,6 +138,8 @@ export interface ItemStats {
   plantId: string,
   plantName: string,
   plotName?: string,
+  harvestTypeId: number, // int
+  harvestType: string,
   totalQuantity: number, // int
   averageHarvestPerDay: number // int
   firstHarvest: Date | null,

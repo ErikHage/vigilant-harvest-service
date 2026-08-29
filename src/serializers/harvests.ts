@@ -35,6 +35,8 @@ const insert = {
     plantingId: harvest.plantingId,
     quantity: harvest.quantity,
     harvestDate: harvest.harvestDate,
+    harvestTypeId: harvest.harvestTypeId,
+    harvestType: harvest.harvestType,
   }),
 };
 
@@ -53,6 +55,8 @@ const summary = {
     plantingYear: harvest.plantingYear,
     plantingId: harvest.plantingId,
     quantity: harvest.quantity,
+    harvestTypeId: harvest.harvestTypeId,
+    harvestType: harvest.harvestType,
   }),
 };
 
@@ -69,6 +73,8 @@ const search = {
       plantingId: harvest.plantingId,
       quantity: harvest.quantity,
       harvestDate: harvest.harvestDate,
+      harvestTypeId: harvest.harvestTypeId,
+      harvestType: harvest.harvestType,
     };
   },
 };

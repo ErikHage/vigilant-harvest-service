@@ -4,7 +4,7 @@ import {
   HarvestSearchRequest,
   HarvestSummary,
   HarvestSummaryRequest,
-  HarvestSummaryRow, HydratedHarvest, HydratedHarvestRow
+  HarvestSummaryRow, HarvestUpsertInstruction, HydratedHarvest, HydratedHarvestRow
 } from './types';
 import mysqlUtils from '../../database/mysql-utils';
 
@@ -14,6 +14,8 @@ function fromRow(row: HarvestRow): Harvest {
     plantingId: row.planting_id,
     quantity: row.quantity,
     harvestDate: mysqlUtils.dbDateStringToJsDate(row.date_created),
+    harvestTypeId: row.harvest_type_id,
+    harvestType: row.harvest_type_name,
   }
 }
 
@@ -27,15 +29,18 @@ function fromHydratedRow(row: HydratedHarvestRow): HydratedHarvest {
     plotName: row.plot_name,
     quantity: row.quantity,
     harvestDate: mysqlUtils.dbDateStringToJsDate(row.date_created),
+    harvestTypeId: row.harvest_type_id,
+    harvestType: row.harvest_type_name,
   }
 }
 
 const insert = {
-  toParams: (harvest: Harvest): Array<string | number> => ([
+  toParams: (harvest: HarvestUpsertInstruction): Array<string | number> => ([
     harvest.harvestId,
     harvest.plantingId,
     harvest.quantity,
     mysqlUtils.dateToDbString(harvest.harvestDate),
+    harvest.harvestTypeId,
   ]),
 };
 
@@ -48,6 +53,8 @@ const summary = {
     plantingYear: row.planting_year,
     plantingId: row.planting_id,
     quantity: parseInt(row.quantity),
+    harvestTypeId: row.harvest_type_id,
+    harvestType: row.harvest_type_name,
   }),
 };
 
@@ -57,16 +64,17 @@ const search = {
   ]),
 };
 
-const getByPlantingIdAndDate = {
-  toParams: (plantingId: string, harvestDate: Date): Array<string | number> => ([
+const getByPlantingIdDateAndType = {
+  toParams: (plantingId: string, harvestDate: Date, harvestTypeId: number): Array<string | number> => ([
     plantingId,
     mysqlUtils.dateToDbString(harvestDate),
+    harvestTypeId,
   ]),
 };
 
 export default {
   insert,
-  getByPlantingIdAndDate,
+  getByPlantingIdDateAndType,
   summary,
   search,
   fromRow,

@@ -10,6 +10,13 @@ Planting: A number of a type of Plant planted in a single year (maybe scoped by 
 
 Harvest: A quantity of a plant harvested from a planting
 
+Harvest Type: What a harvest's quantity counts — either a unit of measure (pounds, pints, bunches)
+or the part of the plant picked (fruit, leaf, root), depending on the plant. Types come from the
+seeded `harvest_types` table, readable via `GET /harvest-types`. A plant declares a
+`defaultHarvestType`, and a harvest inherits it at creation time; changing a plant's default does
+not rewrite existing harvests. Harvests recorded against the same planting on the same day are
+merged into one only when they share a harvest type, so a day can hold one harvest per type.
+
 
 
 Example curl:

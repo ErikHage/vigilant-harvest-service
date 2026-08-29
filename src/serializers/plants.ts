@@ -8,6 +8,7 @@ import {
   PlantResponse, PlantScheduleAssignmentRequest, PlantSubcategory, PlantSubcategoryRequest, PlantSubcategoryResponse
 } from '../services/plants/types';
 import scheduleSerializer from './schedules';
+import { UNSPECIFIED_HARVEST_TYPE_ID } from '../services/harvest-types/types';
 
 function capitalizeFirstLetter(str: string): string {
   if (!str) {
@@ -51,6 +52,7 @@ function fromRequest(req: Request): PlantRequest {
       growingNotes: req.body.growing?.growingNotes,
     },
     harvesting: {
+      defaultHarvestTypeId: req.body.harvesting?.defaultHarvestTypeId ?? UNSPECIFIED_HARVEST_TYPE_ID,
       fruitSize: req.body.harvesting?.fruitSize,
       shelfStability: req.body.harvesting?.shelfStability,
       harvestInstructions: req.body.harvesting?.harvestInstructions,

@@ -6,38 +6,56 @@ import {
   HarvestSearchRequest,
   HarvestStats, HarvestStatsRequest,
   HarvestSummary,
-  HarvestSummaryRequest, HydratedHarvest
+  HarvestSummaryRequest, HarvestUpsertInstruction, HydratedHarvest
 } from './types';
 
 import datasource from './harvests-mysql-datasource';
 import { ensureError, FeralError } from '../../errors';
 import { getLogger } from '../../logging';
 import stats from './stats';
+import { UNSPECIFIED_HARVEST_TYPE_ID } from '../harvest-types/types';
 
 const logger = getLogger('harvests-service');
 
 async function upsertHarvests(harvestRequests: HarvestRequest[]): Promise<Harvest[]> {
   try {
-    const harvestPromises: Promise<Harvest>[] = harvestRequests.map(async (harvestRequest) => {
-      let maybeExistingHarvest = null;
+    // a request typically carries several harvests against the same planting, so resolve each
+    // planting's default harvest type once rather than once per harvest
+    const defaultHarvestTypeIds = await resolveDefaultHarvestTypeIds(harvestRequests);
 
-      if (harvestRequest.harvestId == null) {
-        maybeExistingHarvest = await maybeMergeHarvest(harvestRequest);
+    const harvestPromises: Promise<HarvestUpsertInstruction>[] = harvestRequests.map(async (harvestRequest) => {
+      const defaultHarvestTypeId = defaultHarvestTypeIds.get(harvestRequest.plantingId)
+        ?? UNSPECIFIED_HARVEST_TYPE_ID;
+
+      // an explicit id is an update: the quantity is replaced and the stored type is kept
+      if (harvestRequest.harvestId != null) {
+        const maybeExistingHarvest = await datasource.getHarvestById(harvestRequest.harvestId);
+
+        return {
+          harvestId: harvestRequest.harvestId,
+          plantingId: harvestRequest.plantingId,
+          quantity: harvestRequest.quantity,
+          harvestDate: harvestRequest.harvestDate,
+          harvestTypeId: maybeExistingHarvest?.harvestTypeId ?? defaultHarvestTypeId,
+        };
       }
 
-      const quantity = maybeExistingHarvest !== null
-        ? maybeExistingHarvest.quantity + harvestRequest.quantity
-        : harvestRequest.quantity;
+      // no id: accumulate into the same planting's same-day harvest, but only one recorded under
+      // the plant's current default type. When the default has changed this finds nothing and a
+      // second harvest is recorded for the day, so the two types stay separate rather than being
+      // summed together.
+      const maybeMergeTarget = await maybeMergeHarvest(harvestRequest, defaultHarvestTypeId);
 
       return {
-        harvestId: maybeExistingHarvest?.harvestId || harvestRequest.harvestId || v4(),
+        harvestId: maybeMergeTarget?.harvestId ?? v4(),
         plantingId: harvestRequest.plantingId,
-        quantity,
+        quantity: (maybeMergeTarget?.quantity ?? 0) + harvestRequest.quantity,
         harvestDate: harvestRequest.harvestDate,
+        harvestTypeId: defaultHarvestTypeId, // equals the merge target's type when there is one
       };
     });
 
-    const harvests: Harvest[] = await Promise.all(harvestPromises);
+    const harvests: HarvestUpsertInstruction[] = await Promise.all(harvestPromises);
 
     return await datasource.upsertHarvests(harvests);
   } catch (err) {
@@ -48,13 +66,25 @@ async function upsertHarvests(harvestRequests: HarvestRequest[]): Promise<Harves
   }
 }
 
-async function maybeMergeHarvest(request: HarvestRequest): Promise<Harvest | null> {
+async function resolveDefaultHarvestTypeIds(requests: HarvestRequest[]): Promise<Map<string, number>> {
+  const plantingIds = [ ...new Set(requests.map(request => request.plantingId)), ];
+
+  const entries = await Promise.all(plantingIds.map(async (plantingId): Promise<[string, number]> => {
+    const defaultHarvestTypeId = await datasource.getDefaultHarvestTypeIdByPlantingId(plantingId);
+    return [ plantingId, defaultHarvestTypeId ?? UNSPECIFIED_HARVEST_TYPE_ID, ];
+  }));
+
+  return new Map(entries);
+}
+
+async function maybeMergeHarvest(request: HarvestRequest, harvestTypeId: number): Promise<Harvest | null> {
   try {
-    return await datasource.getHarvestByPlantingIdAndDate(request.plantingId, request.harvestDate);
+    return await datasource.getHarvestByPlantingIdDateAndType(
+      request.plantingId, request.harvestDate, harvestTypeId);
   } catch (err) {
     const error = new FeralError('Error merging harvest', ensureError(err))
-      .withDebugParams({ request, });
-    logger.error(error, 'Error merging harvest', { request, });
+      .withDebugParams({ request, harvestTypeId, });
+    logger.error(error, 'Error merging harvest', { request, harvestTypeId, });
     throw error;
   }
 }

@@ -44,6 +44,8 @@ function fromRow(row: PlantRow, activityScheduleRows: ActivityScheduleRow[]): Pl
       growingNotes: row.growing_notes,
     },
     harvesting: {
+      defaultHarvestTypeId: row.default_harvest_type_id,
+      defaultHarvestType: row.default_harvest_type_name,
       fruitSize: row.fruit_size,
       shelfStability: row.shelf_stability,
       harvestInstructions: row.harvest_instructions,
@@ -77,6 +79,7 @@ const insert = {
     plant.growing.climbingHeightFeet ?? null,
     plant.growing.plantSize ?? null,
     plant.growing.growingNotes ?? null,
+    plant.harvesting.defaultHarvestTypeId,
     plant.harvesting.fruitSize ?? null,
     plant.harvesting.shelfStability ?? null,
     plant.harvesting.harvestInstructions ?? null,
