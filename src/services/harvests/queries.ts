@@ -5,16 +5,16 @@ const harvestTypeJoin: string =
   `JOIN harvest_types ht
        ON ht.harvest_type_id = h.harvest_type_id`;
 
-// harvest_type_id is deliberately absent from the UPDATE clause: a harvest's type is stamped once,
-// on insert, from the plant's default, and is never rewritten. A same-day harvest of a different
-// type is not merged into an existing row at all: it is inserted as a row of its own.
+// the service resolves the authoritative harvest_type_id before this runs -- the requested one, or
+// the type already stored, or the plant's default -- so the UPDATE clause writes it back as given
 const upsertHarvest: string =
   `INSERT INTO harvests (harvest_id, planting_id, quantity, date_created, harvest_type_id)
    VALUES (?, ?, ?, ?, ?)
        ON DUPLICATE KEY
        UPDATE planting_id = VALUES(planting_id),
               quantity = VALUES(quantity),
-              date_created = VALUES(date_created)`;
+              date_created = VALUES(date_created),
+              harvest_type_id = VALUES(harvest_type_id)`;
 
 const getHarvestById: string =
   `SELECT ${allHarvestFields}

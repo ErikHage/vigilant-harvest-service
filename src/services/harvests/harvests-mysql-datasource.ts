@@ -21,6 +21,14 @@ async function upsertHarvests(harvests: HarvestUpsertInstruction[]): Promise<Har
       sql: queries.upsertHarvest,
       params: rowMapper.insert.toParams(harvest),
     });
+
+    // the retyped harvest's quantity has moved to the row above, so its own row goes away with it
+    if (harvest.absorbedHarvestId != null) {
+      queriesToRun.push({
+        sql: queries.deleteById,
+        params: [ harvest.absorbedHarvestId, ],
+      });
+    }
   });
 
   await db.execTransactionQuery(queriesToRun);

@@ -14,44 +14,44 @@ import { ensureError, FeralError } from '../../errors';
 import { getLogger } from '../../logging';
 import stats from './stats';
 import { UNSPECIFIED_HARVEST_TYPE_ID } from '../harvest-types/types';
+import { BadRequestError } from '../../errors/common';
+import harvestTypesService from '../harvest-types/harvest-types-service';
 
 const logger = getLogger('harvests-service');
 
 async function upsertHarvests(harvestRequests: HarvestRequest[]): Promise<Harvest[]> {
+  // deliberately outside the try below, which would re-wrap the 400 as a 500
+  await assertRequestedHarvestTypesExist(harvestRequests);
+
   try {
     // a request typically carries several harvests against the same planting, so resolve each
     // planting's default harvest type once rather than once per harvest
     const defaultHarvestTypeIds = await resolveDefaultHarvestTypeIds(harvestRequests);
 
     const harvestPromises: Promise<HarvestUpsertInstruction>[] = harvestRequests.map(async (harvestRequest) => {
-      const defaultHarvestTypeId = defaultHarvestTypeIds.get(harvestRequest.plantingId)
+      const maybeExistingHarvest = harvestRequest.harvestId != null
+        ? await datasource.getHarvestById(harvestRequest.harvestId)
+        : null;
+
+      // a requested type wins; failing that an existing harvest keeps the type it is stored with,
+      // and a new one inherits its plant's current default
+      const harvestTypeId = harvestRequest.harvestTypeId
+        ?? maybeExistingHarvest?.harvestTypeId
+        ?? defaultHarvestTypeIds.get(harvestRequest.plantingId)
         ?? UNSPECIFIED_HARVEST_TYPE_ID;
 
-      // an explicit id is an update: the quantity is replaced and the stored type is kept
-      if (harvestRequest.harvestId != null) {
-        const maybeExistingHarvest = await datasource.getHarvestById(harvestRequest.harvestId);
-
-        return {
-          harvestId: harvestRequest.harvestId,
-          plantingId: harvestRequest.plantingId,
-          quantity: harvestRequest.quantity,
-          harvestDate: harvestRequest.harvestDate,
-          harvestTypeId: maybeExistingHarvest?.harvestTypeId ?? defaultHarvestTypeId,
-        };
-      }
-
-      // no id: accumulate into the same planting's same-day harvest, but only one recorded under
-      // the plant's current default type. When the default has changed this finds nothing and a
-      // second harvest is recorded for the day, so the two types stay separate rather than being
-      // summed together.
-      const maybeMergeTarget = await maybeMergeHarvest(harvestRequest, defaultHarvestTypeId);
+      // a planting holds at most one harvest per day per type, so a harvest landing on a day that
+      // already holds one of its type is absorbed by it: a new harvest accumulates into it, and an
+      // existing harvest retyped onto the collision moves its quantity across and is deleted
+      const maybeMergeTarget = await findMergeTarget(harvestRequest, harvestTypeId, maybeExistingHarvest);
 
       return {
-        harvestId: maybeMergeTarget?.harvestId ?? v4(),
+        harvestId: maybeMergeTarget?.harvestId ?? harvestRequest.harvestId ?? v4(),
         plantingId: harvestRequest.plantingId,
         quantity: (maybeMergeTarget?.quantity ?? 0) + harvestRequest.quantity,
         harvestDate: harvestRequest.harvestDate,
-        harvestTypeId: defaultHarvestTypeId, // equals the merge target's type when there is one
+        harvestTypeId,
+        absorbedHarvestId: maybeMergeTarget != null ? maybeExistingHarvest?.harvestId : undefined,
       };
     });
 
@@ -66,6 +66,26 @@ async function upsertHarvests(harvestRequests: HarvestRequest[]): Promise<Harves
   }
 }
 
+async function assertRequestedHarvestTypesExist(requests: HarvestRequest[]): Promise<void> {
+  const requestedIds = [ ...new Set(
+    requests.map(request => request.harvestTypeId).filter((id): id is number => id != null)
+  ), ];
+
+  if (requestedIds.length === 0) {
+    return;
+  }
+
+  const harvestTypes = await harvestTypesService.getHarvestTypes();
+  const knownIds = new Set(harvestTypes.map(harvestType => harvestType.harvestTypeId));
+
+  const unknownIds = requestedIds.filter(id => !knownIds.has(id));
+
+  if (unknownIds.length > 0) {
+    throw new BadRequestError(`Unknown harvest type id(s): ${unknownIds.join(', ')}`)
+      .withDebugParams({ requests, });
+  }
+}
+
 async function resolveDefaultHarvestTypeIds(requests: HarvestRequest[]): Promise<Map<string, number>> {
   const plantingIds = [ ...new Set(requests.map(request => request.plantingId)), ];
 
@@ -77,10 +97,21 @@ async function resolveDefaultHarvestTypeIds(requests: HarvestRequest[]): Promise
   return new Map(entries);
 }
 
-async function maybeMergeHarvest(request: HarvestRequest, harvestTypeId: number): Promise<Harvest | null> {
+async function findMergeTarget(
+  request: HarvestRequest,
+  harvestTypeId: number,
+  maybeExistingHarvest: Harvest | null
+): Promise<Harvest | null> {
   try {
-    return await datasource.getHarvestByPlantingIdDateAndType(
+    const maybeMergeTarget = await datasource.getHarvestByPlantingIdDateAndType(
       request.plantingId, request.harvestDate, harvestTypeId);
+
+    // a harvest whose type is unchanged finds itself here, and is not a merge target for itself
+    if (maybeMergeTarget?.harvestId === maybeExistingHarvest?.harvestId) {
+      return null;
+    }
+
+    return maybeMergeTarget;
   } catch (err) {
     const error = new FeralError('Error merging harvest', ensureError(err))
       .withDebugParams({ request, harvestTypeId, });

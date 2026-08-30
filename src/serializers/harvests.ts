@@ -26,6 +26,7 @@ const insert = {
         plantingId: harvest.plantingId,
         quantity: Number(harvest.quantity),
         harvestDate,
+        harvestTypeId: parseHarvestTypeId(harvest.harvestTypeId),
       }
     });
   },
@@ -100,6 +101,21 @@ const stats = {
     };
   },
 };
+
+// the id is only checked for shape here; the service confirms it is one that exists
+function parseHarvestTypeId(rawHarvestTypeId: unknown): number | undefined {
+  if (rawHarvestTypeId == null) {
+    return undefined;
+  }
+
+  const harvestTypeId = Number(rawHarvestTypeId);
+
+  if (!Number.isInteger(harvestTypeId) || harvestTypeId < 1) {
+    throw new BadRequestError(`Invalid harvest type id: ${rawHarvestTypeId}`);
+  }
+
+  return harvestTypeId;
+}
 
 function parseStatsRequestType(rawType: string): StatsType {
   const parsedType = StatsTypeUtils.parse(rawType);

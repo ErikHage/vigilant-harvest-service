@@ -8,7 +8,19 @@ A **harvest type** describes what a harvest's `quantity` counts. Depending on th
 either a unit of measure (`pounds`, `pints`, `bunches`) or the part of the plant picked (`fruit`,
 `leaf`, `root`). Types come from a fixed, server-seeded list.
 
-## ⚠️ Three breaking changes to handle first
+## How to read this doc
+
+This doc is **append-only**. Everything from here to the changelog is the contract as first written,
+on 2026-08-29. Later changes are recorded in [Changelog](#changelog) at the bottom instead of being
+edited in above, so that a reader who has already worked through the body can pick up just the
+differences.
+
+Read the changelog. Passages the changelog supersedes are marked `⚠️ Superseded` where they appear,
+and each entry lists exactly what it replaces.
+
+## ⚠️ Two breaking changes to handle first
+
+> ⚠️ **Superseded** — revisions 2 and 3 add a third breaking change, and revise it.
 
 **1. `/harvests/summary` and `/harvests/stats` can now return more rows than before.**
 Both used to return one row per planting (or per plant). They now return one row per
@@ -24,19 +36,6 @@ The request serializer defaults a missing `harvesting.defaultHarvestTypeId` to `
 `PUT /plants` is a full upsert, so an existing plant-edit form that doesn't send the new field will
 wipe that plant's harvest type on every save. Always send `harvesting.defaultHarvestTypeId` —
 populate it from the plant you loaded.
-
-**3. `PUT /harvests` may now return a *new* harvest where it used to return the existing one.**
-Submitting a harvest with no `harvestId` still merges into that planting's harvest for the same day
-— but only when that harvest was recorded under the plant's **current** default type. If the plant's
-default has changed since, nothing is merged: a second harvest is created for that planting and day,
-carrying the new type, and the response comes back with a **different `harvestId`** than the one
-already on screen.
-
-So one planting can hold two harvests on the same date, e.g. 8 `pounds` and 2 `count`. Any UI that
-assumes one harvest per planting per day — a day cell keyed by `plantingId`, or code expecting the
-response id to match the row it just submitted — needs the harvest type in that key, and needs to
-render a day as a list rather than a single value. Take the `harvestId` from the response rather
-than assuming it.
 
 ## New endpoint: `GET /harvest-types`
 
@@ -113,6 +112,9 @@ Example response fragment:
 
 ### `PUT /harvests` — request is UNCHANGED
 
+> ⚠️ **Superseded by revision 3** — the request now takes an optional `harvestTypeId`.
+> Do not build against this section.
+
 Do not send a harvest type. Each harvest inherits its plant's `defaultHarvestTypeId` at creation.
 Per-harvest override is a planned future change; there is no way to set it today.
 
@@ -177,26 +179,136 @@ unchanged and are not per type.
 
 ## Behaviour the UI should reflect
 
-- A harvest's type is stamped **once, at creation**, from the plant's default, and is never
-  rewritten afterwards.
-- Updating a harvest by `harvestId` replaces its quantity and **keeps** its stored type.
-- Submitting a harvest with no `harvestId` merges into the planting's same-day harvest **only when
-  the types match**. When the plant's default has changed, a separate harvest is created instead —
-  quantities of two different types are never summed together (see breaking change 3).
+> ⚠️ **Superseded by revisions 2 and 3** — the merge rule and the "stamped once" rule
+> below have both changed. Read the changelog for the current rules.
+
+- A harvest's type is stamped **once, at creation**, from the plant's default.
+- Updating a harvest (by `harvestId`) or merging into a same-day harvest **never** changes its
+  stored type.
 - Changing a plant's default **does not** rewrite existing harvests — historical harvests keep the
   type they were recorded under. This is intentional. So a "change this plant's units" action in
   the UI should not promise to update past harvests; word it as applying to future harvests.
-- Because of the above, one planting legitimately holds harvests of more than one type — over the
-  season, and even on a single day.
+- Because of the above, one planting legitimately holds harvests of more than one type over time.
 
 ## Suggested UI work
+
+> ⚠️ **Items 4 and 6 superseded** by revisions 2 and 3. Items 1, 2, 3 and 5 still stand.
 
 1. Fetch `GET /harvest-types` once and cache it; back a dropdown with it.
 2. Plant edit form: add the dropdown bound to `harvesting.defaultHarvestTypeId`, and make sure the
    save path always sends it (breaking change 2).
 3. Plant display: show `harvesting.defaultHarvestType`.
-4. Harvest lists: show `harvestType` next to `quantity` (e.g. "8 pounds"), and allow a
-   planting to show more than one entry for a single day (breaking change 3).
+4. Harvest lists: show `harvestType` next to `quantity` (e.g. "8 pounds").
 5. Summary and stats views: re-key any grouping to include the harvest type, and label each row
    with its type (breaking change 1).
 6. Harvest entry form: no change — do not add a type picker, it isn't supported server-side yet.
+
+---
+
+# Changelog
+
+Newest last. Each entry is a change to the contract described above, made after that body was
+written.
+
+## Revision 2 — 2026-08-29 — same-day harvests are only merged within a type
+
+**What changed.** `PUT /harvests` with no `harvestId` used to merge into *any* harvest that planting
+already had on that date, adding the quantities and keeping whatever type that harvest was stored
+with. So a plant whose default changed from `pounds` to `count` would turn a new 2-`count` harvest
+into part of an existing 8-`pounds` one — 10 `pounds`, summing two quantities that don't share a
+unit.
+
+It now merges **only when the types match**. If the existing same-day harvest was recorded under a
+different type, nothing is merged: a second harvest is created for that planting and date, carrying
+the new type. The day then holds 8 `pounds` and 2 `count` as separate entries.
+
+**New breaking change (numbered 3).** `PUT /harvests` may return a **different `harvestId`** than
+the harvest already on screen, because it created a new one instead of merging. A planting can hold
+more than one harvest on a single date.
+
+Any UI that assumes one harvest per planting per day — a day cell keyed by `plantingId`, or code
+expecting the response id to match the row it submitted — needs the harvest type in that key, and
+needs to render a day as a list rather than a single value.
+
+**Supersedes:**
+
+- *Behaviour the UI should reflect* — the bullet reading "Updating a harvest (by `harvestId`) or
+  merging into a same-day harvest **never** changes its stored type". Updating by `harvestId` still
+  preserves the stored type; the same-day merge is what changed.
+- *Suggested UI work* item 4 — harvest lists must now let one planting show more than one entry for
+  a single day.
+
+## Revision 3 — 2026-08-29 — harvest type can be set per harvest
+
+**What changed.** The per-harvest override that the body describes as "a planned future change" is
+now implemented, in both directions: setting a type when recording a harvest, and changing the type
+of one that already exists.
+
+### `PUT /harvests` takes an optional `harvestTypeId`
+
+Each harvest in the array accepts it. Omit it and a new harvest inherits its plant's
+`defaultHarvestTypeId`, while an existing one keeps the type it is already stored with. Send it and
+it wins over both.
+
+```json
+{
+  "harvests": [
+    { "plantingId": "…", "quantity": 3, "harvestDate": "2026-08-28T00:00:00" },
+    { "plantingId": "…", "quantity": 3, "harvestDate": "2026-08-28T00:00:00", "harvestTypeId": 9 },
+    { "harvestId": "…", "plantingId": "…", "quantity": 3, "harvestDate": "2026-08-28T00:00:00",
+      "harvestTypeId": 4 }
+  ]
+}
+```
+
+Those three are: inherit the plant default, create with an override, and retype an existing harvest.
+
+An id that isn't in `GET /harvest-types` gets a `400`, as does a non-integer one, and nothing in the
+request is written. The body is the standard error envelope:
+`{ "errors": [ { "message": "Unknown harvest type id(s): 99999", … } ] }`.
+
+### The rule that now governs all of this
+
+**A planting holds at most one harvest per day per type.** Harvests that would collide on that
+triple are folded into one and their quantities summed. Quantities of two *different* types are
+never summed.
+
+### Breaking change 3 is wider than revision 2 stated
+
+`PUT /harvests` not returning the `harvestId` you sent now has a second cause. Retyping an existing
+harvest onto a day that already holds one of the new type **absorbs it**: the quantities are
+combined into that harvest, **the row you sent is deleted**, and the response carries the surviving
+harvest's id.
+
+```
+Day already has:  A: 8 pounds   B: 2 count
+
+PUT { harvestId: B, quantity: 2, harvestTypeId: <pounds> }
+
+Result:           A: 10 pounds  (B is gone)
+Response:         harvestId A   — not the id you sent
+```
+
+So a harvest the UI just edited may no longer exist. Reconcile against the ids in the response
+rather than the ones you sent.
+
+**Supersedes:**
+
+- *Harvests → `PUT /harvests` — request is UNCHANGED* — the whole section. The request takes
+  `harvestTypeId`, and there is no longer a reason to avoid a type picker.
+- *Behaviour the UI should reflect* — the "stamped **once**, at creation" bullet. A harvest's type
+  is now changeable for the life of the harvest.
+- *Suggested UI work* item 6 ("do not add a type picker, it isn't supported server-side yet").
+
+**Replaces suggested UI work item 6 with:**
+
+6. Harvest entry form: add an optional type picker, defaulted to the plant's `defaultHarvestType`
+   and backed by the same cached `GET /harvest-types` list. Leave `harvestTypeId` out of the
+   request to accept that default.
+7. Harvest edit: allow changing an existing harvest's type by sending `harvestId` +
+   `harvestTypeId`, and handle the response coming back with a different id than you sent.
+8. Handle a `400` from `PUT /harvests` for an unknown harvest type id. It shouldn't happen if the
+   picker is backed by `GET /harvest-types`, but don't surface it as a generic failure.
+
+**Unchanged by this revision:** everything about plants, `GET /harvest-types`, the response fields
+on harvests, and the summary/stats grouping. Breaking changes 1 and 2 stand as written.
