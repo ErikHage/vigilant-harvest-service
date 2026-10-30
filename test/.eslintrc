@@ -1,0 +1,5 @@
+{
+  "parserOptions": {
+    "project": "./test/acceptance/tsconfig.json"
+  }
+}
