@@ -120,8 +120,6 @@ const getSchedulesByPlantId: string =
 
 const countPlantingsByPlantId: string = 'SELECT COUNT(*) AS count FROM plantings WHERE plant_id = ?';
 
-const deleteScheduleLinksByPlantId: string = 'DELETE FROM plants_activity_schedules WHERE plant_id = ?';
-
 const deleteById: string = 'DELETE FROM plants WHERE plant_id = ?';
 
 const categories = {
@@ -161,7 +159,6 @@ export default {
   getSchedulesByPlantId,
   countPlantingsByPlantId,
 
-  deleteScheduleLinksByPlantId,
   deleteById,
 
   categories,

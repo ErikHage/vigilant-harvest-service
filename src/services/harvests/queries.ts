@@ -7,9 +7,10 @@ const harvestTypeJoin: string =
 
 // the service resolves the authoritative harvest_type_id before this runs -- the requested one, or
 // the type already stored, or the plant's default -- so the UPDATE clause writes it back as given
+// planting_year is set only on insert: an existing harvest keeps the year it was filed under
 const upsertHarvest: string =
-  `INSERT INTO harvests (harvest_id, planting_id, quantity, date_created, harvest_type_id)
-   VALUES (?, ?, ?, ?, ?)
+  `INSERT INTO harvests (harvest_id, planting_id, planting_year, quantity, date_created, harvest_type_id)
+   VALUES (?, ?, ?, ?, ?, ?)
        ON DUPLICATE KEY
        UPDATE planting_id = VALUES(planting_id),
               quantity = VALUES(quantity),
@@ -29,6 +30,11 @@ const getHarvestByPlantingIdDateAndType: string =
     WHERE h.planting_id = ?
       AND h.date_created = ?
       AND h.harvest_type_id = ?`;
+
+const getPlantingYearByPlantingId: string =
+  `SELECT current_planting_year
+     FROM plantings
+    WHERE planting_id = ?`;
 
 const getDefaultHarvestTypeIdByPlantingId: string =
   `SELECT pl.default_harvest_type_id
@@ -72,6 +78,7 @@ export default {
   upsertHarvest,
   getHarvestById,
   getHarvestByPlantingIdDateAndType,
+  getPlantingYearByPlantingId,
   getDefaultHarvestTypeIdByPlantingId,
   getHarvestSummary,
   searchHarvests,

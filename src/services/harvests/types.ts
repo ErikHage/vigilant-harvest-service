@@ -31,6 +31,7 @@ export interface Harvest {
 export interface HarvestUpsertInstruction {
   harvestId: string,
   plantingId: string,
+  plantingYear: number, // int; only written for a new harvest
   quantity: number, //int
   harvestDate: Date,
   harvestTypeId: number, //int
@@ -148,4 +149,8 @@ export interface ItemStats {
   averageHarvestPerDay: number // int
   firstHarvest: Date | null,
   lastHarvest: Date | null,
+}
+
+export interface PlantingYearRow extends RowDataPacket {
+  current_planting_year: number,
 }

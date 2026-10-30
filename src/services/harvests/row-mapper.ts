@@ -38,6 +38,7 @@ const insert = {
   toParams: (harvest: HarvestUpsertInstruction): Array<string | number> => ([
     harvest.harvestId,
     harvest.plantingId,
+    harvest.plantingYear,
     harvest.quantity,
     mysqlUtils.dateToDbString(harvest.harvestDate),
     harvest.harvestTypeId,

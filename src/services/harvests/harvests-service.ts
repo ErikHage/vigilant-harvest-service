@@ -22,6 +22,7 @@ const logger = getLogger('harvests-service');
 async function upsertHarvests(harvestRequests: HarvestRequest[]): Promise<Harvest[]> {
   // deliberately outside the try below, which would re-wrap the 400 as a 500
   await assertRequestedHarvestTypesExist(harvestRequests);
+  const plantingYears = await resolvePlantingYears(harvestRequests);
 
   try {
     // a request typically carries several harvests against the same planting, so resolve each
@@ -48,6 +49,7 @@ async function upsertHarvests(harvestRequests: HarvestRequest[]): Promise<Harves
       return {
         harvestId: maybeMergeTarget?.harvestId ?? harvestRequest.harvestId ?? v4(),
         plantingId: harvestRequest.plantingId,
+        plantingYear: plantingYears.get(harvestRequest.plantingId)!,
         quantity: (maybeMergeTarget?.quantity ?? 0) + harvestRequest.quantity,
         harvestDate: harvestRequest.harvestDate,
         harvestTypeId,
@@ -84,6 +86,24 @@ async function assertRequestedHarvestTypesExist(requests: HarvestRequest[]): Pro
     throw new BadRequestError(`Unknown harvest type id(s): ${unknownIds.join(', ')}`)
       .withDebugParams({ requests, });
   }
+}
+
+// a new harvest is filed under its planting's current year; a planting that does not exist is the
+// client's mistake, so it is reported by id rather than left to fail the insert
+async function resolvePlantingYears(requests: HarvestRequest[]): Promise<Map<string, number>> {
+  const plantingIds = [ ...new Set(requests.map(request => request.plantingId)), ];
+
+  const entries = await Promise.all(plantingIds.map(async (plantingId): Promise<[string, number | null]> =>
+    [ plantingId, await datasource.getPlantingYearByPlantingId(plantingId), ]));
+
+  const unknownIds = entries.filter(([ , plantingYear, ]) => plantingYear === null).map(([ plantingId, ]) => plantingId);
+
+  if (unknownIds.length > 0) {
+    throw new BadRequestError(`Unknown planting id(s): ${unknownIds.join(', ')}`)
+      .withDebugParams({ requests, });
+  }
+
+  return new Map(entries as [string, number][]);
 }
 
 async function resolveDefaultHarvestTypeIds(requests: HarvestRequest[]): Promise<Map<string, number>> {

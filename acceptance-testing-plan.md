@@ -10,9 +10,13 @@ the changelogs it isn't append-only: tick items off, edit the plan when it chang
 anything that changed course in the progress log at the bottom.
 
 - **Started:** 2026-10-29
-- **Status:** Phases 0–2 done; Phase 2 awaits review and commit
-- **Changelog:** `ai-changelogs/projects/vigilant-harvest-service/2026-02-21-1-testing.md`. Append
-  an entry before each commit; the delete APIs get their own file in Phase 2.
+- **Status:** Phases 0–3 done; Phase 3 awaits review and commit
+- **Changelogs:** test work in `ai-changelogs/projects/vigilant-harvest-service/2026-02-21-1-testing.md`;
+  the delete APIs and foreign keys (Phases 2 and 3) in `2026-10-29-1-delete-apis.md`. Append an
+  entry before each commit.
+- **Next, after the Phase 3 commit:** work out how the orphans got into the database (see
+  *Follow-up: where the orphans came from*). The user found orphans in prod too, and will clean
+  them up with `scripts/foreign-key-orphans.sql` before deploying Phase 3.
 - **Reference suite:** `../feral-authentication-service/test/acceptance/`. Its README and
   `ai-changelogs/projects/feral-authentication-service/2026-08-31-2-acceptance-test-adoption.md`
   explain the pattern.
@@ -26,11 +30,13 @@ anything that changed course in the progress log at the bottom.
 |---|---|---|
 | 0 | Local prerequisites (test user, env, both services running) | done (`54c5373`) |
 | 1 | Test setup: drop jest, adopt feral's test layout | done (`6001d0e`) |
-| 2 | Service changes: delete APIs needed for cleanup | done; awaiting review and commit |
-| 3 | Suite scaffolding, preflight, teardown, residue check, first specs | not started |
-| 4 | Specs per API grouping | not started |
-| 5 | Prove the suite can fail, layering checks, docs | not started |
-| 6 | Upgrade to vitest 5 and Node 24 | not started |
+| 2 | Service changes: delete APIs needed for cleanup | done (`53cf265`) |
+| 3 | Foreign keys, client statuses that survive the rewrap, harvest year | done; awaiting review and commit |
+| — | Follow-up: where the orphans came from | next, after the Phase 3 commit |
+| 4 | Suite scaffolding, preflight, teardown, residue check, first specs | not started |
+| 5 | Specs per API grouping | not started |
+| 6 | Prove the suite can fail, layering checks, docs | not started |
+| 7 | Upgrade to vitest 5 and Node 24 | not started |
 
 ---
 
@@ -50,8 +56,13 @@ Agreed with the user on 2026-10-29.
    - Children are records a user made and could care about: plantings under a plant, harvests
      under a planting, plantings in a plot or year, plants in a subcategory, subcategories in a
      category, journal and log entries in a year.
-   - Internal rows are deleted with their owner, in the same transaction: status history,
-     planting-year mappings, plant-to-schedule links.
+   - Internal rows are deleted with their owner: status history, planting-year mappings,
+     plant-to-schedule links. Phase 2 did this in the service, in one transaction; since Phase 3
+     the database does it with `ON DELETE CASCADE`.
+   - **Since Phase 3 the database enforces this rule itself**, with 14 foreign keys: CASCADE for
+     the owned rows, RESTRICT for everything else. The service's 409 pre-checks stay, because
+     their messages say what blocked the delete. MySQL's own refusal (errno 1451 → 409) backs
+     them up.
    - Rejected alternative: cascading deletes. They make teardown easier, but one click in the app
      could wipe a plant's whole history.
 3. **The guarantee that test data is gone is a global teardown that checks for residue through
@@ -61,6 +72,8 @@ Agreed with the user on 2026-10-29.
      to prove those tables are clean:
      - no test planting years left → no plantings, journal entries or log entries in them
      - no test plantings left → no harvests, status history or year mappings
+   - Since Phase 3 the foreign keys make this hold at the database level, not just in the
+     service: a child row can no longer outlive its parent.
    - The README carries orphan-check SQL to confirm this by hand.
    - Rejected alternatives: a read-only DB check in teardown, and a DB sweep that deletes
      leftovers. A sweep would hide a broken delete endpoint, which is exactly what the check is
@@ -112,7 +125,7 @@ Goal: a machine where both services run locally and the suite has a user to log 
     403.
   - The password is only in `test/acceptance/.env.acceptance`. `.gitignore` now lists it, and
     `git check-ignore` confirms the rule.
-  - No SQL seed was written, since this machine's ids differ from the seed scripts. Phase 3's
+  - No SQL seed was written, since this machine's ids differ from the seed scripts. Phase 4's
     README documents these API steps for another machine.
 - [x] **Confirm the service's `SESSION_PUBLIC_KEY` matches the key feral signs Vigilant Harvest
   sessions with.** It does. Feral's `GET /keys` doesn't expose public keys, so the check was a
@@ -147,7 +160,7 @@ Goal: a machine where both services run locally and the suite has a user to log 
 ## Phase 1: Test setup: drop jest, adopt feral's test layout
 
 Goal: jest, supertest and the old in-process test are gone; `test/` is laid out like
-`../feral-authentication-service/test/`, ready for Phase 3 to fill in; and nothing about the
+`../feral-authentication-service/test/`, ready for Phase 4 to fill in; and nothing about the
 service itself changes. The review behind this phase is Appendix C.
 
 ### What's there today
@@ -178,8 +191,8 @@ test/
     tsconfig.json              extends ../../tsconfig.json; noEmit, module esnext,
                                moduleResolution bundler, types [node],
                                include ["./**/*.ts"], exclude []
-    vitest.config.ts           placeholder now; Phase 3 fills it in
-    ...                        everything else arrives in Phase 3
+    vitest.config.ts           placeholder now; Phase 4 fills it in
+    ...                        everything else arrives in Phase 4
 ```
 
 Copy feral's `test/.eslintrc` and `test/acceptance/tsconfig.json`. Check that feral's
@@ -190,14 +203,14 @@ Copy feral's `test/.eslintrc` and `test/acceptance/tsconfig.json`. Check that fe
 - [x] Delete `test/service-info.test.ts`, `test/setup.ts` and `jest.config.ts` (T-2, T-3, T-4, T-6).
 - [x] `npm uninstall jest ts-jest @types/jest supertest @types/supertest`. Only `test/setup.ts`
   used supertest.
-- [x] Remove the `test:int` script (T-5). Phase 3 adds `test:acceptance` and
+- [x] Remove the `test:int` script (T-5). Phase 4 adds `test:acceptance` and
   `test:acceptance:watch`.
 - [x] Install **`vitest ^4.1.12`**, and bump **`@types/node` from `^18.16.2` to `^20.19.43`**.
   - The plan said vitest 5. npm refused it: vitest 5.0.5 declares Node `^22.12 || ^24 || >=26`
     and a peer `@types/node` of `^22 || >=24`, while the project has `@types/node ^18` and
     builds its Docker image on `node:20-alpine`.
   - The user chose vitest 4 (Node 20, 22 and 24+), with `@types/node` matching the Docker
-    runtime, and asked for the vitest 5 / Node 24 upgrade as the last step (Phase 6).
+    runtime, and asked for the vitest 5 / Node 24 upgrade as the last step (Phase 7).
   - Keep the `^` range like the other dev dependencies; only the DSL library is pinned exactly.
   - Feral is still on `vitest ^1.6.0`. The gap is noted in the changelog in case something
     ported from feral behaves differently.
@@ -205,12 +218,12 @@ Copy feral's `test/.eslintrc` and `test/acceptance/tsconfig.json`. Check that fe
 - [x] Add `test/.eslintrc`, so `npm run lint` keeps covering `test/` once the root tsconfig
   excludes it (T-10).
 - [x] Add `test/acceptance/tsconfig.json` (feral's, without `typeRoots`), and
-  `test/acceptance/vitest.config.ts` with feral's settings minus `globalSetup`, which Phase 3
+  `test/acceptance/vitest.config.ts` with feral's settings minus `globalSetup`, which Phase 4
   adds with the setup files. With no specs yet, `vitest run` reports "No test files found", so
-  the scripts come in Phase 3.
+  the scripts come in Phase 4.
 - [x] `npm run clean` (part of `npm run build`), so the stale `dist/test/` and
   `dist/jest.config.js` are gone.
-- Moved to Phase 6: the Dockerfile's `node:24-alpine` bump (T-7).
+- Moved to Phase 7: the Dockerfile's `node:24-alpine` bump (T-7).
 
 ### Done when
 
@@ -227,8 +240,8 @@ All met on 2026-10-29:
   deleted.
 - `npx vitest run --config test/acceptance/vitest.config.ts` loads the config and finds no
   specs, as expected.
-- **Coverage gap, accepted:** the project has no tests between this phase and Phase 3's first
-  spec. The deleted test only checked `/service-info`, and Phase 3's `service-info.spec.ts`
+- **Coverage gap, accepted:** the project has no tests between this phase and Phase 4's first
+  spec. The deleted test only checked `/service-info`, and Phase 4's `service-info.spec.ts`
   restores that check against the running service.
 
 ---
@@ -344,7 +357,7 @@ The plant and plot deletes now refuse cases they allow today. Before merging, ch
 
 - All of the above work by hand with curl against a local service.
 - `npm run build` is clean.
-- The suite from phases 3 and 4 covers each endpoint; it is the real proof.
+- The suite from phases 4 and 5 covers each endpoint; it is the real proof.
 
 **Met on 2026-10-29.**
 - `tsc` and `npm run lint` are clean, and nodemon's rebuild (`npm run build`) passed.
@@ -358,9 +371,9 @@ The plant and plot deletes now refuse cases they allow today. Before merging, ch
   - Each delete succeeded once its dependants were gone, and the non-numeric ids answered 400.
   - Afterwards nothing was left: through the API, and in SQL across status history, year
     mappings, harvests, schedule links and schedule items.
-- The script lives outside the repo. Phase 4's specs replace it.
+- The script lives outside the repo. Phase 5's specs replace it.
 
-**Found while testing, and important for Phase 3:**
+**Found while testing, and important for Phase 4:**
 - **Dates in a 9xxx test year can't be stored.** `harvests.date_created`,
   `garden_journal.entry_date` and `garden_activity_log.entry_date` are MySQL `TIMESTAMP`s, which
   end in 2038. A harvest dated `9411-07-01` gets a 500 ("Incorrect datetime value").
@@ -372,15 +385,112 @@ The plant and plot deletes now refuse cases they allow today. Before merging, ch
   - 25 `planting_status_history` rows whose planting is gone
   - 1 harvest whose planting is gone
 
-  They predate this change. The README's orphan-check SQL must expect them, or be scoped to the
-  suite's own ids, or it will report them as the suite's residue.
+  They predate this change. *Superseded by Phase 3:* the user deleted them with
+  `scripts/foreign-key-orphans.sql` on 2026-10-30, and the foreign keys now prevent new ones.
 - `entry_date` values come back shifted by the local UTC offset: `9411-06-01` was sent, and the
   error showed `9411-05-31 20:00:00`. This may be a timezone bug in the journal and log date
   handling. Not chased here; add it to Appendix A if a spec confirms it.
 
 ---
 
-## Phase 3: Suite scaffolding
+## Phase 3: Foreign keys
+
+Added on 2026-10-30, at the user's request: Phase 2's 409 rules lived only in service code, and
+the schema had 3 foreign keys among 16 tables. Done before the suite, so the suite tests the
+final behaviour rather than pinning orphan-creating writes only to rewrite those specs.
+
+### Decisions (agreed with the user, 2026-10-30)
+
+- **Existing orphans are the user's to clear, by hand.** The migration never deletes data.
+  - `scripts/foreign-key-orphans.sql` is a Workbench script: a REPORT of all 14 relationships, a
+    PREVIEW, and DELETES for rows that are meaningless without their parent (a deleted
+    planting's history, year mappings and harvests; links to a deleted plant or schedule).
+  - Anything else the report finds is real data, to be decided case by case.
+- **The migration refuses to run while orphans exist.** `src/server.ts` exits when a migration
+  fails at boot, so a half-applied migration would leave prod down *and* inconsistent.
+  - The migration's JS runs the same report first, and rejects before any `ALTER`, naming each
+    relationship and its count.
+- **FK violations are client errors, and so is anything else a service rewraps.**
+  - `FeralError` now keeps a 4xx status from the error it wraps (this fixes S-rewrap).
+  - `src/database/index.ts` maps MySQL errno 1452 (missing parent) → 400, 1451 (still
+    referenced) → 409, and 1062 (duplicate) → 409.
+- **Harvest year (B-year) fixed before its FK.** A new harvest takes its planting's
+  `current_planting_year`. An existing harvest keeps the year it was filed under; the column is
+  left out of the upsert's `ON DUPLICATE KEY UPDATE`. A harvest for an unknown planting → 400,
+  naming it.
+
+### What was built
+
+- [x] `FeralError` inherits a 4xx `cause.status`. `toMysqlError` in `src/database/index.ts` maps
+  1452, 1451 and 1062.
+- [x] `harvests-service.resolvePlantingYears`, before the rewrapping `try`;
+  `getPlantingYearByPlantingId`; and `planting_year` in the upsert's INSERT only.
+- [x] Migration `20261030002022-add-foreign-keys`:
+  - an orphan guard (`...-orphans.sql`);
+  - one `ALTER TABLE` per child table (each is atomic): 14 FKs and 9 `idx_*` indexes;
+  - a down migration that drops exactly those.
+- [x] The planting, plant and schedule deletes are back to single statements (CASCADE does the
+  rest). The 409 pre-checks stay.
+
+| Child column | → Parent | On delete |
+|---|---|---|
+| `plant_subcategories.category_id` | `plant_categories` | RESTRICT |
+| `plants.subcategory_id` | `plant_subcategories` | RESTRICT |
+| `plantings.plant_id`, `.plot_id`, `.current_planting_year` | `plants`, `plots`, `planting_years` | RESTRICT |
+| `harvests.planting_id`, `.planting_year` | `plantings`, `planting_years` | RESTRICT |
+| `garden_journal.planting_year`, `garden_activity_log.planting_year` | `planting_years` | RESTRICT |
+| `planting_planting_years.planting_year` | `planting_years` | RESTRICT |
+| `planting_planting_years.planting_id` | `plantings` | CASCADE |
+| `planting_status_history.planting_id` | `plantings` | CASCADE |
+| `plants_activity_schedules.plant_id`, `.activity_schedule_id` | `plants`, `activity_schedules` | CASCADE |
+
+### Verified on 2026-10-30
+
+- **Guard:** with the orphans still present, `db-migrate up` refused with "harvests.planting_id: 1,
+  planting_status_history.planting_id: 25". The schema was unchanged (3 FKs), and the
+  migration wasn't recorded.
+- **After the user's Workbench cleanup:** the report showed 0 for all 14 relationships.
+- **Rehearsal: `up`, `down`, `up`.**
+  - After each `up`: 17 FKs (3 existing + 14) and 14 `idx_*` indexes (5 existing + 9).
+  - After `down`: 3 FKs and 5 indexes, with the migration unrecorded.
+  - CASCADE is on exactly the four owned relationships.
+- **Build:** `tsc`, `npm run lint` and `npm run build` are clean, and the server boots with the
+  migration applied.
+- **Smoke test, 60/60 passing** (scratchpad script, outside the repo). It reran the 50 Phase 2
+  checks, now relying on CASCADE, plus:
+  - 400 for each write naming a missing parent: a planting for an unknown plant, a planting in
+    an unknown year, a plant with an unknown subcategory, a harvest for an unknown planting, a
+    journal entry in an unknown year;
+  - 409 for a duplicate category and for assigning the same schedule twice;
+  - 400 for a planting update with a field its status doesn't allow;
+  - both test harvests found by `GET /harvests/search?year=<9xxx year>`;
+  - the year's 409 reporting `"harvests":2`;
+  - 0 rows left everywhere, including the catch-all `acc-smoke-%` SQL count, now fixed.
+- **The plant with an unknown subcategory now leaves no row behind**, so B-orphan is gone.
+
+### Prod rollout
+
+1. Run `scripts/foreign-key-orphans.sql` against prod: REPORT, then PREVIEW, then DELETES, then
+   the REPORT again (all 0), then COMMIT.
+2. Deploy. The migration runs at boot. If anything was missed, the guard stops the boot and
+   names it, without changing the schema.
+
+### Follow-up: where the orphans came from (next, after the Phase 3 commit)
+
+The user found orphans in prod as well, so work out how each kind could have been created:
+which code paths, and which of them Phases 2 and 3 have closed. Candidates seen so far:
+- the old single-row deletes (Phase 2's "Why");
+- writes that never checked their parent: a harvest for planting `"1"` (the README curl), and a
+  plant with an unknown subcategory;
+- the DELETE action's own error wrapping;
+- SPLIT and carry-forward inserts.
+
+Compare against the prod report's counts per relationship, and record the conclusions in the
+delete-APIs changelog.
+
+---
+
+## Phase 4: Suite scaffolding
 
 Goal: the whole skeleton running green against the local services, with the first few specs, the
 preflight and the residue check in place, before the specs are filled in.
@@ -587,12 +697,12 @@ If anything is found, it throws an error naming each leftover, and the run fails
 
 ### Done when
 
-The skeleton is green, the layering greps (Phase 5) hold, and running it twice in a row leaves
+The skeleton is green, the layering greps (Phase 6) hold, and running it twice in a row leaves
 no residue.
 
 ---
 
-## Phase 4: Specs per API grouping
+## Phase 5: Specs per API grouping
 
 Drivers assert only on what the spec itself created, or on invariants. Other data in the
 database is someone's real garden. Each bullet below becomes one `it(...)` or a small group.
@@ -601,10 +711,10 @@ database is someone's real garden. Each bullet below becomes one `it(...)` or a 
 ### plant-categories
 - [ ] Create a category and see it listed with no subcategories.
 - [ ] Add a subcategory and see it under its category.
-- [ ] A duplicate category name → pinned 500, should be 409 (B-dup). Control: the list still
-  shows one.
-- [ ] A duplicate subcategory name in the same category → pinned 500, should be 409. The same
-  name under another category succeeds.
+- [ ] A duplicate category name → 409 (B-dup, fixed in Phase 3). Control: the list still shows
+  one.
+- [ ] A duplicate subcategory name in the same category → 409. The same name under another
+  category succeeds.
 - [ ] Deleting a category that still has subcategories → 409. Deleting a subcategory a plant uses
   → 409.
 - [ ] Deleting an empty subcategory, then the empty category, → gone from the list.
@@ -615,13 +725,12 @@ database is someone's real garden. Each bullet below becomes one `it(...)` or a 
 - [ ] A plant with no `defaultHarvestTypeId` gets `unspecified` (id 1). A chosen default is kept.
 - [ ] Update by `plantId`. The response and a re-read agree.
 - [ ] Assign and unassign activity schedules. Both `assign` and `unassign` must be arrays, else 400.
-- [ ] Assigning the same schedule twice → pinned 500, should be 409 or idempotent.
+- [ ] Assigning the same schedule twice → 409 (fixed in Phase 3).
 - [ ] An unknown plant id → pinned 500, should be 404 (S-NF).
 - [ ] Creating a plant whose name is taken overwrites the other plant → pinned (B-overwrite).
   Control: the first plant's details are now the second's.
-- [ ] An unknown `subcategoryId` → pinned 500 that leaves an orphan row holding the name
-  (B-orphan). **The driver must find that row, by listing or by name, and register it for
-  teardown**, or it becomes residue.
+- [ ] An unknown `subcategoryId` → 400, and no row is written (B-orphan, fixed by Phase 3's
+  foreign key). Control: the name is still free afterwards.
 - [ ] Deleting a plant with plantings → 409. Deleting it after its plantings are gone → gone, and
   its schedule links with it.
 
@@ -639,7 +748,7 @@ database is someone's real garden. Each bullet below becomes one `it(...)` or a 
   PLANTED plantings into it.
 - [ ] `details` counts are always 0 → pinned (B-details), with a planting in the year as the
   control.
-- [ ] A duplicate year → pinned 500, should be 409.
+- [ ] A duplicate year → 409 (fixed in Phase 3).
 - [ ] Deleting a year with plantings, harvests, journal or log entries → 409. Deleting an empty
   year → gone.
 
@@ -649,11 +758,12 @@ database is someone's real garden. Each bullet below becomes one `it(...)` or a 
   `transplantDate`, `numberTransplanted`) → RETIRE. Each step adds a history entry.
 - [ ] A COMMENT adds a history entry without changing status.
 - [ ] SPLIT into named parts: the counts add up, and the children exist and are cleaned up.
-- [ ] A split that overflows the count → pinned 500, should be 400.
+- [ ] A split that overflows the count → 400 (S-rewrap, fixed in Phase 3).
 - [ ] An action out of lifecycle order → 400. This one is correct today, since the check sits
   outside the rewrap.
-- [ ] Update with a field allowed for the status → 200. A field not allowed for the status →
-  pinned 500, should be 400 (S-rewrap).
+- [ ] Update with a field allowed for the status → 200. A field not allowed for the status → 400
+  (S-rewrap, fixed in Phase 3).
+- [ ] Create for an unknown plant, or in a year that doesn't exist → 400, and nothing is written.
 - [ ] The DELETE action from CREATED → gone. The DELETE action from a later status → 400.
 - [ ] `DELETE /plantings/:id` with harvests → 409; without harvests → gone.
 - [ ] `GET /plantings?plantingYear=` lists the spec's plantings. A non-numeric year → pinned 500
@@ -666,9 +776,10 @@ database is someone's real garden. Each bullet below becomes one `it(...)` or a 
 - [ ] Two harvests on the same planting, day and type fold into one, with the quantities summed.
 - [ ] Summary, search and stats (Plant and Planting): the spec's harvests appear, filtered to its
   own plantings.
-- [ ] Harvests are stored under the **current calendar year**, not the planting's year → pinned
-  (B-year). So summary and search for the test year find nothing. Assert both halves: missing
-  under the test year, present under the current year.
+- [ ] A new harvest is filed under its planting's current year (B-year, fixed in Phase 3), so
+  summary and search for the test year find it. An existing harvest keeps its year when
+  re-saved.
+- [ ] A harvest for an unknown planting → 400, naming it.
 - [ ] A body without `harvests` → pinned 500, should be 400.
 - [ ] Delete → gone.
 
@@ -685,6 +796,7 @@ database is someone's real garden. Each bullet below becomes one `it(...)` or a 
 - [ ] Upsert (201 when new, 200 with `entryId`), then list by year.
 - [ ] Delete through the new endpoint → gone from the list.
 - [ ] A missing `entryDate` → pinned 500, should be 400.
+- [ ] An entry in a planting year that doesn't exist → 400 (Phase 3's foreign key).
 
 ### activity-schedules
 - [ ] Create (201, no items), get, list, update. Update overwrites both fields → pin it if
@@ -696,7 +808,7 @@ database is someone's real garden. Each bullet below becomes one `it(...)` or a 
 
 ---
 
-## Phase 5: Prove it, check it, document it
+## Phase 6: Prove it, check it, document it
 
 ### Prove the suite can fail
 
@@ -747,7 +859,7 @@ targeted ways (by hand, then revert) and check that each break fails exactly wha
 
 ---
 
-## Phase 6: Upgrade to vitest 5 and Node 24
+## Phase 7: Upgrade to vitest 5 and Node 24
 
 Requested by the user on 2026-10-29, when vitest 5 turned out to need a newer Node than the
 project targets (see Phase 1). It's the final step, so the suite is complete and green before
@@ -761,7 +873,7 @@ the runtime moves under it.
 - [ ] Build the Docker image, and run it once against the local database. Confirm the service
   starts, migrations run, and `GET /service-info` answers.
 - [ ] `npm run build`, `npm run tsc:acceptance` and the full `npm run test:acceptance` are green,
-  with the same counts as at the end of Phase 5.
+  with the same counts as at the end of Phase 6.
 - [ ] Note in the changelog that feral is still on vitest 1.6, in case the two suites drift.
 - [ ] Delete this file once the changelogs hold the history.
 
@@ -769,7 +881,7 @@ the runtime moves under it.
 
 ## Appendix A: Review findings (2026-10-29)
 
-From a read-only review of the service at `a3c0ed2`. The ids are referenced from Phase 4. The
+From a read-only review of the service at `a3c0ed2`. The ids are referenced from Phase 5. The
 **Suite** column says how the suite will record each one. **Out of scope** means it's worth
 fixing, but not part of this plan.
 
@@ -791,8 +903,8 @@ fixing, but not part of this plan.
 | S-B1 | A bad, forged or expired token → **500**, not 401. The `try` in `verify()` wraps only the Promise constructor, so the rejection never becomes `JwtVerifyError`, and `attach-actor` maps it to "Unknown error authenticating token". | `src/jwt/index.ts` `verify()`, `src/middleware/attach-actor.ts` | pinned (auth) |
 | S-B2 | No `return` after `next(err)` when the token is missing or not a string, so `next` is called twice. The 401 is sent, then the error handler runs again on a finished response. | `src/middleware/attach-actor.ts` | the 401 test; watch for flakiness |
 | S-NF | `RowNotFoundError` has status 500, so every not-found is a 500: plant, plot, planting, year, schedule, item, planning year. | `src/database/index.ts:61` | pinned |
-| S-rewrap | Services rewrap every error in `new FeralError(...)`, which resets the status to 500. A disallowed planting update field (`PlantingValidationError`, 400) and `SplitActionOverflowError` come out as 500. The same flattening fed feral's first pinned-behaviour fixes. | `plantings-service.ts`, `split-action.ts` | pinned |
-| B-dup | Duplicate category, subcategory, planting year or schedule link → 500. | services | pinned |
+| S-rewrap | Services rewrap every error in `new FeralError(...)`, which resets the status to 500. A disallowed planting update field (`PlantingValidationError`, 400) and `SplitActionOverflowError` come out as 500. The same flattening fed feral's first pinned-behaviour fixes. | `plantings-service.ts`, `split-action.ts` | **fixed in Phase 3** (`FeralError` keeps a 4xx cause's status) |
+| B-dup | Duplicate category, subcategory, planting year or schedule link → 500. | services | **fixed in Phase 3** (errno 1062 → 409) |
 | S-NaN | `parseInt` never throws, so non-numeric path or query numbers reach SQL as `NaN` → 500. The guard in `planning-handlers.ts` is dead code. | handlers | pinned |
 | S-body | Missing required body fields → 500: no `harvests` array (TypeError in the serializer), no `entryDate` (`format(Invalid Date)`), no planting `name` (NOT NULL). | serializers | pinned (a few) |
 | S-shape | Error bodies are inconsistent: plant handlers send `{message}`, everything else sends `{errors:[...]}`. Malformed JSON gets Express's HTML 400 page. | handlers, `app.ts` | drivers tolerate both |
@@ -801,16 +913,16 @@ fixing, but not part of this plan.
 
 | Id | Finding | Where | Suite |
 |---|---|---|---|
-| B-year | Harvest upserts never write `planting_year`, so it takes the column default: the current calendar year. Summary, search and stats all filter on it. | `src/services/harvests/queries.ts` upsert | pinned |
+| B-year | Harvest upserts never write `planting_year`, so it takes the column default: the current calendar year. Summary, search and stats all filter on it. | `src/services/harvests/queries.ts` upsert | **fixed in Phase 3** (new harvests take the planting's year) |
 | B-details | `getStatusBreakdowns` selects `current_planting_year`, but the row mapper reads `planting_year`, so `GET /planting-years` `details` counts are always 0. | `plantings/queries.ts` vs `plantings/row-mapper.ts` | pinned |
 | B-overwrite | Upsert on a taken `friendly_name` silently updates the *other* plot or plant (`ON DUPLICATE KEY` fires on the unique name). For plots, the response holds an id that doesn't exist. | `plots-mysql-datasource.ts`, `plants-mysql-datasource.ts` | pinned |
-| B-orphan | A plant with an unknown `subcategoryId` is inserted, then the read-back inner join fails → 500. The row stays and holds the name. Schedule assignment for an unknown plant behaves the same way. | plants datasource | pinned; driver cleans up |
+| B-orphan | A plant with an unknown `subcategoryId` is inserted, then the read-back inner join fails → 500. The row stays and holds the name. Schedule assignment for an unknown plant behaves the same way. | plants datasource | **fixed in Phase 3** (the FK refuses the insert → 400) |
 | B-plot | Plot `isActive` is always true, a PUT echoes the input rather than the stored row, and a GET returns `is_active` as `1`. | `serializers/plots.ts`, `plots-service.ts` | pinned |
 | B-name | `getPlantByFriendlyName` reads `results[0]!.plantId`, but the row has `plant_id`. | `plants-mysql-datasource.ts` | confirm; pin if reachable |
 | B-split | `splitPlanting` picks its column list from `sourceCount` but always passes 3 params, so they mismatch when the count is 0. The PLANT action's split and update aren't in one transaction. | `plantings-mysql-datasource.ts`, `plant-action.ts` | pin if reachable |
 | B-clear | `buildUpdateQuery` checks truthiness, so a field can't be cleared or set to 0. | `plantings/queries.ts` | pinned (one case) |
 | B-item | Schedule-item PATCH ignores `:activityScheduleId` in the path. | `schedules/queries.ts` | pinned |
-| B9 | No connection pool: every query opens a connection. `execTransactionQuery` leaks its connection if `beginTransaction` fails. | `src/database/index.ts` | fix in Phase 2 if cheap |
+| B9 | No connection pool: every query opens a connection. `execTransactionQuery` leaks its connection if `beginTransaction` fails. | `src/database/index.ts` | leak **fixed in Phase 2**; no pool yet |
 | B10 | `src/types/express/index.d.ts` imports a path that doesn't exist. `apiRouter` is a module-level singleton, so calling `buildRouter()` twice registers every route twice. | | out of scope |
 | B11 | `scripts/init-test-db-users.sql` passwords don't match `.env`. The vigilant seed script is stale: it omits `tags` (TEXT NOT NULL) and leaves `subcategory_id=0`. | `scripts/` | out of scope (the suite doesn't use the seed) |
 
@@ -820,23 +932,27 @@ latent double-send.
 
 ---
 
-## Appendix B: Data the API can and can't remove today
+## Appendix B: Data the API can and can't remove
 
-| Table | Written by | Deletable today | After Phase 2 |
+"Deletable before" is the service as reviewed on 2026-10-29. "Now" is after Phases 2 and 3:
+the 409s come from the service's pre-checks, backed by RESTRICT foreign keys, and "removed with"
+is `ON DELETE CASCADE`.
+
+| Table | Written by | Deletable before | Now |
 |---|---|---|---|
 | plant_categories | `POST /plant-categories` | no | `DELETE /plant-categories/:id` (409 if it has subcategories) |
 | plant_subcategories | `POST /plant-categories/:id/plant-subcategories` | no | `DELETE .../plant-subcategories/:id` (409 if plants use it) |
-| plants | `PUT /plants` | yes, orphans plantings and links | 409 if plantings; links removed with it |
+| plants | `PUT /plants` | yes, orphans plantings and links | 409 if plantings; links cascade |
 | plants_activity_schedules | `PUT /plants/:id/activity-schedules` | `unassign` only | also removed with either side |
 | plots | `PUT /plots` | yes, orphans `plot_id` | 409 if plantings use it |
 | planting_years | `PUT /planting-years` | no | `DELETE /planting-years/:year` (409 if referenced) |
-| plantings | `POST /plantings`, SPLIT | yes, orphans everything below | 409 if harvests; history and mappings removed with it |
-| planting_status_history | every planting action and update | no (internal) | removed with its planting |
-| planting_planting_years | create, year carry-over, SPLIT | no (internal) | removed with its planting |
+| plantings | `POST /plantings`, SPLIT | yes, orphans everything below | 409 if harvests; history and mappings cascade |
+| planting_status_history | every planting action and update | no (internal) | cascades with its planting |
+| planting_planting_years | create, year carry-over, SPLIT | no (internal) | cascades with its planting; refuses a year delete |
 | harvests | `PUT /harvests` | yes | unchanged |
 | garden_journal | `PUT /journal` | no | `DELETE /journal/entries/:entryId` |
 | garden_activity_log | `PUT /activity-log` | no | `DELETE /activity-log/entries/:entryId` |
-| activity_schedules | `POST /activity-schedules` | no | `DELETE /activity-schedules/:id` |
+| activity_schedules | `POST /activity-schedules` | no | `DELETE /activity-schedules/:id`; items and plant links cascade |
 | activity_schedule_items | `POST .../schedule-items` | yes | also cascaded by FK with its schedule |
 | harvest_types | seed only | n/a | read-only to the suite |
 
@@ -854,7 +970,7 @@ worth fixing, but not part of this plan.
 | T-2 | `test/setup.ts` is both a jest `setupFiles` entry and imported by the test, so it runs twice. With the module-level `apiRouter` singleton (B10), a second app instance would register every route twice. | `jest.config.ts`, `test/setup.ts` | Phase 1: deleted |
 | T-3 | The setup loads the real dev `.env` (DB credentials, session key) into the test process. `getApp(__dirname, '8102')` passes an `appRoot` that `getApp` never uses, and a port nothing listens on. | `test/setup.ts`, `src/app.ts` | Phase 1: deleted. The unused `appRoot` parameter is out of scope. |
 | T-4 | The one test only checks `/service-info`. It never touches the DB, auth or a real route, so it guards almost nothing, and the acceptance suite covers the same check against the real service. | `test/service-info.test.ts` | Phase 1: deleted (user decision) |
-| T-5 | Script names are out of step: `test:int` here, `test:integration` and `test:acceptance` in the sibling projects. | `package.json` | Phase 1 removes `test:int`; Phase 3 adds `test:acceptance` and `:watch` |
+| T-5 | Script names are out of step: `test:int` here, `test:integration` and `test:acceptance` in the sibling projects. | `package.json` | Phase 1 removes `test:int`; Phase 4 adds `test:acceptance` and `:watch` |
 | T-6 | A 30s `testTimeout` is far more than an in-process call needs, and would hide a hang. | `jest.config.ts` | Phase 1: deleted. Acceptance uses feral's 15s test and 20s hook timeouts. |
 | T-7 | The Docker image builds on `node:20-alpine`. Node 20 reached end of life in April 2026, and vitest 5 declares `node ^22.12 \|\| ^24 \|\| >=26`. The Docker build's `npm install` includes devDependencies (needed for `npm run build`), so it warns `EBADENGINE`, though it won't fail unless `engine-strict` is set. | `Dockerfile` | Phase 1, optional: `node:24-alpine` in both stages |
 | T-8 | `tools/copy-assets.ts` copies `.env` into `dist/`. The server runs from the repo root, and `dotenv.config()` reads `./.env` from the cwd, so the copy isn't needed, and it puts secrets in the build output. In Docker the copy fails quietly, because `.dockerignore` excludes `.env`. Feral has the same line. | `tools/copy-assets.ts` | out of scope; pairs with S-1, in both projects |
@@ -900,3 +1016,15 @@ counts once there are any.
 
   Found: the TIMESTAMP date limit for 9xxx test years, 26 pre-existing orphan rows, and no
   impact on the app. Awaiting review before commit.
+- **2026-10-30**: Phase 2 committed as `53cf265`. **Phase 3 added (foreign keys)** at the
+  user's request, ahead of the suite. The suite phases were renumbered 3–6 → 4–7; the entries
+  above keep the numbers they had when written.
+  - 14 foreign keys, with CASCADE only for owned rows.
+  - FeralError keeps 4xx statuses (S-rewrap fixed); MySQL errors map to 400 or 409.
+  - New harvests take their planting's year (B-year fixed).
+  - Orphan guard in the migration; the user cleared the local orphans with
+    `scripts/foreign-key-orphans.sql`.
+  - Rehearsed `up`/`down`/`up`; 60/60 smoke checks.
+
+  Next, after the commit: analyse where the orphans came from, since prod has some too.
+  Awaiting review before commit.

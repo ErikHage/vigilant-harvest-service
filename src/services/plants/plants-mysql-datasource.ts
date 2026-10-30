@@ -109,18 +109,14 @@ async function countPlantingsByPlantId(plantId: string): Promise<number> {
   return await db.execCountQuery(query);
 }
 
-// schedule links are join rows, not children, so they go with the plant
+// schedule links go with the plant, by ON DELETE CASCADE
 async function deletePlantById(plantId: string): Promise<void> {
-  await db.execTransactionQuery([
-    {
-      sql: queries.deleteScheduleLinksByPlantId,
-      params: [ plantId, ],
-    },
-    {
-      sql: queries.deleteById,
-      params: [ plantId, ],
-    },
-  ]);
+  const query = {
+    sql: queries.deleteById,
+    params: [ plantId, ],
+  };
+
+  await db.execQuery(query);
 }
 
 async function insertCategory(category: PlantCategoryRequest): Promise<PlantCategory> {

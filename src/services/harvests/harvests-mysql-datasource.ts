@@ -5,7 +5,8 @@ import {
   HarvestSearchRequest,
   HarvestSummary,
   HarvestSummaryRequest,
-  HarvestSummaryRow, HarvestUpsertInstruction, HydratedHarvest, HydratedHarvestRow
+  HarvestSummaryRow, HarvestUpsertInstruction, HydratedHarvest, HydratedHarvestRow,
+  PlantingYearRow
 } from './types';
 import { QueryPayload } from '../../database/types';
 
@@ -53,6 +54,21 @@ async function getHarvestById(harvestId: string): Promise<Harvest | null> {
   }
 
   return rowMapper.fromRow(results[0]!);
+}
+
+async function getPlantingYearByPlantingId(plantingId: string): Promise<number | null> {
+  const query = {
+    sql: queries.getPlantingYearByPlantingId,
+    params: [ plantingId, ],
+  };
+
+  const results = await db.execQuery<PlantingYearRow[]>(query);
+
+  if (results.length === 0) {
+    return null;
+  }
+
+  return results[0]!.current_planting_year;
 }
 
 async function getDefaultHarvestTypeIdByPlantingId(plantingId: string): Promise<number | null> {
@@ -134,6 +150,7 @@ async function deleteHarvestById(harvestId: string): Promise<void> {
 export default {
   upsertHarvests,
   getHarvestById,
+  getPlantingYearByPlantingId,
   getDefaultHarvestTypeIdByPlantingId,
   getHarvestByPlantingIdDateAndType,
   getHarvestSummary,

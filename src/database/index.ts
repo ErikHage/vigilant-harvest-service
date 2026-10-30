@@ -8,6 +8,24 @@ import { getLogger } from '../logging';
 
 const logger = getLogger('database-index');
 
+// MySQL errors a client caused, by errno, and the status each one answers with
+const clientErrors: Map<number, { status: number, reason: string }> = new Map([
+  [ 1062, { status: 409, reason: 'duplicate entry', }, ],
+  [ 1451, { status: 409, reason: 'row is still referenced', }, ],
+  [ 1452, { status: 400, reason: 'referenced row does not exist', }, ],
+]);
+
+function toMysqlError(message: string, debugParams: object, err: unknown): MysqlError {
+  const errno: unknown = (err as { errno?: unknown } | null)?.errno;
+  const clientError = typeof errno === 'number' ? clientErrors.get(errno) : undefined;
+
+  const error = new MysqlError(clientError ? `${message}: ${clientError.reason}` : message, debugParams, ensureError(err));
+  if (clientError) {
+    error.status = clientError.status;
+  }
+  return error;
+}
+
 async function execQuery<T extends QueryResult>(queryPayload: QueryPayload): Promise<T> {
   const conn: Connection = await mysqlClient.getConnection();
 
@@ -17,7 +35,7 @@ async function execQuery<T extends QueryResult>(queryPayload: QueryPayload): Pro
   } catch (err) {
     const error = ensureError(err);
     logger.error(error, 'Error performing query');
-    throw new MysqlError('Error performing query', { queryPayload, }, ensureError(err));
+    throw toMysqlError('Error performing query', { queryPayload, }, err);
   } finally {
     await mysqlClient.closeConnection(conn);
   }
@@ -51,7 +69,7 @@ async function execTransactionQuery<T extends QueryResult>(queriesArray: Array<Q
     const sql: string[] = queriesArray.map(q => q.sql);
     const error = ensureError(err);
     logger.error(error, 'Error performing queries');
-    throw new MysqlError('Error performing transaction query', { sql, }, ensureError(err));
+    throw toMysqlError('Error performing transaction query', { sql, }, err);
   } finally {
     await mysqlClient.closeConnection(conn);
   }

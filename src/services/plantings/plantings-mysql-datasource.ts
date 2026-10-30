@@ -255,22 +255,14 @@ async function countHarvestsByPlantingId(plantingId: string): Promise<number> {
   return await db.execCountQuery(query);
 }
 
-// status history and year mappings belong to the planting, so they go with it
+// status history and year mappings go with the planting, by ON DELETE CASCADE
 async function deletePlantingById(plantingId: string): Promise<void> {
-  await db.execTransactionQuery([
-    {
-      sql: queries.plantingStatusHistory.deleteByPlantingId,
-      params: [ plantingId, ],
-    },
-    {
-      sql: queries.yearMapping.deleteByPlantingId,
-      params: [ plantingId, ],
-    },
-    {
-      sql: queries.plantings.deleteById,
-      params: [ plantingId, ],
-    },
-  ]);
+  const query: QueryPayload = {
+    sql: queries.plantings.deleteById,
+    params: [ plantingId, ],
+  };
+
+  await db.execQuery(query);
 }
 
 export default {

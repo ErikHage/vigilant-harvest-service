@@ -72,18 +72,14 @@ async function updateSchedule(scheduleUpdateRequest: ActivityScheduleUpdateReque
   return await getScheduleById(scheduleUpdateRequest.activityScheduleId);
 }
 
-// plant links are join rows, not children, so they go with the schedule
+// items and plant links go with the schedule, by ON DELETE CASCADE
 async function deleteSchedule(activityScheduleId: string): Promise<void> {
-  await db.execTransactionQuery([
-    {
-      sql: queries.schedules.deletePlantLinks,
-      params: [ activityScheduleId, ],
-    },
-    {
-      sql: queries.schedules.delete,
-      params: [ activityScheduleId, ],
-    },
-  ]);
+  const query: QueryPayload = {
+    sql: queries.schedules.delete,
+    params: [ activityScheduleId, ],
+  };
+
+  await db.execQuery(query);
 }
 
 async function getScheduleItemById(entryId: string): Promise<ActivityScheduleItem> {

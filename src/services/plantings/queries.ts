@@ -166,8 +166,6 @@ const yearMapping = {
     SELECT planting_id, planting_year
       FROM planting_planting_years
      WHERE planting_id = (?)`,
-
-  deleteByPlantingId: 'DELETE FROM planting_planting_years WHERE planting_id = ?',
 };
 
 const plantingStatusHistory = {
@@ -190,8 +188,6 @@ const plantingStatusHistory = {
   getByPlantingId: `SELECT ${allPlantingHistoryFields}
                     FROM planting_status_history
                     WHERE planting_id = ?`,
-
-  deleteByPlantingId: 'DELETE FROM planting_status_history WHERE planting_id = ?',
 };
 
 export default {

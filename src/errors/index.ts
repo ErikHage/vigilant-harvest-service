@@ -40,7 +40,8 @@ export class FeralError extends Error {
     super(message);
     this.name = 'FeralError';
     this.feralCause = cause;
-    this.status = 500;
+    // a client error keeps its status through every layer that wraps it
+    this.status = cause !== undefined && cause.status >= 400 && cause.status < 500 ? cause.status : 500;
     this.debugParams = {};
   }
 
