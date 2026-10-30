@@ -10,13 +10,13 @@ the changelogs it isn't append-only: tick items off, edit the plan when it chang
 anything that changed course in the progress log at the bottom.
 
 - **Started:** 2026-10-29
-- **Status:** Phases 0–3 done; Phase 3 awaits review and commit
+- **Status:** Phases 0–3 done (Phase 3 is `18fba3b`); the orphan analysis awaits review
 - **Changelogs:** test work in `ai-changelogs/projects/vigilant-harvest-service/2026-02-21-1-testing.md`;
   the delete APIs and foreign keys (Phases 2 and 3) in `2026-10-29-1-delete-apis.md`. Append an
   entry before each commit.
-- **Next, after the Phase 3 commit:** work out how the orphans got into the database (see
-  *Follow-up: where the orphans came from*). The user found orphans in prod too, and will clean
-  them up with `scripts/foreign-key-orphans.sql` before deploying Phase 3.
+- **Next:** the user diagnoses and cleans prod with `scripts/foreign-key-orphans-diagnose.sql`, then
+  `scripts/foreign-key-orphans.sql`, and deploys Phase 3. Then Phase 4. See *Follow-up: where the
+  orphans came from*.
 - **Reference suite:** `../feral-authentication-service/test/acceptance/`. Its README and
   `ai-changelogs/projects/feral-authentication-service/2026-08-31-2-acceptance-test-adoption.md`
   explain the pattern.
@@ -31,8 +31,8 @@ anything that changed course in the progress log at the bottom.
 | 0 | Local prerequisites (test user, env, both services running) | done (`54c5373`) |
 | 1 | Test setup: drop jest, adopt feral's test layout | done (`6001d0e`) |
 | 2 | Service changes: delete APIs needed for cleanup | done (`53cf265`) |
-| 3 | Foreign keys, client statuses that survive the rewrap, harvest year | done; awaiting review and commit |
-| — | Follow-up: where the orphans came from | next, after the Phase 3 commit |
+| 3 | Foreign keys, client statuses that survive the rewrap, harvest year | done (`18fba3b`) |
+| — | Follow-up: where the orphans came from | done; awaiting review |
 | 4 | Suite scaffolding, preflight, teardown, residue check, first specs | not started |
 | 5 | Specs per API grouping | not started |
 | 6 | Prove the suite can fail, layering checks, docs | not started |
@@ -475,18 +475,62 @@ final behaviour rather than pinning orphan-creating writes only to rewrite those
 2. Deploy. The migration runs at boot. If anything was missed, the guard stops the boot and
    names it, without changing the schema.
 
-### Follow-up: where the orphans came from (next, after the Phase 3 commit)
+### Follow-up: where the orphans came from (done 2026-10-30, awaiting review)
 
-The user found orphans in prod as well, so work out how each kind could have been created:
-which code paths, and which of them Phases 2 and 3 have closed. Candidates seen so far:
-- the old single-row deletes (Phase 2's "Why");
-- writes that never checked their parent: a harvest for planting `"1"` (the README curl), and a
-  plant with an unknown subcategory;
-- the DELETE action's own error wrapping;
-- SPLIT and carry-forward inserts.
+The user found orphans in prod as well, and asked how they got there before cleaning up. Prod
+isn't reachable from here, and the local orphans were already deleted, so the analysis traces
+every path that could have written an orphan before Phases 2 and 3: the code at each commit,
+the migrations, and the app's calls. Each path is matched to a signature in the data.
+`scripts/foreign-key-orphans-diagnose.sql` (read-only) then labels each prod orphan with its
+likely cause.
 
-Compare against the prod report's counts per relationship, and record the conclusions in the
-delete-APIs changelog.
+**How each kind of orphan could be written, and what closes it now:**
+
+| Orphan | Path that wrote it | Reachable from the app? | Closed by |
+|---|---|---|---|
+| status history / year mappings of a deleted planting | the planting **DELETE action** (the app's Delete button, CREATED plantings, since 2025-02-23), or `DELETE /plantings/:id`; both removed only the `plantings` row | **yes**, the Delete button | Phase 2 (transaction), then Phase 3 (CASCADE) |
+| harvests of a deleted planting | the same deletes, on a planting that had harvests | yes, if a CREATED planting had harvests | Phase 2 409, Phase 3 RESTRICT |
+| a harvest for a planting that never existed | `PUT /harvests` never checked `plantingId`. Local: planting `"1"`, 2024-11-09, the README's example curl | no; curl or a script | Phase 3: 400 before the write, plus the FK |
+| any row in a year that was never created (plantings, journal, log) | no write checked the year, and **the app falls back to the calendar year** (`new Date().getFullYear()`) when none is saved in the browser | **yes**, e.g. early in a year before it's created | Phase 3 FK: such a write now gets a 400 |
+| `harvests.planting_year` with no such year | the 2025-11-30 migration backfilled `YEAR(date_created)`; after that, the column default was the calendar year at save time | yes, every harvest | Phase 3: the planting's year, plus the FK |
+| `plants.subcategory_id = 0` | the 2026-03-17 migration added the column with `DEFAULT 0`, so a plant never re-categorised since points at nothing. `GET /plants` inner-joins subcategories, so **such plants are hidden in the app** and can't be fixed there | the plant is hidden from it | Phase 3 FK (no new ones); existing ones need a repair |
+| a plant with an unknown subcategory | `PUT /plants` inserted, then the read-back failed with a 500 (B-orphan) | unlikely; the app picks from a list | Phase 3: 400, no row |
+| plantings of a deleted plant or plot | `DELETE /plants/:id`, `DELETE /plots/:id`, or a write with an unknown id | no, the app never calls these | Phase 2 409, Phase 3 RESTRICT |
+| schedule links | assigning an unknown id, or deleting a plant (via the API) | no | Phase 3 CASCADE and FK |
+
+- **Ruled out:** SPLIT and the year carry-forward. Both write the parent and children in one
+  transaction. The DELETE action's error wrapping changes only the status, never what's deleted.
+- **The local pattern fits the Delete button.** There were 25 history rows for 6 deleted plantings,
+  but **no** year-mapping orphans. Mappings only exist since the year-mappings migration, and any
+  delete after it would have left mappings behind. So those 6 were deleted *before* that migration
+  ran locally, by the Delete button or `DELETE /plantings/:id`.
+- **In prod, `diagnose.sql` query 1 says which:**
+  - `last_status = CREATED` → the app's Delete button (or the endpoint).
+  - Anything later → the endpoint or by hand, since the app's Delete is CREATED-only.
+  - `year_mappings_left > 0` → deleted after the mappings migration.
+  - `harvests_left > 0` → deleted with harvests on it.
+
+**What it means for the prod cleanup:**
+- **Delete** (`foreign-key-orphans.sql`): the history, mappings and harvests of deleted plantings,
+  and dangling schedule links. They were already invisible: every read joins through the planting.
+- **Repair, don't delete**, because each of these is real data the guard would otherwise block:
+  - a missing planting year → `INSERT INTO planting_years (...)` with real dates;
+  - `plants.subcategory_id = 0` → `UPDATE plants SET subcategory_id = <id>`;
+  - a missing plot → `UPDATE plantings SET plot_id = NULL`.
+
+  `diagnose.sql` queries 5–7 list these, with the repair SQL in comments.
+- **Verified locally on 2026-10-30.**
+  - All 7 diagnostic queries run clean against the real schema.
+  - In a rolled-back transaction, one orphan of each kind was planted, with FK checks off for
+    that session only. Every one was labelled with the expected cause: deleted-after-start,
+    deleted-while-CREATED with a mapping and a harvest, the `"1"` curl harvest, a dangling link,
+    a 1999 harvest year, and a subcategory-0 plant.
+  - After the rollback, 0 test rows were left, 14 relationships had 0 orphans, and all 17 keys
+    were intact.
+
+**One new consequence for the app:** the calendar-year fallback that used to write into missing
+years now gets a 400 instead. Early in a year, before that planting year is created, the app's
+writes will fail with an error alert until the year exists. Worth a prompt in the app, separately.
 
 ---
 
@@ -1028,3 +1072,11 @@ counts once there are any.
 
   Next, after the commit: analyse where the orphans came from, since prod has some too.
   Awaiting review before commit.
+- **2026-10-30**: Phase 3 committed as `18fba3b`. Orphan analysis done:
+  - every pre-Phase-3 path that could write an orphan is traced and matched to Phases 2 and 3;
+  - the local pattern points at the app's Delete button, used before the year-mappings migration;
+  - `scripts/foreign-key-orphans-diagnose.sql` was added and rehearsed on rolled-back orphans of
+    every kind;
+  - year and subcategory-0 orphans are repairs, not deletes.
+
+  Awaiting review.
