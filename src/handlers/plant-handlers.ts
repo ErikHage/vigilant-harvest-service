@@ -105,6 +105,33 @@ async function insertSubcategory(request: Request, response: Response) {
     .send(plantSubcategoryResponse);
 }
 
+async function deleteCategoryById(request: Request, response: Response) {
+  const categoryId = parseInt(request.params.categoryId!);
+
+  if (Number.isNaN(categoryId)) {
+    response.sendStatus(httpStatus.BAD_REQUEST);
+    return;
+  }
+
+  await plantsService.deleteCategoryById(categoryId);
+
+  response.sendStatus(httpStatus.OK);
+}
+
+async function deleteSubcategoryById(request: Request, response: Response) {
+  const categoryId = parseInt(request.params.categoryId!);
+  const subcategoryId = parseInt(request.params.subcategoryId!);
+
+  if (Number.isNaN(categoryId) || Number.isNaN(subcategoryId)) {
+    response.sendStatus(httpStatus.BAD_REQUEST);
+    return;
+  }
+
+  await plantsService.deleteSubcategoryById(categoryId, subcategoryId);
+
+  response.sendStatus(httpStatus.OK);
+}
+
 export default {
   upsertPlant: tryDecorator.decorate(upsertPlant),
   updateScheduleAssignment: tryDecorator.decorate(updateScheduleAssignment),
@@ -114,6 +141,8 @@ export default {
 
   insertCategory: tryDecorator.decorate(insertCategory),
   getCategories: tryDecorator.decorate(getCategories),
+  deleteCategoryById: tryDecorator.decorate(deleteCategoryById),
 
   insertSubcategory: tryDecorator.decorate(insertSubcategory),
+  deleteSubcategoryById: tryDecorator.decorate(deleteSubcategoryById),
 }

@@ -21,6 +21,13 @@ const schedules = {
     '   SET name = ?, ' +
     '       description = ? ' +
     ' WHERE activity_schedule_id = ?',
+
+  deletePlantLinks:
+    'DELETE FROM plants_activity_schedules WHERE activity_schedule_id = ?',
+
+  // activity_schedule_items cascade on delete
+  delete:
+    'DELETE FROM activity_schedules WHERE activity_schedule_id = ?',
 };
 
 const scheduleItems = {

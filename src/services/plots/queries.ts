@@ -13,6 +13,7 @@ const plots = {
     `,
     getById: `SELECT ${allPlotFields} FROM plots WHERE plot_id = ?`,
     getAll: `SELECT ${allPlotFields} FROM plots`,
+    countPlantingsByPlotId: 'SELECT COUNT(*) AS count FROM plantings WHERE plot_id = ?',
     deleteById: 'DELETE FROM plots WHERE plot_id = ?',
 };
 

@@ -27,7 +27,16 @@ async function getJournalEntries(request: Request, response: Response) {
     .send(journalEntriesResponse);
 }
 
+async function deleteJournalEntry(request: Request, response: Response) {
+  const { entryId, } = request.params;
+
+  await journalService.deleteJournalEntryById(entryId!);
+
+  response.sendStatus(httpStatus.OK);
+}
+
 export default {
   upsertJournalEntry: tryDecorator.decorate(upsertJournalEntry),
   getJournalEntries: tryDecorator.decorate(getJournalEntries),
+  deleteJournalEntry: tryDecorator.decorate(deleteJournalEntry),
 }

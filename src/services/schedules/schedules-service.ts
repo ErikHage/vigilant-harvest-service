@@ -48,6 +48,15 @@ async function updateSchedule(scheduleUpdateRequest: ActivityScheduleUpdateReque
   }
 }
 
+async function deleteSchedule(activityScheduleId: string): Promise<void> {
+  try {
+    await datasource.deleteSchedule(activityScheduleId);
+  } catch (err) {
+    throw new FeralError('Error deleting schedule', ensureError(err))
+      .withDebugParams({ activityScheduleId, });
+  }
+}
+
 async function addScheduleItem(scheduleItemRequest: ActivityScheduleItemCreateRequest): Promise<ActivityScheduleItem> {
   try {
     const entryId = uuidV4();
@@ -81,6 +90,7 @@ export default {
   listSchedules,
   getScheduleById,
   updateSchedule,
+  deleteSchedule,
 
   addScheduleItem,
   updateScheduleItem,

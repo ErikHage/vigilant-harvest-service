@@ -41,6 +41,14 @@ async function updateSchedule(request: Request, response: Response): Promise<voi
     .send(activityScheduleResponse);
 }
 
+async function deleteSchedule(request: Request, response: Response): Promise<void> {
+  const activityScheduleId = request.params.activityScheduleId!;
+  await schedulesService.deleteSchedule(activityScheduleId);
+
+  response
+    .sendStatus(httpStatus.NO_CONTENT);
+}
+
 async function addScheduleItem(request: Request, response: Response): Promise<void> {
   const scheduleItemRequest = schedulesSerializer.scheduleItems.fromCreateRequest(request);
   const scheduleItem = await schedulesService.addScheduleItem(scheduleItemRequest);
@@ -74,6 +82,7 @@ export default {
   listSchedules: tryDecorator.decorate(listSchedules),
   getScheduleById: tryDecorator.decorate(getScheduleById),
   updateSchedule: tryDecorator.decorate(updateSchedule),
+  deleteSchedule: tryDecorator.decorate(deleteSchedule),
 
   addScheduleItem: tryDecorator.decorate(addScheduleItem),
   updateScheduleItem: tryDecorator.decorate(updateScheduleItem),

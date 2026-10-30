@@ -46,3 +46,19 @@ export interface PlantingsBreakdownRow extends RowDataPacket {
   planting_status: string,
   status_count: number,
 }
+
+export interface PlantingYearUsage {
+  plantings: number,
+  plantingMappings: number,
+  harvests: number,
+  journalEntries: number,
+  activityLogEntries: number,
+}
+
+export interface PlantingYearUsageRow extends RowDataPacket {
+  plantings: number,
+  planting_mappings: number,
+  harvests: number,
+  journal_entries: number,
+  activity_log_entries: number,
+}

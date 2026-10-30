@@ -100,13 +100,27 @@ async function getPlants(): Promise<Plant[]> {
   return results.map(r => rowMapper.fromRow(r, []));
 }
 
-async function deletePlantById(plantId: string): Promise<void> {
+async function countPlantingsByPlantId(plantId: string): Promise<number> {
   const query = {
-    sql: queries.deleteById,
+    sql: queries.countPlantingsByPlantId,
     params: [ plantId, ],
   };
 
-  await db.execQuery(query);
+  return await db.execCountQuery(query);
+}
+
+// schedule links are join rows, not children, so they go with the plant
+async function deletePlantById(plantId: string): Promise<void> {
+  await db.execTransactionQuery([
+    {
+      sql: queries.deleteScheduleLinksByPlantId,
+      params: [ plantId, ],
+    },
+    {
+      sql: queries.deleteById,
+      params: [ plantId, ],
+    },
+  ]);
 }
 
 async function insertCategory(category: PlantCategoryRequest): Promise<PlantCategory> {
@@ -157,15 +171,56 @@ async function getCategories(): Promise<PlantCategory[]> {
   return rowMapper.categories.fromCategorySubcategoryRows(results);
 }
 
+async function countSubcategoriesByCategoryId(categoryId: number): Promise<number> {
+  const query = {
+    sql: queries.categories.countSubcategoriesByCategoryId,
+    params: [ categoryId, ],
+  };
+
+  return await db.execCountQuery(query);
+}
+
+async function countPlantsBySubcategoryId(subcategoryId: number): Promise<number> {
+  const query = {
+    sql: queries.categories.countPlantsBySubcategoryId,
+    params: [ subcategoryId, ],
+  };
+
+  return await db.execCountQuery(query);
+}
+
+async function deleteCategoryById(categoryId: number): Promise<void> {
+  const query = {
+    sql: queries.categories.deleteCategoryById,
+    params: [ categoryId, ],
+  };
+
+  await db.execQuery(query);
+}
+
+async function deleteSubcategoryById(categoryId: number, subcategoryId: number): Promise<void> {
+  const query = {
+    sql: queries.categories.deleteSubcategoryById,
+    params: [ categoryId, subcategoryId, ],
+  };
+
+  await db.execQuery(query);
+}
+
 export default {
   upsertPlant,
   updateScheduleAssignment,
   getPlantById,
   getPlantByFriendlyName,
   getPlants,
+  countPlantingsByPlantId,
   deletePlantById,
 
   insertCategory,
   insertSubcategory,
   getCategories,
+  countSubcategoriesByCategoryId,
+  countPlantsBySubcategoryId,
+  deleteCategoryById,
+  deleteSubcategoryById,
 }

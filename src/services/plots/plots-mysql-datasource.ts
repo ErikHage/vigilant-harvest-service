@@ -41,6 +41,15 @@ async function getPlots(): Promise<Plot[]> {
   return results.map(rowMapper.plots.fromRow);
 }
 
+async function countPlantingsByPlotId(plotId: string): Promise<number> {
+  const query: QueryPayload = {
+    sql: queries.plots.countPlantingsByPlotId,
+    params: [ plotId, ],
+  };
+
+  return await db.execCountQuery(query);
+}
+
 async function deletePlotById(plotId: string): Promise<void> {
   const query: QueryPayload = {
     sql: queries.plots.deleteById,
@@ -54,5 +63,6 @@ export default {
   upsertPlot,
   getPlotById,
   getPlots,
+  countPlantingsByPlotId,
   deletePlotById,
 }

@@ -32,7 +32,17 @@ async function getActivityLogEntriesForYear(plantingYear: number): Promise<Activ
   }
 }
 
+async function deleteActivityLogEntryById(entryId: string): Promise<void> {
+  try {
+    await datasource.deleteActivityLogEntryById(entryId);
+  } catch (err) {
+    throw new FeralError('Error deleting activity log entry', ensureError(err))
+      .withDebugParams({ entryId, });
+  }
+}
+
 export default {
   upsertActivityLogEntry,
   getActivityLogEntriesForYear,
+  deleteActivityLogEntryById,
 }

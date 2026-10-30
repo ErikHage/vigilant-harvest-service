@@ -118,6 +118,10 @@ const getSchedulesByPlantId: string =
   '    ON ps.activity_schedule_id = s.activity_schedule_id ' +
   ' WHERE ps.plant_id = ?';
 
+const countPlantingsByPlantId: string = 'SELECT COUNT(*) AS count FROM plantings WHERE plant_id = ?';
+
+const deleteScheduleLinksByPlantId: string = 'DELETE FROM plants_activity_schedules WHERE plant_id = ?';
+
 const deleteById: string = 'DELETE FROM plants WHERE plant_id = ?';
 
 const categories = {
@@ -132,6 +136,18 @@ const categories = {
     '  FROM plant_categories c ' +
     '  LEFT OUTER JOIN plant_subcategories s ' +
     '    ON c.category_id = s.category_id',
+
+  countSubcategoriesByCategoryId:
+    'SELECT COUNT(*) AS count FROM plant_subcategories WHERE category_id = ?',
+
+  countPlantsBySubcategoryId:
+    'SELECT COUNT(*) AS count FROM plants WHERE subcategory_id = ?',
+
+  deleteCategoryById:
+    'DELETE FROM plant_categories WHERE category_id = ?',
+
+  deleteSubcategoryById:
+    'DELETE FROM plant_subcategories WHERE category_id = ? AND subcategory_id = ?',
 };
 
 export default {
@@ -143,7 +159,9 @@ export default {
   getByFriendlyName,
   getAll,
   getSchedulesByPlantId,
+  countPlantingsByPlantId,
 
+  deleteScheduleLinksByPlantId,
   deleteById,
 
   categories,

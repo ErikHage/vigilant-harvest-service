@@ -1,8 +1,9 @@
-import { PlantingYear, PlantingYearRequest } from './types';
+import { PlantingYear, PlantingYearRequest, PlantingYearUsage } from './types';
 
 import datasource from './planting-years-mysql-datasource';
 import plantingsDatasource from '../plantings/plantings-mysql-datasource';
 import { ensureError, FeralError } from '../../errors';
+import { ConflictError } from '../../errors/common';
 
 async function insertPlantingYear(plantingYearRequest: PlantingYearRequest): Promise<PlantingYear> {
   try {
@@ -57,8 +58,23 @@ async function getPlantingYear(year: number): Promise<PlantingYear> {
   }
 }
 
+async function deletePlantingYear(year: number): Promise<void> {
+  const usage: PlantingYearUsage = await datasource.getPlantingYearUsage(year);
+
+  if (Object.values(usage).some(count => count > 0)) {
+    throw new ConflictError(`Planting year ${year} is in use`).withDebugParams({ year, usage, });
+  }
+
+  try {
+    await datasource.deletePlantingYear(year);
+  } catch (err) {
+    throw new FeralError('Error deleting planting year ' + year, ensureError(err));
+  }
+}
+
 export default {
   insertPlantingYear,
   getPlantingYears,
   getPlantingYear,
+  deletePlantingYear,
 }

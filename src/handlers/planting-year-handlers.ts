@@ -36,8 +36,22 @@ async function getPlantingYear(request: Request, response: Response) {
     .send(plantingYearResponse);
 }
 
+async function deletePlantingYear(request: Request, response: Response) {
+  const year = plantingYearSerializers.get.fromRequest(request);
+
+  if (Number.isNaN(year)) {
+    response.sendStatus(httpStatus.BAD_REQUEST);
+    return;
+  }
+
+  await plantingYearsService.deletePlantingYear(year);
+
+  response.sendStatus(httpStatus.OK);
+}
+
 export default {
   insertPlantingYear: tryDecorator.decorate(insertPlantingYear),
   getPlantingYears: tryDecorator.decorate(getPlantingYears),
   getPlantingYear: tryDecorator.decorate(getPlantingYear),
+  deletePlantingYear: tryDecorator.decorate(deletePlantingYear),
 }

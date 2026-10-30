@@ -4,6 +4,7 @@ import { Plot, PlotRequest } from './types';
 
 import datasource from './plots-mysql-datasource';
 import { ensureError, FeralError } from '../../errors';
+import { ConflictError } from '../../errors/common';
 
 async function upsertPlot(plotRequest: PlotRequest): Promise<Plot> {
   try {
@@ -41,6 +42,12 @@ async function getPlots(): Promise<Plot[]> {
 }
 
 async function deletePlotById(plotId: string) {
+  const plantingCount: number = await datasource.countPlantingsByPlotId(plotId);
+
+  if (plantingCount > 0) {
+    throw new ConflictError('Plot has plantings').withDebugParams({ plotId, plantingCount, });
+  }
+
   try {
     await datasource.deletePlotById(plotId);
   } catch (err) {

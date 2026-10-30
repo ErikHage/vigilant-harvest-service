@@ -1,6 +1,6 @@
 import { Connection, FieldPacket, QueryResult } from 'mysql2/promise';
 
-import { QueryPayload } from './types';
+import { CountRow, QueryPayload } from './types';
 
 import mysqlClient from './mysql-connection';
 import { ensureError, FeralError } from '../errors';
@@ -23,11 +23,18 @@ async function execQuery<T extends QueryResult>(queryPayload: QueryPayload): Pro
   }
 }
 
+// expects a query that selects a single COUNT(*) AS count
+async function execCountQuery(queryPayload: QueryPayload): Promise<number> {
+  const results = await execQuery<CountRow[]>(queryPayload);
+  return Number(results[0]?.count ?? 0);
+}
+
 async function execTransactionQuery<T extends QueryResult>(queriesArray: Array<QueryPayload>) {
   const conn = await mysqlClient.getConnection();
-  await conn.beginTransaction();
 
   try {
+    await conn.beginTransaction();
+
     const promises: Promise<[T, FieldPacket[]]>[] = [];
     queriesArray.forEach((queryPayload: QueryPayload) => {
       promises.push(conn.query(queryPayload.sql, queryPayload.params));
@@ -39,7 +46,8 @@ async function execTransactionQuery<T extends QueryResult>(queriesArray: Array<Q
 
     return results;
   } catch (err) {
-    await conn.rollback();
+    // a failed rollback must not hide the error that caused it
+    await conn.rollback().catch(rollbackErr => logger.error(ensureError(rollbackErr), 'Error rolling back transaction'));
     const sql: string[] = queriesArray.map(q => q.sql);
     const error = ensureError(err);
     logger.error(error, 'Error performing queries');
@@ -70,5 +78,6 @@ export class RowNotFoundError extends FeralError {
 
 export default {
   execQuery,
+  execCountQuery,
   execTransactionQuery,
 }

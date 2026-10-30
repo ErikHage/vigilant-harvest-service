@@ -11,6 +11,7 @@ const journalEntries = {
     `,
     getByEntryId: `SELECT ${allFields} FROM garden_journal WHERE entry_id = ?`,
     getByYear: `SELECT ${allFields} FROM garden_journal WHERE planting_year = ?`,
+    deleteByEntryId: 'DELETE FROM garden_journal WHERE entry_id = ?',
 };
 
 export default {

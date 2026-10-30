@@ -10,7 +10,7 @@ the changelogs it isn't append-only: tick items off, edit the plan when it chang
 anything that changed course in the progress log at the bottom.
 
 - **Started:** 2026-10-29
-- **Status:** Phases 0 and 1 done; Phase 0's `.gitignore` change awaits review
+- **Status:** Phases 0–2 done; Phase 2 awaits review and commit
 - **Changelog:** `ai-changelogs/projects/vigilant-harvest-service/2026-02-21-1-testing.md`. Append
   an entry before each commit; the delete APIs get their own file in Phase 2.
 - **Reference suite:** `../feral-authentication-service/test/acceptance/`. Its README and
@@ -24,9 +24,9 @@ anything that changed course in the progress log at the bottom.
 
 | Phase | What | Status |
 |---|---|---|
-| 0 | Local prerequisites (test user, env, both services running) | done; awaiting review and commit |
+| 0 | Local prerequisites (test user, env, both services running) | done (`54c5373`) |
 | 1 | Test setup: drop jest, adopt feral's test layout | done (`6001d0e`) |
-| 2 | Service changes: delete APIs needed for cleanup | not started |
+| 2 | Service changes: delete APIs needed for cleanup | done; awaiting review and commit |
 | 3 | Suite scaffolding, preflight, teardown, residue check, first specs | not started |
 | 4 | Specs per API grouping | not started |
 | 5 | Prove the suite can fail, layering checks, docs | not started |
@@ -262,14 +262,18 @@ The deletes that do exist are single-row hard deletes that orphan dependants. Th
 
 ### Shared groundwork
 
-- [ ] Add `ConflictError` (status 409) to `src/errors/common.ts`, next to `BadRequestError`.
-- [ ] **Run "in use" checks outside the services' `try { ... } catch { throw new FeralError(...) }`
+- [x] Add `ConflictError` (status 409) to `src/errors/common.ts`, plus `CONFLICT: 409` in
+  `src/util/http-status.ts`.
+- [x] Add `db.execCountQuery`, for queries that select a single `COUNT(*) AS count`, with a
+  `CountRow` type in `src/database/types.ts`. Every "in use" check uses it.
+- [x] **Run "in use" checks outside the services' `try { ... } catch { throw new FeralError(...) }`
   rewrap.** That rewrap forces every error to 500, so a 409 thrown inside it comes out as a 500.
   Follow the lifecycle check at `src/services/plantings/plantings-service.ts:39`, which sits
   outside the `try` for this reason.
-- [ ] Multi-row deletes go through `db.execTransactionQuery` (`src/database/index.ts:26`).
-  - Note: that function leaks its connection if `beginTransaction` fails (finding B9). Fix it
-    here if it's cheap, since this phase leans on it.
+- [x] Multi-row deletes go through `db.execTransactionQuery`.
+  - **B9 fixed:** `beginTransaction` now sits inside the `try`, so the `finally` always closes
+    the connection.
+  - A failing rollback is logged instead of thrown, so it can't hide the error that caused it.
 
 ### New endpoints
 
@@ -282,44 +286,97 @@ The deletes that do exist are single-row hard deletes that orphan dependants. Th
 | `DELETE /journal/entries/:entryId` | the entry | never | `journal/*`, journal handlers |
 | `DELETE /activity-log/entries/:entryId` | the entry | never | `activity-log/*`, activity-log handlers |
 
-- [ ] `DELETE /plant-categories/:categoryId`
-- [ ] `DELETE /plant-categories/:categoryId/plant-subcategories/:subcategoryId`
-- [ ] `DELETE /planting-years/:plantingYear`
-- [ ] `DELETE /activity-schedules/:activityScheduleId`
-- [ ] `DELETE /journal/entries/:entryId`
-- [ ] `DELETE /activity-log/entries/:entryId`
+- [x] `DELETE /plant-categories/:categoryId`
+- [x] `DELETE /plant-categories/:categoryId/plant-subcategories/:subcategoryId`
+- [x] `DELETE /planting-years/:plantingYear`
+- [x] `DELETE /activity-schedules/:activityScheduleId`
+- [x] `DELETE /journal/entries/:entryId`
+- [x] `DELETE /activity-log/entries/:entryId`
 
 The `/entries/` segment keeps a delete-by-UUID apart from the existing
 `GET /journal/:plantingYear` and `GET /activity-log/:plantingYear`. Rename it freely before it
 ships.
 
-Status codes: match the existing deletes. Plants, plots, plantings and harvests answer 200 "OK",
-and schedule items answer 204. Deleting an unknown id answers 200 today, not 404. That's fine for
-best-effort teardown and isn't changed here.
+Status codes: match the existing deletes.
+- Plants, plots, plantings and harvests answer 200 "OK", and so do the new category,
+  subcategory, planting-year, journal and activity-log deletes.
+- Schedule items answer 204, and so does the new schedule delete.
+- A non-numeric category, subcategory or year id answers 400. The handler returns early, so a
+  `NaN` never reaches SQL (unlike S-NaN elsewhere).
+- Deleting an unknown id answers 200 today, not 404. That's fine for best-effort teardown and
+  isn't changed here.
+- A 409 body is the usual `{ errors: [...] }`. Its `debugParams` say what blocked the delete: a
+  count, or for a planting year the breakdown `{ plantings, plantingMappings, harvests,
+  journalEntries, activityLogEntries }`.
+- The subcategory delete matches on both `category_id` and `subcategory_id`, so a subcategory
+  can't be deleted through another category's path.
 
 ### Changes to existing deletes
 
-- [ ] **Plantings.**
+- [x] **Plantings.**
   - `DELETE /plantings/:id` and the `DELETE` action (`src/services/plantings/actions/delete-action.ts`)
     go through one datasource method.
   - 409 if the planting has harvests.
   - Otherwise delete the planting, its `planting_status_history` rows and its
     `planting_planting_years` rows in one transaction.
   - The action keeps its existing rule that it's only allowed from CREATED.
-- [ ] **Plants.** `DELETE /plants/:id` answers 409 if any planting references the plant. Otherwise
+  - The harvest check is a `_assertNoHarvests` in `plantings-service.ts`, called before the
+    rewrapping `try` by both `deletePlantingById` and `performAction` (for DELETE). Inside
+    `DeleteAction` it would have become a 500.
+  - A RETIRED planting can only take COMMENT actions, so teardown must use
+    `DELETE /plantings/:id`, which has no status rule.
+- [x] **Plants.** `DELETE /plants/:id` answers 409 if any planting references the plant. Otherwise
   it deletes the plant and its `plants_activity_schedules` links in one transaction.
-- [ ] **Plots.** `DELETE /plots/:id` answers 409 if any planting has that `plot_id`.
+- [x] **Plots.** `DELETE /plots/:id` answers 409 if any planting has that `plot_id`.
 
 ### Risk to check before merging
 
 The plant and plot deletes now refuse cases they allow today. Before merging, check how
 `../vigilant-harvest-app` calls them, and decide whether the app needs a message for the 409.
 
+**Checked 2026-10-29: no impact.**
+- The app's store has a `deletePlantById` action, but no component calls it.
+- The app never deletes plots.
+- Its planting Delete action is offered only for CREATED plantings. A refusal there (a CREATED
+  planting with harvests) surfaces through the store's existing error alert.
+
 ### Done when
 
 - All of the above work by hand with curl against a local service.
 - `npm run build` is clean.
 - The suite from phases 3 and 4 covers each endpoint; it is the real proof.
+
+**Met on 2026-10-29.**
+- `tsc` and `npm run lint` are clean, and nodemon's rebuild (`npm run build`) passed.
+- A throwaway smoke script exercised every endpoint against the running service: 50 checks, all
+  passing. Its last check, a catch-all `acc-smoke-%` SQL count, had a column-name bug in the
+  script; it was rerun on its own and returned 0 across every table.
+  - Data: an `acc-smoke-*` category, subcategory, plant, plot, schedule with an item, two
+    plantings, two harvests, and a journal and an activity-log entry, all in planting year 9411.
+  - Each 409 fired while its dependant existed. The year's 409 reported
+    `{"plantings":2,"plantingMappings":2,"harvests":0,"journalEntries":1,"activityLogEntries":1}`.
+  - Each delete succeeded once its dependants were gone, and the non-numeric ids answered 400.
+  - Afterwards nothing was left: through the API, and in SQL across status history, year
+    mappings, harvests, schedule links and schedule items.
+- The script lives outside the repo. Phase 4's specs replace it.
+
+**Found while testing, and important for Phase 3:**
+- **Dates in a 9xxx test year can't be stored.** `harvests.date_created`,
+  `garden_journal.entry_date` and `garden_activity_log.entry_date` are MySQL `TIMESTAMP`s, which
+  end in 2038. A harvest dated `9411-07-01` gets a 500 ("Incorrect datetime value").
+  - So the test year stays a 9xxx *label*, and harvest and entry dates use real-era dates.
+  - The service never ties those dates to `plantingYear`.
+  - `planting_years` date columns are `DATE`, so a test year's own frost and target dates can be
+    in 9xxx.
+- **The local database already has orphans from the old deletes:**
+  - 25 `planting_status_history` rows whose planting is gone
+  - 1 harvest whose planting is gone
+
+  They predate this change. The README's orphan-check SQL must expect them, or be scoped to the
+  suite's own ids, or it will report them as the suite's residue.
+- `entry_date` values come back shifted by the local UTC offset: `9411-06-01` was sent, and the
+  error showed `9411-05-31 20:00:00`. This may be a timezone bug in the journal and log date
+  handling. Not chased here; add it to Appendix A if a spec confirms it.
 
 ---
 
@@ -440,6 +497,8 @@ Other names aren't valid: the suite creates no users, since users live in feral.
 
 ### Names and the world
 
+- Dates on harvests and on journal and activity-log entries must stay within MySQL `TIMESTAMP`
+  range (1970–2038), whatever the test year is (see Phase 2's findings). Use dates near today.
 - Anything with a name gets `acc-<alias>-<6 hex>`: plants, plots, categories, subcategories,
   schedules, planting names. The plant, plot, category and (per category) subcategory names are
   unique keys, and the database is never reset.
@@ -833,3 +892,11 @@ counts once there are any.
   - `test/acceptance/.env.acceptance` was written and gitignored.
 
   Found: about 955 leftover test applications in feral's local database.
+- **2026-10-29**: Phase 0 committed as `54c5373`. Phase 2 done:
+  - six new deletes; plantings, plants and plots refuse with 409 while in use; internal rows go
+    in one transaction;
+  - B9 fixed;
+  - 50/50 smoke checks passed with no residue.
+
+  Found: the TIMESTAMP date limit for 9xxx test years, 26 pre-existing orphan rows, and no
+  impact on the app. Awaiting review before commit.

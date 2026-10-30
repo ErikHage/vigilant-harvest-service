@@ -41,8 +41,18 @@ async function getJournalEntriesForYear(plantingYear: number): Promise<JournalEn
   return results.map(rowMapper.journalEntries.fromRow);
 }
 
+async function deleteJournalEntryById(entryId: string): Promise<void> {
+  const query: QueryPayload = {
+    sql: queries.journalEntries.deleteByEntryId,
+    params: [ entryId, ],
+  };
+
+  await db.execQuery(query);
+}
+
 export default {
   upsertJournalEntry,
   getJournalEntryById,
   getJournalEntriesForYear,
+  deleteJournalEntryById,
 }

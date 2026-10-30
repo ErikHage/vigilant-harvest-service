@@ -28,7 +28,16 @@ async function getActivityLogEntries(request: Request, response: Response) {
     .send(activityLogEntriesResponse);
 }
 
+async function deleteActivityLogEntry(request: Request, response: Response) {
+  const { entryId, } = request.params;
+
+  await activityLogService.deleteActivityLogEntryById(entryId!);
+
+  response.sendStatus(httpStatus.OK);
+}
+
 export default {
   upsertActivityLogEntry: tryDecorator.decorate(upsertActivityLogEntry),
   getActivityLogEntries: tryDecorator.decorate(getActivityLogEntries),
+  deleteActivityLogEntry: tryDecorator.decorate(deleteActivityLogEntry),
 }

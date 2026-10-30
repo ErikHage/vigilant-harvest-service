@@ -14,6 +14,13 @@ export class UnauthorizedError extends FeralError {
   }
 }
 
+export class ConflictError extends FeralError {
+  constructor(message: string) {
+    super(message);
+    this.status = 409;
+  }
+}
+
 export class ValidationError extends FeralError {
   constructor(message: string) {
     super(message);

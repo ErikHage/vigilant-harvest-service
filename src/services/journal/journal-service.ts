@@ -30,7 +30,17 @@ async function getJournalEntriesForYear(plantingYear: number): Promise<JournalEn
   }
 }
 
+async function deleteJournalEntryById(entryId: string): Promise<void> {
+  try {
+    await datasource.deleteJournalEntryById(entryId);
+  } catch (err) {
+    throw new FeralError('Error deleting journal entry', ensureError(err))
+      .withDebugParams({ entryId, });
+  }
+}
+
 export default {
   upsertJournalEntry,
   getJournalEntriesForYear,
+  deleteJournalEntryById,
 }

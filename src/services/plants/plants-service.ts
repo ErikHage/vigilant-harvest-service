@@ -11,7 +11,7 @@ import {
 
 import datasource from '../plants/plants-mysql-datasource';
 import { ensureError, FeralError } from '../../errors';
-import { ValidationError } from '../../errors/common';
+import { ConflictError, ValidationError } from '../../errors/common';
 
 async function upsertPlant(plantRequest: PlantRequest): Promise<Plant> {
   const existingPlant: Plant | undefined = await datasource.getPlantByFriendlyName(plantRequest.friendlyName);
@@ -69,6 +69,12 @@ async function getPlants(): Promise<Plant[]> {
 }
 
 async function deletePlantById(plantId: string): Promise<void> {
+  const plantingCount: number = await datasource.countPlantingsByPlantId(plantId);
+
+  if (plantingCount > 0) {
+    throw new ConflictError('Plant has plantings').withDebugParams({ plantId, plantingCount, });
+  }
+
   try {
     await datasource.deletePlantById(plantId);
   } catch (err) {
@@ -101,6 +107,38 @@ async function getCategories(): Promise<PlantCategory[]> {
   }
 }
 
+async function deleteCategoryById(categoryId: number): Promise<void> {
+  const subcategoryCount: number = await datasource.countSubcategoriesByCategoryId(categoryId);
+
+  if (subcategoryCount > 0) {
+    throw new ConflictError('Plant category has subcategories')
+      .withDebugParams({ categoryId, subcategoryCount, });
+  }
+
+  try {
+    await datasource.deleteCategoryById(categoryId);
+  } catch (err) {
+    throw new FeralError('Error deleting plant category', ensureError(err))
+      .withDebugParams({ categoryId, });
+  }
+}
+
+async function deleteSubcategoryById(categoryId: number, subcategoryId: number): Promise<void> {
+  const plantCount: number = await datasource.countPlantsBySubcategoryId(subcategoryId);
+
+  if (plantCount > 0) {
+    throw new ConflictError('Plant subcategory has plants')
+      .withDebugParams({ categoryId, subcategoryId, plantCount, });
+  }
+
+  try {
+    await datasource.deleteSubcategoryById(categoryId, subcategoryId);
+  } catch (err) {
+    throw new FeralError('Error deleting plant subcategory', ensureError(err))
+      .withDebugParams({ categoryId, subcategoryId, });
+  }
+}
+
 export default {
   upsertPlant,
   updateScheduleAssignment,
@@ -111,4 +149,6 @@ export default {
   insertCategory,
   insertSubcategory,
   getCategories,
+  deleteCategoryById,
+  deleteSubcategoryById,
 }

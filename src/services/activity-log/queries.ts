@@ -15,6 +15,7 @@ const activityLogEntries = {
     `,
     getByEntryId: `SELECT ${allFields} FROM garden_activity_log WHERE entry_id = ?`,
     getByYear: `SELECT ${allFields} FROM garden_activity_log WHERE planting_year = ?`,
+    deleteByEntryId: 'DELETE FROM garden_activity_log WHERE entry_id = ?',
 };
 
 export default {

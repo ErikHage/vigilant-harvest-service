@@ -7,7 +7,7 @@ import { LifecycleTransitionViolationError } from './errors';
 
 import { ensureError, FeralError } from '../../errors';
 import { getStrategy } from './actions/planting-action-factory';
-import { ValidationError } from '../../errors/common';
+import { ConflictError, ValidationError } from '../../errors/common';
 import datasource from './plantings-mysql-datasource';
 import plantingValidation from './planting-validation';
 
@@ -37,6 +37,10 @@ async function performAction(plantingActionRequest: PerformActionRequest): Promi
   const currentPlanting: Planting = await datasource.getPlantingById(plantingActionRequest.plantingId);
 
   _assertLifecycleTransition(currentPlanting, plantingActionRequest);
+
+  if (plantingActionRequest.actionType === constants.plantings.actionTypes.delete) {
+    await _assertNoHarvests(plantingActionRequest.plantingId);
+  }
 
   const strategy: PlantingAction = getStrategy(plantingActionRequest.actionType);
 
@@ -118,11 +122,21 @@ function _buildUpdateComment(plantingUpdateRequest: PlantingUpdateRequest): stri
 }
 
 async function deletePlantingById(plantingId: string): Promise<void> {
+  await _assertNoHarvests(plantingId);
+
   try {
     await datasource.deletePlantingById(plantingId);
   } catch (err) {
     throw new FeralError('Error deleting planting by id', ensureError(err))
       .withDebugParams({ plantingId, });
+  }
+}
+
+async function _assertNoHarvests(plantingId: string): Promise<void> {
+  const harvestCount: number = await datasource.countHarvestsByPlantingId(plantingId);
+
+  if (harvestCount > 0) {
+    throw new ConflictError('Planting has harvests').withDebugParams({ plantingId, harvestCount, });
   }
 }
 

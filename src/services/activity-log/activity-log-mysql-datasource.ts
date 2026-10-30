@@ -41,8 +41,18 @@ async function getActivityLogEntriesForYear(plantingYear: number): Promise<Activ
   return results.map(rowMapper.activityLogEntries.fromRow);
 }
 
+async function deleteActivityLogEntryById(entryId: string): Promise<void> {
+  const query: QueryPayload = {
+    sql: queries.activityLogEntries.deleteByEntryId,
+    params: [ entryId, ],
+  };
+
+  await db.execQuery(query);
+}
+
 export default {
   upsertActivityLogEntry,
   getActivityLogEntryById,
   getActivityLogEntriesForYear,
+  deleteActivityLogEntryById,
 }

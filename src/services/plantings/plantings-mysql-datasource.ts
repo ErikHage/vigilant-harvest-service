@@ -246,13 +246,31 @@ async function getPlantingsBreakdown(): Promise<Map<number, PlantingsBreakdown>>
   return rowMapper.plantings.breakdown.fromRows(results);
 }
 
-async function deletePlantingById(plantingId: string): Promise<void> {
+async function countHarvestsByPlantingId(plantingId: string): Promise<number> {
   const query: QueryPayload = {
-    sql: queries.plantings.deleteById,
+    sql: queries.plantings.countHarvestsByPlantingId,
     params: [ plantingId, ],
   };
 
-  await db.execQuery(query);
+  return await db.execCountQuery(query);
+}
+
+// status history and year mappings belong to the planting, so they go with it
+async function deletePlantingById(plantingId: string): Promise<void> {
+  await db.execTransactionQuery([
+    {
+      sql: queries.plantingStatusHistory.deleteByPlantingId,
+      params: [ plantingId, ],
+    },
+    {
+      sql: queries.yearMapping.deleteByPlantingId,
+      params: [ plantingId, ],
+    },
+    {
+      sql: queries.plantings.deleteById,
+      params: [ plantingId, ],
+    },
+  ]);
 }
 
 export default {
@@ -265,6 +283,7 @@ export default {
   getPlantingIdsToCarryForward,
   getPlantings,
   getPlanningPlantings,
+  countHarvestsByPlantingId,
   deletePlantingById,
 
   insertStatusHistory,

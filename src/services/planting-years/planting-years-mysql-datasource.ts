@@ -1,4 +1,4 @@
-import { PlantingYear, PlantingYearRow } from './types';
+import { PlantingYear, PlantingYearRow, PlantingYearUsage, PlantingYearUsageRow } from './types';
 import { QueryPayload } from '../../database/types';
 
 import queries from './queries';
@@ -55,8 +55,37 @@ async function getPlantingYear(year: number): Promise<PlantingYear> {
   return rowMapper.plantingYears.fromRow(results[0]!);
 }
 
+async function getPlantingYearUsage(year: number): Promise<PlantingYearUsage> {
+  const query: QueryPayload = {
+    sql: queries.plantingYears.getUsage,
+    params: [ year, year, year, year, year, ],
+  };
+
+  const results: PlantingYearUsageRow[] = await db.execQuery<PlantingYearUsageRow[]>(query);
+  const row = results[0]!;
+
+  return {
+    plantings: Number(row.plantings),
+    plantingMappings: Number(row.planting_mappings),
+    harvests: Number(row.harvests),
+    journalEntries: Number(row.journal_entries),
+    activityLogEntries: Number(row.activity_log_entries),
+  };
+}
+
+async function deletePlantingYear(year: number): Promise<void> {
+  const query: QueryPayload = {
+    sql: queries.plantingYears.deleteByYear,
+    params: [ year, ],
+  };
+
+  await db.execQuery(query);
+}
+
 export default {
   insertPlantingYear,
   getPlantingYears,
   getPlantingYear,
+  getPlantingYearUsage,
+  deletePlantingYear,
 }
