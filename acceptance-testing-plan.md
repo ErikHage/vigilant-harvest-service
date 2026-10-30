@@ -10,7 +10,7 @@ the changelogs it isn't append-only: tick items off, edit the plan when it chang
 anything that changed course in the progress log at the bottom.
 
 - **Started:** 2026-10-29
-- **Status:** Phase 1 done, awaiting the user's review and commit
+- **Status:** Phases 0 and 1 done; Phase 0's `.gitignore` change awaits review
 - **Changelog:** `ai-changelogs/projects/vigilant-harvest-service/2026-02-21-1-testing.md`. Append
   an entry before each commit; the delete APIs get their own file in Phase 2.
 - **Reference suite:** `../feral-authentication-service/test/acceptance/`. Its README and
@@ -24,8 +24,8 @@ anything that changed course in the progress log at the bottom.
 
 | Phase | What | Status |
 |---|---|---|
-| 0 | Local prerequisites (test user, env, both services running) | not started |
-| 1 | Test setup: drop jest, adopt feral's test layout | done; awaiting review and commit |
+| 0 | Local prerequisites (test user, env, both services running) | done; awaiting review and commit |
+| 1 | Test setup: drop jest, adopt feral's test layout | done (`6001d0e`) |
 | 2 | Service changes: delete APIs needed for cleanup | not started |
 | 3 | Suite scaffolding, preflight, teardown, residue check, first specs | not started |
 | 4 | Specs per API grouping | not started |
@@ -99,27 +99,48 @@ Agreed with the user on 2026-10-29.
 
 Goal: a machine where both services run locally and the suite has a user to log in as.
 
-- [ ] **Create the test user `vigilant-test-gardener` in the local `feral_auth` database.**
-  - Grant it the *Vigilant Harvest* application (scope `vigilant`; the row is seeded by
-    `scripts/seed feral_auth db for testing.sql`).
-  - Do it either way:
-    - add `scripts/init-acceptance-user.sql`, a bcrypt hash plus the application grant, the way
-      feral's `scripts/init-test-data.sql` seeds `feral-test-admin`;
-    - or create it through feral's API, logged in as `feral-test-admin` (`POST /users`, then the
-      application grant).
-  - Check how feral grants a user an application before choosing. Its acceptance changelog
-    (2026-10-20 entry) says this machine's ids differ from the seed scripts, so the API route
-    may be the reliable one here.
-  - The password goes only in the gitignored `.env.acceptance`.
-- [ ] **Confirm the service's `SESSION_PUBLIC_KEY` matches the key feral signs Vigilant Harvest
-  sessions with.**
-  - `.env` currently has the "desktop" key active.
-  - If they don't match, every authenticated call answers 500, because of the bad-token bug in
-    finding S-B1 below.
-- [ ] **Note the Vigilant Harvest application id** for `ACCEPTANCE_APPLICATION_ID`.
-- [ ] **Confirm both services start** with `../start-vigilant-harvest.sh`:
-  - feral-authentication-service on `:8003`
-  - this service on `:8002`, at `/api/vigilant-harvest-service/v0`
+- [x] **Create the test user `vigilant-test-gardener` in the local `feral_auth` database.**
+  - Done on 2026-10-29 **through feral's API**, logged in as `feral-test-admin` (credentials from
+    feral's gitignored `test/acceptance/.env.acceptance`). The steps were:
+    1. `POST /users`: username `vigilant-test-gardener`, first name `Vigilant`, last name
+       `Test Gardener`, email `vigilant-test-gardener@example.test`, and a random password.
+       This created userId `b41b463e-770b-42d1-b632-ba03c7d3e418`.
+    2. `POST /users/:userId/applications` with `{ "applicationIds": [<Vigilant Harvest id>] }`.
+       This *replaces* the user's grants, which is harmless for a new user.
+  - Feral's login refuses any application but its own (scope `feral`) unless the user holds a
+    grant (`checkGranted` in feral's `authentication-service.ts`). Without step 2, login gives
+    403.
+  - The password is only in `test/acceptance/.env.acceptance`. `.gitignore` now lists it, and
+    `git check-ignore` confirms the rule.
+  - No SQL seed was written, since this machine's ids differ from the seed scripts. Phase 3's
+    README documents these API steps for another machine.
+- [x] **Confirm the service's `SESSION_PUBLIC_KEY` matches the key feral signs Vigilant Harvest
+  sessions with.** It does. Feral's `GET /keys` doesn't expose public keys, so the check was a
+  real login: the gardener's token for the Vigilant Harvest app verifies (RS256, `iss:
+  feral-auth`) against the `SESSION_PUBLIC_KEY` active in `.env`.
+  - The token's claims are `sessionId, userId, username, applicationId, roles, expiration, iat,
+    iss, exp`.
+  - The Vigilant Harvest app shares key pair `063f7b9c-...` with Feral Authentication and
+    Voracious Appetite.
+- [x] **The Vigilant Harvest application id** is `82d7d287-978b-4df1-bc3d-526838b2465b`
+  (scope `vigilant`).
+- [x] **Both services start.**
+  - feral-authentication-service was already running on `:8003`.
+  - This service was started with `npm run dev` and answered within seconds on `:8002`.
+  - Probes made as the gardener:
+    - `GET /service-info` → 200
+    - `GET /harvest-types` → 200 with 19 types
+    - `GET /harvest-types` without a token → 401
+- **What the local database already holds** (real dev data the suite must never touch): 27
+  plants, 7 plots, 14 categories, 3 planting years, 4 activity schedules, 59 plantings.
+- **Found in passing:** feral's local `feral_auth` database holds 972 applications, and about
+  955 of them are leftovers from feral's own suites:
+  - 797 `ui-game-*`
+  - 157 `acc Application *`
+  - more `ui-renamed-*` and `ui-app-*`
+
+  That is exactly the residue this plan's teardown and residue check exist to prevent here. It
+  is out of scope for this plan; tell the user.
 
 ---
 
@@ -804,3 +825,11 @@ counts once there are any.
   Node 20. Phase 6 added for the vitest 5 / Node 24 upgrade, at the user's request. Changelog
   started: `2026-02-21-1-testing.md`, backfilled from `831accf`. Awaiting the user's review
   before commit.
+- **2026-10-29**: Phase 1 committed as `6001d0e`. Phase 0 done:
+  - `vigilant-test-gardener` created through feral's API and granted the Vigilant Harvest app
+    (`82d7d287-...`);
+  - its token verifies against this service's `SESSION_PUBLIC_KEY`;
+  - the service answers as that user;
+  - `test/acceptance/.env.acceptance` was written and gitignored.
+
+  Found: about 955 leftover test applications in feral's local database.

@@ -32,3 +32,6 @@ chrome-user-data
 .idea
 *.iml
 *.pid
+
+# acceptance suite secrets
+test/acceptance/.env.acceptance
