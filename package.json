@@ -13,7 +13,10 @@
     "start": "node ./dist/src/server.js",
     "lint": "eslint . --ext .ts",
     "dev": "nodemon --watch src -e ts,ejs --exec npm run dev:start",
-    "prepush": "npm run lint"
+    "prepush": "npm run lint",
+    "tsc:acceptance": "tsc -p test/acceptance/tsconfig.json",
+    "test:acceptance": "vitest run --config test/acceptance/vitest.config.mts",
+    "test:acceptance:watch": "vitest --config test/acceptance/vitest.config.mts"
   },
   "dependencies": {
     "@date-fns/utc": "^1.2.0",
@@ -31,6 +34,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.2.0",
+    "@feral-auth/ts-simple-dsl": "0.0.1",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.17",
     "@types/jsonwebtoken": "^9.0.6",

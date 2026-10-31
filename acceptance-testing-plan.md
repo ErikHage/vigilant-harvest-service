@@ -10,11 +10,11 @@ the changelogs it isn't append-only: tick items off, edit the plan when it chang
 anything that changed course in the progress log at the bottom.
 
 - **Started:** 2026-10-29
-- **Status:** Phases 0–3 and the orphan analysis done; the four small fixes await review
+- **Status:** Phases 0–4 done; Phase 4 awaits review and commit
 - **Changelogs:** test work in `ai-changelogs/projects/vigilant-harvest-service/2026-02-21-1-testing.md`;
   the delete APIs and foreign keys (Phases 2 and 3) in `2026-10-29-1-delete-apis.md`; status-code
   fixes in `2026-10-30-1-status-code-fixes.md`. Append an entry before each commit.
-- **Next:** Phase 4. Separately, the user diagnoses and cleans prod with
+- **Next:** Phase 5. Separately, the user diagnoses and cleans prod with
   `scripts/foreign-key-orphans-diagnose.sql`, then `scripts/foreign-key-orphans.sql`, and deploys
   Phase 3. The suite runs locally, so it doesn't wait on prod.
 - **Reference suite:** `../feral-authentication-service/test/acceptance/`. Its README and
@@ -33,8 +33,8 @@ anything that changed course in the progress log at the bottom.
 | 2 | Service changes: delete APIs needed for cleanup | done (`53cf265`) |
 | 3 | Foreign keys, client statuses that survive the rewrap, harvest year | done (`18fba3b`) |
 | — | Follow-up: where the orphans came from | done (`8a49a05`) |
-| — | Four small fixes before the suite | done; awaiting review and commit |
-| 4 | Suite scaffolding, preflight, teardown, residue check, first specs | not started |
+| — | Four small fixes before the suite | done (`d902372`) |
+| 4 | Suite scaffolding, preflight, teardown, residue check, first specs | done; awaiting review and commit |
 | 5 | Specs per API grouping | not started |
 | 6 | Prove the suite can fail, layering checks, docs | not started |
 | 7 | Upgrade to vitest 5 and Node 24 | not started |
@@ -572,35 +572,37 @@ preflight and the residue check in place, before the specs are filled in.
 
 ### Packages and wiring
 
-- [ ] `npm install --save-dev --save-exact @feral-auth/ts-simple-dsl@0.0.1`. Pin it exactly: the
+- [x] `npm install --save-dev --save-exact @feral-auth/ts-simple-dsl@0.0.1`. Pin it exactly: the
   library is pre-1.0 and ships breaking changes in patch releases. feral, recipes-service and
   feral-authentication pin 0.0.1.
-- [ ] Add the scripts, as in feral:
-  - `"test:acceptance": "vitest run --config test/acceptance/vitest.config.ts"`
-  - `"test:acceptance:watch": "vitest --config test/acceptance/vitest.config.ts"`
-- [ ] Finish `test/acceptance/vitest.config.ts` (a placeholder since Phase 1), starting from
+- [x] Add the scripts, as in feral:
+  - `"test:acceptance": "vitest run --config test/acceptance/vitest.config.mts"`
+  - `"test:acceptance:watch": "vitest --config test/acceptance/vitest.config.mts"`
+- [x] Finish `test/acceptance/vitest.config.mts` (a placeholder since Phase 1), starting from
   feral's:
+  - Named `vitest.config.mts`, not `.ts` as in feral. Vite warns about ESM syntax in a `.ts` config
+    in a package that isn't `"type": "module"`.
   - `root: process.cwd()`
   - `include: ['test/acceptance/specs/**/*.spec.ts']`. It's the project's only vitest config.
-  - `globalSetup: ['test/acceptance/setup/global-setup.ts', 'test/acceptance/setup/global-teardown.ts']`.
-    Vitest has no separate global-teardown option. A global-setup module's exported `teardown`
-    (or the function its `setup` returns) runs after all specs, so the residue check lives in
-    `global-teardown.ts` as an exported `teardown`.
+  - `globalSetup: ['test/acceptance/setup/global-setup.ts']`. Vitest has no separate
+    global-teardown option, so the setup **returns** the residue check as its teardown. That way
+    it only runs if the preflight passed; run as a second global-setup file, it also ran after a
+    failed preflight, and buried the real message under a second error.
   - `testTimeout: 15000`, `hookTimeout: 20000`
   - `fileParallelism: false`, because every spec shares one database, and plant, plot, category
     and subcategory names are unique keys.
   - `reporters: ['verbose']`
   - **No** `setupFiles`. Nothing may build the app in-process; a black-box suite only calls the
     running service.
-- [ ] Commit `test/acceptance/.env.acceptance.example`. The real file is already gitignored
+- [x] Commit `test/acceptance/.env.acceptance.example`. The real file is already gitignored
   (`54c5373`) and in place.
-- [ ] Remove the empty, untracked `test/test-support/` left from February 2026. Feral has no such
+- [x] Remove the empty, untracked `test/test-support/` left from February 2026. Feral has no such
   folder.
-- [ ] The suite type-checks under `test/acceptance/tsconfig.json` (from Phase 1), never reaches
+- [x] The suite type-checks under `test/acceptance/tsconfig.json` (from Phase 1), never reaches
   `dist/`, and is linted through `test/.eslintrc` with the repo's rules: kebab-case filenames,
   single quotes, trailing commas, `array-bracket-spacing`, `no-floating-promises`.
   - `no-console` is a warning, so teardown and preflight messages go to `process.stderr`.
-- [ ] Add `"tsc:acceptance": "tsc -p test/acceptance/tsconfig.json"`, to type-check the suite;
+- [x] Add `"tsc:acceptance": "tsc -p test/acceptance/tsconfig.json"`, to type-check the suite;
   feral runs the same check by hand. Keep it out of `build`, because the Docker build doesn't
   copy `test/`.
 
@@ -611,19 +613,20 @@ Mirrors feral. Every file name is kebab-case.
 ```
 test/acceptance/
   README.md
-  vitest.config.ts
+  vitest.config.mts
   .env.acceptance.example
   setup/
     config.ts              loads .env.acceptance (shell overrides win), validates, refuses non-local hosts
-    global-setup.ts        preflight
-    global-teardown.ts     exports teardown(): the residue check; fails the run on leftovers
+    global-setup.ts        preflight; returns the teardown
+    global-teardown.ts     the residue check; sets a failing exit code on leftovers
   support/
     http-client.ts         the only fetch(); never throws on non-2xx; ServiceUnreachableError on network failure
     status-codes.ts        re-declared, never imported from src/
     test-context.ts        config, drivers, teardown registry, actor tokens
     resources.ts           CreatedPlant, CreatedPlanting, ... and TrackedResource
     fixtures.ts            aPlant(), aPlot(), aPlanting(), ... builders
-    actors.ts              Actor = { token, username }; ANONYMOUS_ACTOR
+    actors.ts              Actor = { token, username }; ANONYMOUS_ACTOR, MALFORMED_ACTOR
+    forged-token.ts        a well-signed token from a key made on the spot
     residue.ts             lists leftover test data through the API; shared by setup and teardown
   drivers/
     assertions.ts          the only importer of vitest's expect (custom message as its second argument)
@@ -676,6 +679,7 @@ Reserved names, resolved by `world.actorFor`:
 - `anonymous`: no token.
 - `forged`: an RS256 JWT with `iss: feral-auth` and a plausible payload, signed by a key pair the
   suite generates at runtime with `node:crypto` `generateKeyPairSync`. It never imports from `src/`.
+- `malformed`: a token that isn't a JWT at all.
 
 Other names aren't valid: the suite creates no users, since users live in feral.
 
@@ -754,29 +758,48 @@ outside the specs' context) and lists:
 - `GET /planting-years`: any year in 9000–9999
 - for each such year: `GET /journal/:year` and `GET /activity-log/:year`
 
-If anything is found, it throws an error naming each leftover, and the run fails.
-- [ ] Confirm during implementation that an error thrown from a global-setup `teardown` makes
-  `vitest run` exit non-zero and prints the message. Feral never needed this: it has no global
-  teardown. If it doesn't, set `process.exitCode = 1` as well.
+If anything is found, it names each leftover and fails the run. A check that can't be made (a list
+it can't read, a failed login) fails the run too.
+- [x] Confirm that a failure here makes `vitest run` exit non-zero. **It didn't at first:** vitest
+  prints an error thrown in teardown as "error during close" and still exits 0, so a run that left
+  data behind passed. The teardown now writes the message and sets `process.exitCode = 1`.
+  Checked with a planted `acc-` category: exit 1, named in the message, and exit 0 once removed.
 
 ### First specs, to prove the skeleton
 
-- [ ] `service-info.spec.ts`: reachable with no token, and reports its name.
-- [ ] `auth.spec.ts`:
+- [x] `service-info.spec.ts`: reachable with no token, and reports its name.
+- [x] `authentication.spec.ts`:
   - no token → 401
   - a forged token → 401 (S-B1, fixed)
   - a malformed token → same
   - a real token → 200 (the control)
-- [ ] `dsl-misuse.spec.ts`: a misspelled parameter, and a parameter passed to a step that takes
-  none. Its checks go through `drivers/assertions` (the recipes-service style), so `expect` is
-  still imported in only one file.
-- [ ] A first data spec end to end. `plant-categories.spec.ts` is the obvious one: it exercises
+- [x] `dsl-misuse.spec.ts`: a misspelled parameter, a parameter the step doesn't take, a missing
+  caller, and an outcome the step can't check. Every step here takes `as:`, so there is no
+  parameterless step to test. Its checks go through `drivers/assertions` (the recipes-service
+  style), so `expect` is still imported in only one file.
+- [x] A first data spec end to end. `plant-categories.spec.ts` is the obvious one: it exercises
   the new deletes, the teardown and the residue check together.
 
 ### Done when
 
 The skeleton is green, the layering greps (Phase 6) hold, and running it twice in a row leaves
 no residue.
+
+**Met on 2026-10-31.** 16 tests in 4 files pass, in about a second.
+- `tsc:acceptance`, lint and `npm run build` are clean, and `dist/` holds no test code.
+- Repeated runs back to back are clean, and the layering greps all hold.
+- **The failure paths were each seen to fail:**
+  - a planted leftover: exit 1, named, with the preflight warning first;
+  - a wrong expected reason in one driver: exactly 1 test failed, with a message showing expected
+    and actual, and nothing was left behind;
+  - service or feral unreachable, a wrong password, a non-local host: exit 1 with one message
+    naming the fix.
+- **Built differently from the plan:**
+  - `TrackedResource` is `{ path, label }`, written by the driver that made it, because deletes
+    aren't uniform: a subcategory's path sits under its category.
+  - The README was written now rather than in Phase 6, because the preflight and residue messages
+    send people to it. Its cleanup SQL was rehearsed in a rolled-back transaction: with residue
+    planted in all 14 tables, its 10 deletes returned every table to its starting count.
 
 ---
 
@@ -790,15 +813,15 @@ Every 409 driver asserts the **reason** as well as the status (e.g. "Plant has p
 foreign keys answer 409 by themselves, so the status alone can't show that the service's check ran.
 
 ### plant-categories
-- [ ] Create a category and see it listed with no subcategories.
-- [ ] Add a subcategory and see it under its category.
-- [ ] A duplicate category name → 409 (B-dup, fixed in Phase 3). Control: the list still shows
+- [x] Create a category and see it listed with no subcategories.
+- [x] Add a subcategory and see it under its category.
+- [x] A duplicate category name → 409 (B-dup, fixed in Phase 3). Control: the list still shows
   one.
-- [ ] A duplicate subcategory name in the same category → 409. The same name under another
+- [x] A duplicate subcategory name in the same category → 409. The same name under another
   category succeeds.
-- [ ] Deleting a category that still has subcategories → 409. Deleting a subcategory a plant uses
-  → 409.
-- [ ] Deleting an empty subcategory, then the empty category, → gone from the list.
+- [x] Deleting a category that still has subcategories → 409.
+- [ ] Deleting a subcategory a plant uses → 409. Needs plants, so it comes with that grouping.
+- [x] Deleting an empty subcategory, then the empty category, → gone from the list.
 
 ### plants
 - [ ] Create, get and list. Fields round-trip: taxonomy, sowing, planting, growing, harvesting,
@@ -910,20 +933,14 @@ targeted ways (by hand, then revert) and check that each break fails exactly wha
 - [ ] `grep -rn "fetch(" test/acceptance` → only `support/http-client.ts`
 - [ ] `grep -rnE "\bexpect\(|import \{[^}]*\bexpect\b" test/acceptance` → only `drivers/assertions.ts`
 - [ ] `grep -rn "\.\(get\|post\|put\|patch\|del\)(" test/acceptance/dsl` → nothing but `Map.get`
-- [ ] `grep -rn "^import\|require(" test/acceptance/specs` → the DSL entry and `vitest` (`describe`, `it`, `afterEach`) only
+- [ ] `grep -rn "^import\|require(" test/acceptance/specs` → the DSL entry and `vitest` (`describe`, `it`, `afterEach`) only, plus `dsl-misuse` in its spec
 - [ ] `grep -rn "src/" test/acceptance` → nothing
 - [ ] `grep -rn "DocumentsCurrentBehavior" test/acceptance` → every pinned test, all in `specs/`
 
 ### Docs
 
-- [ ] `test/acceptance/README.md`:
-  - the four rules
-  - how to run, including Phase 0's prerequisites
-  - how to add a test
-  - the known-wrong table (each pin and what it should be)
-  - leftover-cleanup SQL by prefix and year range
-  - a pointer to the REPORT in `scripts/foreign-key-orphans.sql`, which covers all 14
-    relationships. Every count should stay 0
+- [ ] `test/acceptance/README.md` exists since Phase 4: the rules, running, the test user, adding a
+  test, and leftover cleanup. Still to add: the known-broken table (each pin and what it should be).
 - [ ] Changelogs are kept up as each commit lands, following the feature-changelog skill:
   - test work goes in `2026-02-21-1-testing.md`, which starts with the original jest commit
     (`831accf`);
@@ -1124,3 +1141,18 @@ counts once there are any.
   - the README points at the orphan REPORT instead of carrying its own SQL.
 
   Awaiting review before commit.
+- **2026-10-31**: Four small fixes committed as `d902372`. Phase 4 done: the skeleton, preflight,
+  teardown and residue check, and specs for service info, auth, DSL misuse and plant categories.
+  16/16.
+  - **Found and fixed:** a leftover record didn't fail the run. Vitest prints an error thrown in
+    teardown but still exits 0, so the teardown now sets the exit code.
+  - The teardown is returned from the setup, so a failed preflight shows one message.
+  - The README moved up from Phase 6, because error messages point at it.
+
+  Awaiting review before commit.
+- **2026-10-31**: Compared the skeleton with feral's and brought the naming in sync: `authentication-*`
+  files and driver key, `aCategory()` builders with `New*` shapes, `kind` on tracked resources,
+  feral's driver and step patterns (`...IsRejectedAsConflict`, `listIncludes...`, `checkToken`), and
+  feral's README sections. Kept on purpose: `gardener` (the service has no roles, so `admin` would
+  be wrong), `vitest.config.mts`, and `TrackedResource.path`. Added *Skeletons and naming* to the
+  `dsl-tests` skill.
