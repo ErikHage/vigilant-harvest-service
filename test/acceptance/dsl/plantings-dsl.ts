@@ -1,0 +1,284 @@
+import { optional, parseDslArgs, required } from '@feral-auth/ts-simple-dsl';
+
+import { actor, alias } from './params';
+import { aPlanting, fixtureName } from '../support/fixtures';
+import { PlantingsDriver } from '../drivers/plantings-driver';
+import { World } from './world';
+
+export interface PlantingsDsl {
+  /** `as`, `planting`, the alias, `plant`, optional `year`, made for the spec when omitted, optional `leadTimeWeeks`. */
+  createPlanting(...args: string[]): Promise<void>,
+  /** `as`, `planting`, `status`. */
+  checkStatus(...args: string[]): Promise<void>,
+  /** `as`, `planting`, `entries`. */
+  checkHistory(...args: string[]): Promise<void>,
+  /** `as`, `planting`, `numberSown`. */
+  checkNumberSown(...args: string[]): Promise<void>,
+  /** `as`, `planting`, `year`. Asserts the year is among the planting's years. */
+  checkInYear(...args: string[]): Promise<void>,
+  /** `as`, `planting`. Asserts it is listed among the plantings of its year. */
+  checkListedInYear(...args: string[]): Promise<void>,
+  /** `as`. */
+  checkYearMustBeANumber(...args: string[]): Promise<void>,
+  /** `as`. Reads, acts on and updates a planting that does not exist. */
+  checkUnknownPlantingIsNotFound(...args: string[]): Promise<void>,
+  /** `as`, `planting`, `numberSown`. */
+  start(...args: string[]): Promise<void>,
+  /** `as`, `planting`, `plot`, `numberTransplanted`. */
+  plant(...args: string[]): Promise<void>,
+  /** `as`, `planting`. */
+  retire(...args: string[]): Promise<void>,
+  /** `as`, `planting`, `comment`. */
+  comment(...args: string[]): Promise<void>,
+  /** `as`, `planting`, `into`, the alias of the new planting, `count`. */
+  split(...args: string[]): Promise<void>,
+  /** `as`, `planting`, the original, `into`, an alias for what the service split off, `remaining`, how many. */
+  nameTheRemainder(...args: string[]): Promise<void>,
+  /** `as`, `planting`, `action`. */
+  checkActionIsRejected(...args: string[]): Promise<void>,
+  /** `as`, `planting`, `count`. */
+  checkSplitOverflowIsRejected(...args: string[]): Promise<void>,
+  /** `as`, `planting`, `seedSource`. */
+  update(...args: string[]): Promise<void>,
+  /** `as`, `planting`, `seedSource`, what it holds now. */
+  checkFieldCanBeCleared(...args: string[]): Promise<void>,
+  /** `as`, `planting`. Asserts a field its status doesn't allow is rejected. */
+  checkUpdateOfFieldIsRejected(...args: string[]): Promise<void>,
+  /** `as`, `plant`. */
+  checkCreateForUnknownPlantIsRejected(...args: string[]): Promise<void>,
+  /** `as`, `plant`. */
+  checkCreateInUnknownYearIsRejected(...args: string[]): Promise<void>,
+  /** `as`, `plant`. */
+  checkCreateWithoutNameIsRejected(...args: string[]): Promise<void>,
+  /** `as`, `planting`. Asserts it is gone. */
+  deleteWithAction(...args: string[]): Promise<void>,
+  /** `as`, `planting`. */
+  checkDeleteActionIsRejectedWhileItHasHarvests(...args: string[]): Promise<void>,
+  /** `as`, `planting`. */
+  checkDeleteIsRejectedWhileItHasHarvests(...args: string[]): Promise<void>,
+  /** `as`, `planting`. Asserts it is gone. */
+  deletePlanting(...args: string[]): Promise<void>,
+}
+
+export function createPlantingsDsl(world: World, plantings: PlantingsDriver): PlantingsDsl {
+  async function newPlanting(as: string, plantAlias: string, yearAlias?: string) {
+    const caller = await world.actorFor(as);
+    const { plantingYear, } = await world.yearFor(caller, yearAlias);
+
+    return { caller, input: aPlanting(world.plantNamed(plantAlias).plantId, plantingYear), };
+  }
+
+  return {
+    async createPlanting(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, {
+        as: actor(),
+        planting: alias(),
+        plant: alias(),
+        year: optional(),
+        leadTimeWeeks: optional().asInteger(),
+      });
+      const { caller, input, } = await newPlanting(params.as, params.plant, params.year);
+
+      world.namePlanting(params.planting, await plantings.createPlanting(caller, {
+        ...input,
+        name: fixtureName(params.planting),
+        ...(params.leadTimeWeeks === undefined ? {} : { leadTimeWeeks: params.leadTimeWeeks, }),
+      }));
+    },
+
+    async checkStatus(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), planting: alias(), status: required(), });
+
+      await plantings.getReportsStatus(await world.actorFor(params.as), world.plantingNamed(params.planting), params.status);
+    },
+
+    async checkHistory(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), planting: alias(), entries: required().asInteger(), });
+
+      await plantings.getReportsHistoryCount(await world.actorFor(params.as), world.plantingNamed(params.planting), params.entries);
+    },
+
+    async checkNumberSown(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), planting: alias(), numberSown: required().asInteger(), });
+
+      await plantings.getReportsNumberSown(await world.actorFor(params.as), world.plantingNamed(params.planting), params.numberSown);
+    },
+
+    async checkInYear(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), planting: alias(), year: alias(), });
+
+      await plantings.getReportsYear(
+        await world.actorFor(params.as),
+        world.plantingNamed(params.planting),
+        world.yearNamed(params.year).plantingYear
+      );
+    },
+
+    async checkListedInYear(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), planting: alias(), });
+
+      await plantings.listForYearIncludes(await world.actorFor(params.as), world.plantingNamed(params.planting));
+    },
+
+    async checkYearMustBeANumber(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), });
+
+      await plantings.listForNonNumericYearFailsWithServerError(await world.actorFor(params.as));
+    },
+
+    async checkUnknownPlantingIsNotFound(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), });
+
+      await plantings.getIsNotFoundFor(await world.actorFor(params.as));
+    },
+
+    async start(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), planting: alias(), numberSown: required().asInteger(), });
+
+      await plantings.start(await world.actorFor(params.as), world.plantingNamed(params.planting), params.numberSown);
+    },
+
+    async plant(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, {
+        as: actor(),
+        planting: alias(),
+        plot: alias(),
+        numberTransplanted: required().asInteger(),
+      });
+
+      await plantings.plantInPlot(
+        await world.actorFor(params.as),
+        world.plantingNamed(params.planting),
+        world.plotNamed(params.plot),
+        params.numberTransplanted
+      );
+    },
+
+    async retire(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), planting: alias(), });
+
+      await plantings.retire(await world.actorFor(params.as), world.plantingNamed(params.planting));
+    },
+
+    async comment(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), planting: alias(), comment: required(), });
+
+      await plantings.comment(await world.actorFor(params.as), world.plantingNamed(params.planting), params.comment);
+    },
+
+    async split(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), planting: alias(), into: alias(), count: required().asInteger(), });
+
+      world.namePlanting(params.into, await plantings.split(
+        await world.actorFor(params.as),
+        world.plantingNamed(params.planting),
+        fixtureName(params.into),
+        params.count
+      ));
+    },
+
+    async nameTheRemainder(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), planting: alias(), into: alias(), remaining: required().asInteger(), });
+      const planting = world.plantingNamed(params.planting);
+
+      world.namePlanting(params.into, await plantings.plantingNamedInYear(
+        await world.actorFor(params.as),
+        `${planting.name}(${params.remaining} Remaining)`,
+        planting.plantingYear
+      ));
+    },
+
+    async checkActionIsRejected(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), planting: alias(), action: required(), });
+
+      await plantings.actionOutOfOrderIsRejectedAsBadRequest(
+        await world.actorFor(params.as),
+        world.plantingNamed(params.planting),
+        params.action
+      );
+    },
+
+    async checkSplitOverflowIsRejected(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), planting: alias(), count: required().asInteger(), });
+
+      await plantings.splitOverflowFailsWithServerError(
+        await world.actorFor(params.as),
+        world.plantingNamed(params.planting),
+        params.count
+      );
+    },
+
+    async update(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), planting: alias(), seedSource: required(), });
+
+      await plantings.updateChangesSeedSource(await world.actorFor(params.as), world.plantingNamed(params.planting), params.seedSource);
+    },
+
+    async checkFieldCanBeCleared(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), planting: alias(), seedSource: required(), });
+
+      await plantings.updateToEmptyValueKeepsTheOldOne(
+        await world.actorFor(params.as),
+        world.plantingNamed(params.planting),
+        params.seedSource
+      );
+    },
+
+    async checkUpdateOfFieldIsRejected(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), planting: alias(), });
+
+      await plantings.updateOfFieldNotAllowedIsRejectedAsBadRequest(await world.actorFor(params.as), world.plantingNamed(params.planting));
+    },
+
+    async checkCreateForUnknownPlantIsRejected(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), plant: alias(), });
+      const { caller, input, } = await newPlanting(params.as, params.plant);
+
+      await plantings.createForUnknownPlantIsRejectedAsBadRequest(caller, input);
+    },
+
+    async checkCreateInUnknownYearIsRejected(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), plant: alias(), });
+      const { caller, input, } = await newPlanting(params.as, params.plant);
+
+      await plantings.createInUnknownYearIsRejectedAsBadRequest(caller, input);
+    },
+
+    async checkCreateWithoutNameIsRejected(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), plant: alias(), });
+      const { caller, input, } = await newPlanting(params.as, params.plant);
+
+      await plantings.createWithoutNameFailsWithServerError(caller, input);
+    },
+
+    async deleteWithAction(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), planting: alias(), });
+
+      await plantings.deleteActionRemovesPlanting(await world.actorFor(params.as), world.plantingNamed(params.planting));
+    },
+
+    async checkDeleteActionIsRejectedWhileItHasHarvests(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), planting: alias(), });
+
+      await plantings.deleteActionOfPlantingWithHarvestsIsRejectedAsConflict(
+        await world.actorFor(params.as),
+        world.plantingNamed(params.planting)
+      );
+    },
+
+    async checkDeleteIsRejectedWhileItHasHarvests(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), planting: alias(), });
+
+      await plantings.deleteOfPlantingWithHarvestsIsRejectedAsConflict(
+        await world.actorFor(params.as),
+        world.plantingNamed(params.planting)
+      );
+    },
+
+    async deletePlanting(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), planting: alias(), });
+
+      await plantings.deleteRemovesPlanting(await world.actorFor(params.as), world.plantingNamed(params.planting));
+    },
+  };
+}

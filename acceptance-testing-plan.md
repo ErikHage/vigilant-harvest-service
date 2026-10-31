@@ -10,11 +10,11 @@ the changelogs it isn't append-only: tick items off, edit the plan when it chang
 anything that changed course in the progress log at the bottom.
 
 - **Started:** 2026-10-29
-- **Status:** Phases 0–4 done; Phase 4 awaits review and commit
+- **Status:** Phases 0–5 done; Phase 5 awaits review and commit
 - **Changelogs:** test work in `ai-changelogs/projects/vigilant-harvest-service/2026-02-21-1-testing.md`;
   the delete APIs and foreign keys (Phases 2 and 3) in `2026-10-29-1-delete-apis.md`; status-code
   fixes in `2026-10-30-1-status-code-fixes.md`. Append an entry before each commit.
-- **Next:** Phase 5. Separately, the user diagnoses and cleans prod with
+- **Next:** Phase 6. Separately, the user diagnoses and cleans prod with
   `scripts/foreign-key-orphans-diagnose.sql`, then `scripts/foreign-key-orphans.sql`, and deploys
   Phase 3. The suite runs locally, so it doesn't wait on prod.
 - **Reference suite:** `../feral-authentication-service/test/acceptance/`. Its README and
@@ -34,8 +34,8 @@ anything that changed course in the progress log at the bottom.
 | 3 | Foreign keys, client statuses that survive the rewrap, harvest year | done (`18fba3b`) |
 | — | Follow-up: where the orphans came from | done (`8a49a05`) |
 | — | Four small fixes before the suite | done (`d902372`) |
-| 4 | Suite scaffolding, preflight, teardown, residue check, first specs | done; awaiting review and commit |
-| 5 | Specs per API grouping | not started |
+| 4 | Suite scaffolding, preflight, teardown, residue check, first specs | done (`c7d7e3f`) |
+| 5 | Specs per API grouping | done; awaiting review and commit |
 | 6 | Prove the suite can fail, layering checks, docs | not started |
 | 7 | Upgrade to vitest 5 and Node 24 | not started |
 
@@ -809,6 +809,13 @@ Drivers assert only on what the spec itself created, or on invariants. Other dat
 database is someone's real garden. Each bullet below becomes one `it(...)` or a small group.
 "Pinned" means a `DocumentsCurrentBehavior` test, and the finding id points into the appendix.
 
+**Done on 2026-10-31.** 110 tests in 14 files pass, in about 10 seconds, on repeated runs, with no
+residue, and 20 of them are pins.
+
+Before writing any spec, a throwaway probe called every endpoint these bullets describe, because
+they were written from a code review. Several were wrong, and are corrected below. New findings
+are in Appendix A.
+
 Every 409 driver asserts the **reason** as well as the status (e.g. "Plant has plantings"). The
 foreign keys answer 409 by themselves, so the status alone can't show that the service's check ran.
 
@@ -820,94 +827,111 @@ foreign keys answer 409 by themselves, so the status alone can't show that the s
 - [x] A duplicate subcategory name in the same category → 409. The same name under another
   category succeeds.
 - [x] Deleting a category that still has subcategories → 409.
-- [ ] Deleting a subcategory a plant uses → 409. Needs plants, so it comes with that grouping.
+- [x] Deleting a subcategory a plant uses → 409. Needs plants, so it comes with that grouping.
 - [x] Deleting an empty subcategory, then the empty category, → gone from the list.
 
 ### plants
-- [ ] Create, get and list. Fields round-trip: taxonomy, sowing, planting, growing, harvesting,
+- [x] Create, get and list. Fields round-trip: taxonomy, sowing, planting, growing, harvesting,
   tags, lifespan type.
-- [ ] A plant with no `defaultHarvestTypeId` gets `unspecified` (id 1). A chosen default is kept.
-- [ ] Update by `plantId`. The response and a re-read agree.
-- [ ] Assign and unassign activity schedules. Both `assign` and `unassign` must be arrays, else 400.
-- [ ] Assigning the same schedule twice → 409 (fixed in Phase 3).
-- [ ] An unknown plant id → 404 (S-NF, fixed). The same for each grouping below: an unknown plot,
+- [x] A plant with no `defaultHarvestTypeId` gets `unspecified` (id 1). A chosen default is kept.
+- [x] Update by `plantId`. The response and a re-read agree.
+- [x] Assign and unassign activity schedules.
+- [x] No `assign` or `unassign` lists → pinned 500, should be 400 (S-assign). The plan said this was
+  already a 400; the probe showed otherwise.
+- [x] Assigning the same schedule twice → 409 (fixed in Phase 3).
+- [x] An unknown plant id → 404 (S-NF, fixed). The same for each grouping below: an unknown plot,
   planting, schedule and year.
-- [ ] Creating a plant whose name is taken overwrites the other plant → pinned (B-overwrite).
-  Control: the first plant's details are now the second's.
-- [ ] An unknown `subcategoryId` → 400, and no row is written (B-orphan, fixed by Phase 3's
+- [x] A second plant with a taken name → 400. The plan said this overwrites; it doesn't.
+- [x] Renaming a plant to a taken name → 409.
+- [x] An unknown `plantId` with a taken name → pinned 404, having overwritten the plant holding the
+  name (B-overwrite). Control: that plant's description changed.
+- [x] `sowing.indoor`, `.direct` and `planting.depthInInches` come back as strings → pinned (B-types).
+- [x] An unknown `subcategoryId` → 400, and no row is written (B-orphan, fixed by Phase 3's
   foreign key). Control: the name is still free afterwards.
-- [ ] Deleting a plant with plantings → 409. Deleting it after its plantings are gone → gone, and
+- [x] Deleting a plant with plantings → 409. Deleting it after its plantings are gone → gone, and
   its schedule links with it.
 
 ### plots
-- [ ] Create (201), update (200), get, list, delete.
-- [ ] `isActive` is always true → pinned (B-plot).
-- [ ] A PUT echoes the input, not the stored row → pinned if a test can show the difference.
-- [ ] A taken name overwrites the other plot, and the response holds a plotId that doesn't exist
+- [x] Create (201), update (200), get, list, delete.
+- [x] A write answers `isActive: true` and a read answers `1` → pinned (B-plot).
+- [x] `isActive: false` is ignored → pinned (B-plot).
+- [x] A taken name overwrites the other plot, and the response holds a plotId that doesn't exist
   → pinned (B-overwrite).
-- [ ] Deleting a plot a planting is in → 409.
+- [x] Deleting a plot a planting is in → 409.
+- [x] A plot created after the planting put in it is still cleaned up. This is the case that makes
+  teardown retry; the plot is rejected on the first pass.
 
 ### planting-years
-- [ ] Create a test year (201, plain-text "Created"), then get and list it.
-- [ ] Creating it with `previousPlantingYear` set to another test year carries that year's
+- [x] Create a test year (201, plain-text "Created"), then get and list it.
+- [x] Creating it with `previousPlantingYear` set to another test year carries that year's
   PLANTED plantings into it.
-- [ ] `details` counts each status of the year's plantings (B-details, fixed).
-- [ ] A duplicate year → 409 (fixed in Phase 3).
-- [ ] Deleting a year with plantings, harvests, journal or log entries → 409. Deleting an empty
+- [x] `details` counts each status of the year's plantings (B-details, fixed).
+- [x] A duplicate year → 409 (fixed in Phase 3).
+- [x] Deleting a year with plantings, harvests, journal or log entries → 409. Deleting an empty
   year → gone.
 
 ### plantings
-- [ ] Create: 201, status CREATED, and a get shows one history entry plus the year mapping.
-- [ ] The lifecycle CREATED → START (`sowDate`, `numberSown`) → PLANT (`plotId`,
+- [x] Create: 201, status CREATED, and a get shows one history entry plus the year mapping.
+- [x] The lifecycle CREATED → START (`sowDate`, `numberSown`) → PLANT (`plotId`,
   `transplantDate`, `numberTransplanted`) → RETIRE. Each step adds a history entry.
-- [ ] A COMMENT adds a history entry without changing status.
-- [ ] SPLIT into named parts: the counts add up, and the children exist and are cleaned up.
-- [ ] A split that overflows the count → 400 (S-rewrap, fixed in Phase 3).
-- [ ] An action out of lifecycle order → 400. This one is correct today, since the check sits
+- [x] A COMMENT adds a history entry without changing status.
+- [x] SPLIT into named parts: the counts add up, and the children exist and are cleaned up.
+- [x] A PLANT of fewer than were sown leaves the rest in a new `<name>(N Remaining)` planting, which
+  teardown also catches.
+- [x] A split of as many as a planting holds → pinned 500, should be 400 (S-split). **Phase 3 did not
+  fix this**, despite what this plan and its changelog said: `SplitAction` catches the error and
+  throws a new one with no cause, so there is no status to keep.
+- [x] An action out of lifecycle order → 400. This one is correct today, since the check sits
   outside the rewrap.
-- [ ] Update with a field allowed for the status → 200. A field not allowed for the status → 400
+- [x] Update with a field allowed for the status → 200. A field not allowed for the status → 400
   (S-rewrap, fixed in Phase 3).
-- [ ] Create for an unknown plant, or in a year that doesn't exist → 400, and nothing is written.
-- [ ] The DELETE action from CREATED → gone. The DELETE action from a later status → 400.
-- [ ] `DELETE /plantings/:id` with harvests → 409; without harvests → gone.
-- [ ] `GET /plantings?plantingYear=` lists the spec's plantings. A non-numeric year → pinned 500
+- [x] Create for an unknown plant, or in a year that doesn't exist → 400, and nothing is written.
+- [x] Create with no name → pinned 500, should be 400 (S-body).
+- [x] An empty value leaves the old one in place → pinned (B-clear).
+- [x] The DELETE action from CREATED → gone. The DELETE action from a later status → 400.
+- [x] `DELETE /plantings/:id` with harvests → 409; without harvests → gone.
+- [x] `GET /plantings?plantingYear=` lists the spec's plantings. A non-numeric year → pinned 500
   (S-NaN).
 
 ### harvests
-- [ ] Upsert one harvest: 201, and it inherits the plant's default harvest type.
-- [ ] A per-harvest `harvestTypeId` override is kept. Changing the plant's default afterwards
+- [x] Upsert one harvest: 201, and it inherits the plant's default harvest type.
+- [x] A per-harvest `harvestTypeId` override is kept. Changing the plant's default afterwards
   doesn't rewrite it.
-- [ ] Two harvests on the same planting, day and type fold into one, with the quantities summed.
-- [ ] Summary, search and stats (Plant and Planting): the spec's harvests appear, filtered to its
+- [x] Two harvests on the same planting, day and type fold into one, with the quantities summed.
+- [x] Summary, search and stats (Plant and Planting): the spec's harvests appear, filtered to its
   own plantings.
-- [ ] A new harvest is filed under its planting's current year (B-year, fixed in Phase 3), so
+- [x] A new harvest is filed under its planting's current year (B-year, fixed in Phase 3), so
   summary and search for the test year find it. An existing harvest keeps its year when
   re-saved.
-- [ ] A harvest for an unknown planting → 400, naming it.
-- [ ] A body without `harvests` → pinned 500, should be 400.
-- [ ] Delete → gone.
+- [x] A harvest for an unknown planting → 400, naming it.
+- [x] A body without `harvests` → pinned 500, should be 400.
+- [x] A search with no year → pinned 500, should be 400 as the summary is (S-NaN).
+- [x] Plant stats report `statsType: "Planting"` → pinned (B-stats).
+- [x] Delete → gone.
 
 ### harvest-types
-- [ ] The list contains `unspecified` and is non-empty. Don't assert the exact 19, because the
+- [x] The list contains `unspecified` and is non-empty. Don't assert the exact 19, because the
   list is seed data.
 
 ### planning
-- [ ] For a test year with a target planting date: a CREATED planting whose lead time is due
-  appears in `toStart`, and a STARTED one appears in `toPlant`.
-- [ ] A non-numeric year → pinned 500 (S-NaN).
+- [x] A CREATED planting with a lead time appears in `toStart`, one with none in `toPlant`, and a
+  STARTED one in `toPlant`.
+- [x] An unknown year → 404.
+- [x] A non-numeric year → pinned 500 (S-NaN).
 
 ### journal and activity-log
-- [ ] Upsert (201 when new, 200 with `entryId`), then list by year.
-- [ ] Delete through the new endpoint → gone from the list.
-- [ ] A missing `entryDate` → pinned 500, should be 400.
-- [ ] An entry in a planting year that doesn't exist → 400 (Phase 3's foreign key).
+- [x] Upsert (201 when new, 200 with `entryId`), then list by year.
+- [x] Delete through the new endpoint → gone from the list.
+- [x] A missing `entryDate` → pinned 500, should be 400.
+- [x] A non-numeric year → pinned 500 (S-NaN).
+- [x] An entry in a planting year that doesn't exist → 400 (Phase 3's foreign key).
 
 ### activity-schedules
-- [ ] Create (201, no items), get, list, update. Update overwrites both fields → pin it if
-  omitting one blanks it.
-- [ ] Add, update and delete items (204).
-- [ ] An item PATCH under the wrong schedule id still updates → pinned (B-item).
-- [ ] Deleting a schedule removes its items, and unassigns it from plants (checked through the
+- [x] Create (201, no items), get, list, update.
+- [x] A `PATCH` with only a name blanks the description → pinned (B-patch).
+- [x] Add, update and delete items (204).
+- [x] An item PATCH under the wrong schedule id still updates → pinned (B-item).
+- [x] Deleting a schedule removes its items, and unassigns it from plants (checked through the
   plant).
 
 ---
@@ -1000,7 +1024,9 @@ fixing, but not part of this plan.
 | S-B1 | A bad, forged or expired token → **500**, not 401. The `try` in `verify()` wraps only the Promise constructor, so the rejection never becomes `JwtVerifyError`, and `attach-actor` maps it to "Unknown error authenticating token". | `src/jwt/index.ts` `verify()`, `src/middleware/attach-actor.ts` | **fixed** before Phase 4 |
 | S-B2 | No `return` after `next(err)` when the token is missing or not a string, so `next` is called twice. The 401 is sent, then the error handler runs again on a finished response. | `src/middleware/attach-actor.ts` | **fixed** before Phase 4 |
 | S-NF | `RowNotFoundError` has status 500, so every not-found is a 500: plant, plot, planting, year, schedule, item, planning year. | `src/database/index.ts` | **fixed** before Phase 4 |
-| S-rewrap | Services rewrap every error in `new FeralError(...)`, which resets the status to 500. A disallowed planting update field (`PlantingValidationError`, 400) and `SplitActionOverflowError` come out as 500. The same flattening fed feral's first pinned-behaviour fixes. | `plantings-service.ts`, `split-action.ts` | **fixed in Phase 3** (`FeralError` keeps a 4xx cause's status) |
+| S-rewrap | Services rewrap every error in `new FeralError(...)`, which resets the status to 500. A disallowed planting update field (`PlantingValidationError`, 400) came out as 500. The same flattening fed feral's first pinned-behaviour fixes. | `plantings-service.ts`, `split-action.ts` | **fixed in Phase 3** (`FeralError` keeps a 4xx cause's status) |
+| S-split | A split of as many as a planting holds → 500. `SplitAction` catches every error and throws `SplitActionError` with no cause, and `SplitActionOverflowError` sets no status either. Not fixed by Phase 3, which was claimed in error. | `split-action.ts` | pinned |
+| S-assign | Schedule assignment with no `assign` or `unassign` list → 500. | `serializers/plants.ts` | pinned |
 | B-dup | Duplicate category, subcategory, planting year or schedule link → 500. | services | **fixed in Phase 3** (errno 1062 → 409) |
 | S-NaN | `parseInt` never throws, so non-numeric path or query numbers reach SQL as `NaN` → 500. The guard in `planning-handlers.ts` is dead code. | handlers | pinned |
 | S-body | Missing required body fields → 500: no `harvests` array (TypeError in the serializer), no `entryDate` (`format(Invalid Date)`), no planting `name` (NOT NULL). | serializers | pinned (a few) |
@@ -1012,11 +1038,15 @@ fixing, but not part of this plan.
 |---|---|---|---|
 | B-year | Harvest upserts never write `planting_year`, so it takes the column default: the current calendar year. Summary, search and stats all filter on it. | `src/services/harvests/queries.ts` upsert | **fixed in Phase 3** (new harvests take the planting's year) |
 | B-details | `getStatusBreakdowns` selects `current_planting_year`, but the row mapper reads `planting_year`, so `GET /planting-years` `details` counts are always 0. | `plantings/queries.ts` vs `plantings/row-mapper.ts` | **fixed** before Phase 4 |
-| B-overwrite | Upsert on a taken `friendly_name` silently updates the *other* plot or plant (`ON DUPLICATE KEY` fires on the unique name). For plots, the response holds an id that doesn't exist. | `plots-mysql-datasource.ts`, `plants-mysql-datasource.ts` | pinned |
+| B-overwrite | Upsert on a taken `friendly_name` updates the *other* record (`ON DUPLICATE KEY` fires on the unique name). A plot with a taken name: 201 with an id that doesn't exist. A plant: only with an unknown `plantId`, which answers 404 after overwriting; with no id it is correctly a 400. | `plots-mysql-datasource.ts`, `plants-mysql-datasource.ts` | pinned |
 | B-orphan | A plant with an unknown `subcategoryId` is inserted, then the read-back inner join fails → 500. The row stays and holds the name. Schedule assignment for an unknown plant behaves the same way. | plants datasource | **fixed in Phase 3** (the FK refuses the insert → 400) |
+| B-types | `sowing.indoor` and `.direct` come back as `"1"` and `"0"`, and `planting.depthInInches` as `"0.25"`. | plants row mapper | pinned |
+| B-stats | `statsType` is hard-coded to `Planting`, even for `type=Plant`. | `serializers/harvests.ts` | pinned |
+| B-patch | Schedule and schedule-item `PATCH` overwrite every field, so anything not sent is blanked. | `schedules/queries.ts` | pinned (schedules) |
+| B-list | `GET /plants` always answers `activitySchedules: []`; only `GET /plants/:id` fills them in. | `plants-mysql-datasource.ts` | not pinned; noted |
 | B-plot | Plot `isActive` is always true, a PUT echoes the input rather than the stored row, and a GET returns `is_active` as `1`. | `serializers/plots.ts`, `plots-service.ts` | pinned |
-| B-name | `getPlantByFriendlyName` reads `results[0]!.plantId`, but the row has `plant_id`. | `plants-mysql-datasource.ts` | confirm; pin if reachable |
-| B-split | `splitPlanting` picks its column list from `sourceCount` but always passes 3 params, so they mismatch when the count is 0. The PLANT action's split and update aren't in one transaction. | `plantings-mysql-datasource.ts`, `plant-action.ts` | pin if reachable |
+| B-name | `getPlantByFriendlyName` reads `results[0]!.plantId`, but the row has `plant_id`. | `plants-mysql-datasource.ts` | not observable: the id is only used to read schedules for a name that's about to be rejected |
+| B-split | `splitPlanting` picks its column list from `sourceCount` but always passes 3 params, so they mismatch when the count is 0. The PLANT action's split and update aren't in one transaction. | `plantings-mysql-datasource.ts`, `plant-action.ts` | not reachable: a split needs a count below `numberSown`, so the count is never 0 |
 | B-clear | `buildUpdateQuery` checks truthiness, so a field can't be cleared or set to 0. | `plantings/queries.ts` | pinned (one case) |
 | B-item | Schedule-item PATCH ignores `:activityScheduleId` in the path. | `schedules/queries.ts` | pinned |
 | B9 | No connection pool: every query opens a connection. `execTransactionQuery` leaks its connection if `beginTransaction` fails. | `src/database/index.ts` | leak **fixed in Phase 2**; no pool yet |
@@ -1156,3 +1186,8 @@ counts once there are any.
   feral's README sections. Kept on purpose: `gardener` (the service has no roles, so `admin` would
   be wrong), `vitest.config.mts`, and `TrackedResource.path`. Added *Skeletons and naming* to the
   `dsl-tests` skill.
+- **2026-10-31**: Phase 4 committed as `c7d7e3f`. Phase 5 done: specs for every grouping, 110/110 on
+  repeated runs, no residue, 20 pins. A probe of the real API first corrected several bullets.
+  **A claim from Phase 3 was wrong:** a split overflow is still a 500, not a 400. It's now pinned as
+  S-split, and the changelog corrects it. New findings: B-types, B-stats, B-patch, B-list, S-assign.
+  The cleanup retry was seen to fire. Awaiting review before commit.

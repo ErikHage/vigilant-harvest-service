@@ -1,3 +1,5 @@
+import { NewPlant } from './fixtures';
+
 /**
  * Shared shapes for resources the suite creates, plus the registry the test
  * context uses to tear them down again.
@@ -17,8 +19,63 @@ export interface CreatedSubcategory {
   subcategoryName: string,
 }
 
+export interface CreatedPlant {
+  plantId: string,
+  friendlyName: string,
+  /** What it was created from, so a read can be compared with it. */
+  input: NewPlant,
+}
+
+export interface CreatedPlot {
+  plotId: string,
+  friendlyName: string,
+  lengthInInches: number,
+  widthInInches: number,
+  plotType: string,
+}
+
+export interface CreatedPlantingYear {
+  plantingYear: number,
+}
+
+export interface CreatedPlanting {
+  plantingId: string,
+  name: string,
+  plantingYear: number,
+}
+
+export interface CreatedHarvest {
+  harvestId: string,
+  plantingId: string,
+}
+
+export interface CreatedJournalEntry {
+  entryId: string,
+  plantingYear: number,
+  entry: string,
+}
+
+export interface CreatedActivityLogEntry {
+  entryId: string,
+  plantingYear: number,
+  comments: string,
+}
+
+export interface CreatedSchedule {
+  activityScheduleId: string,
+  name: string,
+  description: string,
+}
+
+export interface CreatedScheduleItem {
+  activityScheduleId: string,
+  entryId: string,
+}
+
 /** The resources a spec creates that teardown deletes. */
-export type TrackedResourceKind = 'category' | 'subcategory';
+export type TrackedResourceKind =
+  'category' | 'subcategory' | 'plant' | 'plot' | 'planting year' | 'planting' | 'harvest' |
+  'journal entry' | 'activity log entry' | 'activity schedule';
 
 export interface TrackedResource {
   kind: TrackedResourceKind,

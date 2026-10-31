@@ -28,6 +28,8 @@ export interface PlantCategoriesDsl {
   deleteSubcategory(...args: string[]): Promise<void>,
   /** `as`, `category`. Asserts the delete is rejected while it has subcategories. */
   checkDeleteOfCategoryIsRejectedWhileInUse(...args: string[]): Promise<void>,
+  /** `as`, `subcategory`. Asserts the delete is rejected while a plant uses it. */
+  checkDeleteOfSubcategoryIsRejectedWhileInUse(...args: string[]): Promise<void>,
 }
 
 export function createPlantCategoriesDsl(world: World, plantCategories: PlantCategoriesDriver): PlantCategoriesDsl {
@@ -110,6 +112,15 @@ export function createPlantCategoriesDsl(world: World, plantCategories: PlantCat
       const params = parseDslArgs(args, { as: actor(), subcategory: alias(), });
 
       await plantCategories.deleteRemovesSubcategory(
+        await world.actorFor(params.as),
+        world.subcategoryNamed(params.subcategory)
+      );
+    },
+
+    async checkDeleteOfSubcategoryIsRejectedWhileInUse(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), subcategory: alias(), });
+
+      await plantCategories.deleteOfSubcategoryInUseIsRejectedAsConflict(
         await world.actorFor(params.as),
         world.subcategoryNamed(params.subcategory)
       );

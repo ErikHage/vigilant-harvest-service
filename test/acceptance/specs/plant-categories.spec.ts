@@ -3,7 +3,7 @@ import { afterEach, describe, it } from 'vitest';
 import { createAcceptanceDsl } from '../dsl/acceptance-dsl';
 
 describe('plant categories', () => {
-  const { plantCategories, cleanup, } = createAcceptanceDsl();
+  const { plantCategories, plants, cleanup, } = createAcceptanceDsl();
 
   afterEach(cleanup);
 
@@ -53,6 +53,14 @@ describe('plant categories', () => {
     await plantCategories.createSubcategory('as: gardener', 'category: herbs', 'subcategory: basil');
 
     await plantCategories.checkDeleteOfCategoryIsRejectedWhileInUse('as: gardener', 'category: herbs');
+  });
+
+  it('rejects deleting a subcategory that a plant uses', async () => {
+    await plantCategories.createCategory('as: gardener', 'category: herbs');
+    await plantCategories.createSubcategory('as: gardener', 'category: herbs', 'subcategory: basil');
+    await plants.createPlant('as: gardener', 'plant: genovese', 'subcategory: basil');
+
+    await plantCategories.checkDeleteOfSubcategoryIsRejectedWhileInUse('as: gardener', 'subcategory: basil');
   });
 
   it('deletes an empty subcategory, then the empty category', async () => {

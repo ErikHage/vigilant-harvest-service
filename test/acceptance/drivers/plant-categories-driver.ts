@@ -27,6 +27,8 @@ export interface PlantCategoriesDriver {
   deleteRemovesSubcategory(caller: Actor, subcategory: CreatedSubcategory): Promise<void>,
   /** Asserts the delete is rejected, and that the category is still there. */
   deleteOfCategoryInUseIsRejectedAsConflict(caller: Actor, category: CreatedCategory): Promise<void>,
+  /** Asserts the delete is rejected, and that the subcategory is still there. */
+  deleteOfSubcategoryInUseIsRejectedAsConflict(caller: Actor, subcategory: CreatedSubcategory): Promise<void>,
 }
 
 export function createPlantCategoriesDriver(client: HttpClient, registry: ResourceRegistry): PlantCategoriesDriver {
@@ -159,6 +161,23 @@ export function createPlantCategoriesDriver(client: HttpClient, registry: Resour
       expectThat(
         !subcategoriesOf(entry).some(each => each.subcategoryId === subcategory.subcategoryId),
         'no such subcategory listed',
+        after.response,
+        what
+      );
+    },
+
+    async deleteOfSubcategoryInUseIsRejectedAsConflict(caller: Actor, subcategory: CreatedSubcategory): Promise<void> {
+      const what = `deleting subcategory "${subcategory.subcategoryName}" while a plant uses it`;
+      const response = await as(caller).del(subcategoryPath(subcategory));
+
+      expectRejection(response, status.CONFLICT, 'Plant subcategory has plants', what);
+
+      const after = await list(caller, `${what}: re-reading the list`);
+      const entry = after.categories.find(each => each.categoryId === subcategory.categoryId);
+
+      expectThat(
+        subcategoriesOf(entry).some(each => each.subcategoryId === subcategory.subcategoryId),
+        'the subcategory still listed',
         after.response,
         what
       );
