@@ -87,7 +87,7 @@ export class JwtSigner {
   async verify<T extends object>(token: string): Promise<T> {
     this._loadKeys();
     try {
-      return new Promise((resolve, reject) => {
+      return await new Promise((resolve, reject) => {
         jwt.verify(token, this.publicCert, this.verifyOptions, (err, decoded) => {
           if (err !== null) {
             reject(err);

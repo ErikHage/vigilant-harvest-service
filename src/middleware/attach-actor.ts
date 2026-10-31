@@ -36,14 +36,16 @@ export default async function(request: Request, response: Response, next: NextFu
 
   if (!feralAuthToken) {
     next(new UnauthorizedError());
+    return;
   }
 
   if (typeof feralAuthToken !== 'string') {
     next(new BadRequestError('auth token must be a single string'));
+    return;
   }
 
   try {
-    request.actor = await verifySessionToken(feralAuthToken as string);
+    request.actor = await verifySessionToken(feralAuthToken);
     next();
   } catch (err) {
     const error = ensureError(err);

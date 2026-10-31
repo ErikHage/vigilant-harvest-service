@@ -127,7 +127,7 @@ const plantings = {
   getAll: `SELECT ${allPlantingFields}
            FROM plantings p`,
 
-  getStatusBreakdowns: `SELECT current_planting_year,
+  getStatusBreakdowns: `SELECT current_planting_year AS planting_year,
                                current_status AS planting_status,
                                count(*) AS status_count
                           FROM plantings

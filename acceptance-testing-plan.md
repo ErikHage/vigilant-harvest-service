@@ -10,13 +10,13 @@ the changelogs it isn't append-only: tick items off, edit the plan when it chang
 anything that changed course in the progress log at the bottom.
 
 - **Started:** 2026-10-29
-- **Status:** Phases 0–3 done (Phase 3 is `18fba3b`); the orphan analysis awaits review
+- **Status:** Phases 0–3 and the orphan analysis done; the four small fixes await review
 - **Changelogs:** test work in `ai-changelogs/projects/vigilant-harvest-service/2026-02-21-1-testing.md`;
-  the delete APIs and foreign keys (Phases 2 and 3) in `2026-10-29-1-delete-apis.md`. Append an
-  entry before each commit.
-- **Next:** the user diagnoses and cleans prod with `scripts/foreign-key-orphans-diagnose.sql`, then
-  `scripts/foreign-key-orphans.sql`, and deploys Phase 3. Then Phase 4. See *Follow-up: where the
-  orphans came from*.
+  the delete APIs and foreign keys (Phases 2 and 3) in `2026-10-29-1-delete-apis.md`; status-code
+  fixes in `2026-10-30-1-status-code-fixes.md`. Append an entry before each commit.
+- **Next:** Phase 4. Separately, the user diagnoses and cleans prod with
+  `scripts/foreign-key-orphans-diagnose.sql`, then `scripts/foreign-key-orphans.sql`, and deploys
+  Phase 3. The suite runs locally, so it doesn't wait on prod.
 - **Reference suite:** `../feral-authentication-service/test/acceptance/`. Its README and
   `ai-changelogs/projects/feral-authentication-service/2026-08-31-2-acceptance-test-adoption.md`
   explain the pattern.
@@ -32,7 +32,8 @@ anything that changed course in the progress log at the bottom.
 | 1 | Test setup: drop jest, adopt feral's test layout | done (`6001d0e`) |
 | 2 | Service changes: delete APIs needed for cleanup | done (`53cf265`) |
 | 3 | Foreign keys, client statuses that survive the rewrap, harvest year | done (`18fba3b`) |
-| — | Follow-up: where the orphans came from | done; awaiting review |
+| — | Follow-up: where the orphans came from | done (`8a49a05`) |
+| — | Four small fixes before the suite | done; awaiting review and commit |
 | 4 | Suite scaffolding, preflight, teardown, residue check, first specs | not started |
 | 5 | Specs per API grouping | not started |
 | 6 | Prove the suite can fail, layering checks, docs | not started |
@@ -74,7 +75,7 @@ Agreed with the user on 2026-10-29.
      - no test plantings left → no harvests, status history or year mappings
    - Since Phase 3 the foreign keys make this hold at the database level, not just in the
      service: a child row can no longer outlive its parent.
-   - The README carries orphan-check SQL to confirm this by hand.
+   - The README points at the REPORT in `scripts/foreign-key-orphans.sql` to confirm this by hand.
    - Rejected alternatives: a read-only DB check in teardown, and a DB sweep that deletes
      leftovers. A sweep would hide a broken delete endpoint, which is exactly what the check is
      there to catch.
@@ -534,6 +535,36 @@ writes will fail with an error alert until the year exists. Worth a prompt in th
 
 ---
 
+## Four small fixes before the suite
+
+Added on 2026-10-30 when the remaining plan was reviewed. The user chose to fix these rather than
+pin them, for the same reason the foreign keys went first: otherwise the suite pins 500s only for
+them to be rewritten soon after.
+
+- [x] **S-NF:** `RowNotFoundError` is a 404, and `FeralError` carries it through the rewrap.
+- [x] **S-B1:** `verify()` awaits its Promise, so a bad token becomes `JwtVerifyError`, then 401.
+- [x] **S-B2:** `attach-actor` returns after each `next(err)`.
+- [x] **B-details:** `getStatusBreakdowns` aliases `current_planting_year AS planting_year`, the
+  column the mapper reads.
+
+**Verified on 2026-10-30:**
+- `tsc`, lint and the build are clean.
+- The smoke script passes 73/73: the 60 from Phase 3 plus 13 new checks:
+  - no token, forged token and malformed token → 401, and a real token → 200;
+  - 404 for an unknown plant, plot, planting, schedule and year, and for an action on or update of
+    an unknown planting;
+  - a test year's `details` show 1 created and 1 planted planting.
+- The server log has no "auth token must be a single string" or "jwt must be provided" lines, so a
+  missing token now takes one path.
+- The orphan report still reads 0 for all 14 relationships.
+- The app is unaffected: its only status branches are 401 on logout, which is feral's, and showing
+  a 400's message on harvest saves.
+
+**Side effect to know:** a mismatched or missing `SESSION_PUBLIC_KEY` now shows as a 401 on every
+request, not a 500. The preflight message covers it.
+
+---
+
 ## Phase 4: Suite scaffolding
 
 Goal: the whole skeleton running green against the local services, with the first few specs, the
@@ -561,7 +592,10 @@ preflight and the residue check in place, before the specs are filled in.
   - `reporters: ['verbose']`
   - **No** `setupFiles`. Nothing may build the app in-process; a black-box suite only calls the
     running service.
-- [ ] Gitignore `test/acceptance/.env.acceptance`, and commit `test/acceptance/.env.acceptance.example`.
+- [ ] Commit `test/acceptance/.env.acceptance.example`. The real file is already gitignored
+  (`54c5373`) and in place.
+- [ ] Remove the empty, untracked `test/test-support/` left from February 2026. Feral has no such
+  folder.
 - [ ] The suite type-checks under `test/acceptance/tsconfig.json` (from Phase 1), never reaches
   `dist/`, and is linted through `test/.eslintrc` with the repo's rules: kebab-case filenames,
   single quotes, trailing commas, `array-bracket-spacing`, `no-floating-promises`.
@@ -700,8 +734,8 @@ Each check turns one way the suite can be misconfigured into one message that na
    `ACCEPTANCE_USERNAME`, `ACCEPTANCE_PASSWORD` and `ACCEPTANCE_APPLICATION_ID`, and that the
    user has the Vigilant Harvest grant.
 3. `GET /harvest-types` with that token:
-   - a 500 → `SESSION_PUBLIC_KEY` probably doesn't match feral's key (a bad token is 500 today,
-     not 401; finding S-B1)
+   - a 401 for a token feral just issued → `SESSION_PUBLIC_KEY` doesn't match the key feral signs
+     with, or is missing
    - an empty list or a DB error → run the migrations
    This works because harvest-types needs auth, needs a migrated database, and has 19 seeded rows.
 4. Run `support/residue.ts` and **warn** (not fail) if residue from an earlier run exists, with a
@@ -730,7 +764,7 @@ If anything is found, it throws an error naming each leftover, and the run fails
 - [ ] `service-info.spec.ts`: reachable with no token, and reports its name.
 - [ ] `auth.spec.ts`:
   - no token → 401
-  - a forged token → pinned 500, "Should be 401" (finding S-B1)
+  - a forged token → 401 (S-B1, fixed)
   - a malformed token → same
   - a real token → 200 (the control)
 - [ ] `dsl-misuse.spec.ts`: a misspelled parameter, and a parameter passed to a step that takes
@@ -752,6 +786,9 @@ Drivers assert only on what the spec itself created, or on invariants. Other dat
 database is someone's real garden. Each bullet below becomes one `it(...)` or a small group.
 "Pinned" means a `DocumentsCurrentBehavior` test, and the finding id points into the appendix.
 
+Every 409 driver asserts the **reason** as well as the status (e.g. "Plant has plantings"). The
+foreign keys answer 409 by themselves, so the status alone can't show that the service's check ran.
+
 ### plant-categories
 - [ ] Create a category and see it listed with no subcategories.
 - [ ] Add a subcategory and see it under its category.
@@ -770,7 +807,8 @@ database is someone's real garden. Each bullet below becomes one `it(...)` or a 
 - [ ] Update by `plantId`. The response and a re-read agree.
 - [ ] Assign and unassign activity schedules. Both `assign` and `unassign` must be arrays, else 400.
 - [ ] Assigning the same schedule twice → 409 (fixed in Phase 3).
-- [ ] An unknown plant id → pinned 500, should be 404 (S-NF).
+- [ ] An unknown plant id → 404 (S-NF, fixed). The same for each grouping below: an unknown plot,
+  planting, schedule and year.
 - [ ] Creating a plant whose name is taken overwrites the other plant → pinned (B-overwrite).
   Control: the first plant's details are now the second's.
 - [ ] An unknown `subcategoryId` → 400, and no row is written (B-orphan, fixed by Phase 3's
@@ -790,8 +828,7 @@ database is someone's real garden. Each bullet below becomes one `it(...)` or a 
 - [ ] Create a test year (201, plain-text "Created"), then get and list it.
 - [ ] Creating it with `previousPlantingYear` set to another test year carries that year's
   PLANTED plantings into it.
-- [ ] `details` counts are always 0 → pinned (B-details), with a planting in the year as the
-  control.
+- [ ] `details` counts each status of the year's plantings (B-details, fixed).
 - [ ] A duplicate year → 409 (fixed in Phase 3).
 - [ ] Deleting a year with plantings, harvests, journal or log entries → 409. Deleting an empty
   year → gone.
@@ -859,11 +896,10 @@ database is someone's real garden. Each bullet below becomes one `it(...)` or a 
 A suite written fresh passes on its first run, which proves nothing. Break the service in a few
 targeted ways (by hand, then revert) and check that each break fails exactly what should notice:
 
-- [ ] Drop the status-history delete from the planting delete transaction. The orphan SQL in the
-  README should show rows. This break is invisible to the API, which is why that SQL exists.
 - [ ] Make one teardown delete a no-op (or point it at a wrong path). The global teardown must
   fail the run and name the record.
-- [ ] Remove the 409 check from the plant delete. The plant-delete test must fail.
+- [ ] Remove the 409 pre-check from the plant delete. The foreign key still answers 409, so the
+  plant-delete test must fail on the *reason*. This proves both layers exist.
 - [ ] Break one serializer field (e.g. rename `friendlyName` in `serializers/plants.ts`). Only
   the tests that read it should fail.
 - [ ] Set `fileParallelism: true` (or pass `--fileParallelism`) and run once. Note what collides, if anything;
@@ -886,8 +922,8 @@ targeted ways (by hand, then revert) and check that each break fails exactly wha
   - how to add a test
   - the known-wrong table (each pin and what it should be)
   - leftover-cleanup SQL by prefix and year range
-  - orphan-check SQL for `planting_status_history`, `planting_planting_years`,
-    `plants_activity_schedules` and `harvests` rows whose owner is gone
+  - a pointer to the REPORT in `scripts/foreign-key-orphans.sql`, which covers all 14
+    relationships. Every count should stay 0
 - [ ] Changelogs are kept up as each commit lands, following the feature-changelog skill:
   - test work goes in `2026-02-21-1-testing.md`, which starts with the original jest commit
     (`831accf`);
@@ -898,7 +934,7 @@ targeted ways (by hand, then revert) and check that each break fails exactly wha
 
 - [ ] Both services running; `npm run test:acceptance` is green.
 - [ ] Run it twice more back to back: no collisions, and the residue check passes each time.
-- [ ] The orphan SQL returns 0 for every table.
+- [ ] The REPORT in `scripts/foreign-key-orphans.sql` shows 0 for all 14 relationships.
 - [ ] `npm run build` and `npm run tsc:acceptance` are clean.
 
 ---
@@ -944,9 +980,9 @@ fixing, but not part of this plan.
 
 | Id | Finding | Where | Suite |
 |---|---|---|---|
-| S-B1 | A bad, forged or expired token → **500**, not 401. The `try` in `verify()` wraps only the Promise constructor, so the rejection never becomes `JwtVerifyError`, and `attach-actor` maps it to "Unknown error authenticating token". | `src/jwt/index.ts` `verify()`, `src/middleware/attach-actor.ts` | pinned (auth) |
-| S-B2 | No `return` after `next(err)` when the token is missing or not a string, so `next` is called twice. The 401 is sent, then the error handler runs again on a finished response. | `src/middleware/attach-actor.ts` | the 401 test; watch for flakiness |
-| S-NF | `RowNotFoundError` has status 500, so every not-found is a 500: plant, plot, planting, year, schedule, item, planning year. | `src/database/index.ts:61` | pinned |
+| S-B1 | A bad, forged or expired token → **500**, not 401. The `try` in `verify()` wraps only the Promise constructor, so the rejection never becomes `JwtVerifyError`, and `attach-actor` maps it to "Unknown error authenticating token". | `src/jwt/index.ts` `verify()`, `src/middleware/attach-actor.ts` | **fixed** before Phase 4 |
+| S-B2 | No `return` after `next(err)` when the token is missing or not a string, so `next` is called twice. The 401 is sent, then the error handler runs again on a finished response. | `src/middleware/attach-actor.ts` | **fixed** before Phase 4 |
+| S-NF | `RowNotFoundError` has status 500, so every not-found is a 500: plant, plot, planting, year, schedule, item, planning year. | `src/database/index.ts` | **fixed** before Phase 4 |
 | S-rewrap | Services rewrap every error in `new FeralError(...)`, which resets the status to 500. A disallowed planting update field (`PlantingValidationError`, 400) and `SplitActionOverflowError` come out as 500. The same flattening fed feral's first pinned-behaviour fixes. | `plantings-service.ts`, `split-action.ts` | **fixed in Phase 3** (`FeralError` keeps a 4xx cause's status) |
 | B-dup | Duplicate category, subcategory, planting year or schedule link → 500. | services | **fixed in Phase 3** (errno 1062 → 409) |
 | S-NaN | `parseInt` never throws, so non-numeric path or query numbers reach SQL as `NaN` → 500. The guard in `planning-handlers.ts` is dead code. | handlers | pinned |
@@ -958,7 +994,7 @@ fixing, but not part of this plan.
 | Id | Finding | Where | Suite |
 |---|---|---|---|
 | B-year | Harvest upserts never write `planting_year`, so it takes the column default: the current calendar year. Summary, search and stats all filter on it. | `src/services/harvests/queries.ts` upsert | **fixed in Phase 3** (new harvests take the planting's year) |
-| B-details | `getStatusBreakdowns` selects `current_planting_year`, but the row mapper reads `planting_year`, so `GET /planting-years` `details` counts are always 0. | `plantings/queries.ts` vs `plantings/row-mapper.ts` | pinned |
+| B-details | `getStatusBreakdowns` selects `current_planting_year`, but the row mapper reads `planting_year`, so `GET /planting-years` `details` counts are always 0. | `plantings/queries.ts` vs `plantings/row-mapper.ts` | **fixed** before Phase 4 |
 | B-overwrite | Upsert on a taken `friendly_name` silently updates the *other* plot or plant (`ON DUPLICATE KEY` fires on the unique name). For plots, the response holds an id that doesn't exist. | `plots-mysql-datasource.ts`, `plants-mysql-datasource.ts` | pinned |
 | B-orphan | A plant with an unknown `subcategoryId` is inserted, then the read-back inner join fails → 500. The row stays and holds the name. Schedule assignment for an unknown plant behaves the same way. | plants datasource | **fixed in Phase 3** (the FK refuses the insert → 400) |
 | B-plot | Plot `isActive` is always true, a PUT echoes the input rather than the stored row, and a GET returns `is_active` as `1`. | `serializers/plots.ts`, `plots-service.ts` | pinned |
@@ -1080,3 +1116,11 @@ counts once there are any.
   - year and subcategory-0 orphans are repairs, not deletes.
 
   Awaiting review.
+- **2026-10-30**: Reviewed the remaining plan with the user. `8a49a05` committed the orphan analysis.
+  Four small fixes made before the suite (S-NF, S-B1, S-B2, B-details), 73/73 smoke checks.
+  Corrected what Phase 3 overtook:
+  - 409 drivers assert the reason as well as the status;
+  - one Phase 6 proof step dropped, since CASCADE replaced the transaction it broke;
+  - the README points at the orphan REPORT instead of carrying its own SQL.
+
+  Awaiting review before commit.

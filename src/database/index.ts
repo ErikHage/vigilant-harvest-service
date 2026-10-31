@@ -88,6 +88,7 @@ export class RowNotFoundError extends FeralError {
   constructor(message: string, debugParams?: object) {
     super(message);
     this.name = 'RowNotFoundError';
+    this.status = 404;
     if (debugParams) {
       this.debugParams = debugParams;
     }
