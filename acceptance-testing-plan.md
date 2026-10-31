@@ -10,17 +10,51 @@ the changelogs it isn't append-only: tick items off, edit the plan when it chang
 anything that changed course in the progress log at the bottom.
 
 - **Started:** 2026-10-29
-- **Status:** Phases 0–5 done; Phase 5 awaits review and commit
+- **Status:** Phases 0–6 done and committed; paused on 2026-10-31 before Phase 7
 - **Changelogs:** test work in `ai-changelogs/projects/vigilant-harvest-service/2026-02-21-1-testing.md`;
   the delete APIs and foreign keys (Phases 2 and 3) in `2026-10-29-1-delete-apis.md`; status-code
   fixes in `2026-10-30-1-status-code-fixes.md`. Append an entry before each commit.
-- **Next:** Phase 6. Separately, the user diagnoses and cleans prod with
+- **Next:** Phase 7. Separately, the user diagnoses and cleans prod with
   `scripts/foreign-key-orphans-diagnose.sql`, then `scripts/foreign-key-orphans.sql`, and deploys
   Phase 3. The suite runs locally, so it doesn't wait on prod.
 - **Reference suite:** `../feral-authentication-service/test/acceptance/`. Its README and
   `ai-changelogs/projects/feral-authentication-service/2026-08-31-2-acceptance-test-adoption.md`
   explain the pattern.
 - **Conventions:** the `dsl-tests` skill (four layering rules, steps, drivers, pinned behaviour).
+
+---
+
+## Picking this back up
+
+Paused on 2026-10-31. Everything is committed in all three repos. Nothing has been pushed.
+
+**To get running:**
+1. Start both services with `../start-vigilant-harvest.sh`, or `npm run dev` in each repo. The dev server
+   was stopped at the pause.
+2. `npm run test:acceptance` should show 110 tests in 14 files passing, in about 10 seconds. The
+   preflight explains anything that's misconfigured.
+
+**The next step is Phase 7:** vitest 5, Node 24 and `@types/node` 24. It's the last phase, and it ends by
+deleting this file.
+- **Open question for the user first:** is Docker available on this machine? Phase 7 moves the Dockerfile
+  to `node:24-alpine`, which changes the production runtime, so it needs a real image build and run to
+  verify. If there's no Docker here, decide how to verify that before starting.
+
+**Waiting on the user, and not blocking Phase 7:**
+- Prod orphans: run `scripts/foreign-key-orphans-diagnose.sql`, repair what its queries 5–7 list, then run
+  `scripts/foreign-key-orphans.sql` until its report reads 0. Phase 3's migration won't run in prod
+  until then; it stops the boot, without changing anything.
+- Deploy Phases 2 and 3. Nothing has been deployed yet.
+
+**Ideas that came up, none of them started:**
+- 20 pinned bugs are listed in the README's known-broken table. Each fix flips its test.
+- The app could prompt to create a missing planting year, now that writes into one get a 400.
+- Feral's local database holds about 955 leftover test applications.
+- `dsl-tests` says the sibling repos are under `C:\ErikStuff\Git\`; on this machine they're in
+  `C:\Users\ehage\Git`. Left alone, since it may be right on another machine.
+
+**Don't look for the session's helper scripts.** The smoke test and the deliberate-break runner lived in a
+temporary folder. The suite replaces the first, and Phase 6's results table records what the second found.
 
 ---
 
@@ -35,8 +69,8 @@ anything that changed course in the progress log at the bottom.
 | — | Follow-up: where the orphans came from | done (`8a49a05`) |
 | — | Four small fixes before the suite | done (`d902372`) |
 | 4 | Suite scaffolding, preflight, teardown, residue check, first specs | done (`c7d7e3f`) |
-| 5 | Specs per API grouping | done; awaiting review and commit |
-| 6 | Prove the suite can fail, layering checks, docs | not started |
+| 5 | Specs per API grouping | done (`83a7084`) |
+| 6 | Prove the suite can fail, layering checks, docs | done |
 | 7 | Upgrade to vitest 5 and Node 24 | not started |
 
 ---
@@ -943,29 +977,59 @@ foreign keys answer 409 by themselves, so the status alone can't show that the s
 A suite written fresh passes on its first run, which proves nothing. Break the service in a few
 targeted ways (by hand, then revert) and check that each break fails exactly what should notice:
 
-- [ ] Make one teardown delete a no-op (or point it at a wrong path). The global teardown must
+**Done on 2026-10-31, with a script:** 20 deliberate breaks, each applied, rebuilt, run and reverted. The
+suite caught 18.
+
+| Break | Result |
+|---|---|
+| Not-found back to 500 | 14 tests failed, all about a missing record |
+| errno 1452 (missing parent) back to 500 | 5 failed: every write naming a missing parent |
+| errno 1062 (duplicate) back to 500 | 5 failed: every duplicate |
+| `FeralError` stops keeping a 4xx status | 25 failed |
+| `verify()` loses its `await` | 2 failed: the forged and malformed tokens |
+| Planting-year `details` alias removed | 1 failed: the counts |
+| Harvests filed under the calendar year | 7 failed, all in harvests |
+| 409 pre-check off: plant, planting, plot, year | 1, 2, 1 and 4 failed, each on the *reason*, so the foreign key alone doesn't pass |
+| One serializer field wrong | 3 failed, all reading it |
+| Harvest for an unknown planting no longer reported | 1 failed |
+| Activity-log delete, category delete do nothing | 1 failed each, and the residue check failed the run |
+| **Pin flipped:** plant stats say `Plant` | 1 failed: the pin, as it should when a bug is fixed |
+| Suite: plot teardown sends the wrong path | All 110 passed, and the **residue check failed the run**, naming 23 plots |
+| Suite: cleanup doesn't retry | All 110 passed, and the **residue check failed the run**, naming the plot |
+| **Survived:** errno 1451 back to 500 | All passed. The 409 pre-checks always answer first, so only a race between check and delete reaches this mapping. A black-box suite can't provoke that |
+| **Survived:** S-B2's `return` removed | All passed. The client still gets its 401; the fix only stops the repeated error handling, which shows in the server log, not the API |
+
+Worth knowing from those runs:
+- The plot break shows why cleanup alone isn't enough. A delete of an unknown id answers 200, so cleanup
+  saw nothing wrong; only the residue check noticed.
+- Breaking the deletes left real residue, because nothing could remove it while they were broken. The
+  next run failed with 64 leftovers, which were cleared once the service was restored.
+- With `--fileParallelism --maxWorkers=4`, all 110 passed in 4 seconds with no residue, so nothing
+  collides. The default stays serial, since the suite shares a database with real data.
+
+- [x] Make one teardown delete a no-op (or point it at a wrong path). The global teardown must
   fail the run and name the record.
-- [ ] Remove the 409 pre-check from the plant delete. The foreign key still answers 409, so the
+- [x] Remove the 409 pre-check from the plant delete. The foreign key still answers 409, so the
   plant-delete test must fail on the *reason*. This proves both layers exist.
-- [ ] Break one serializer field (e.g. rename `friendlyName` in `serializers/plants.ts`). Only
+- [x] Break one serializer field (e.g. rename `friendlyName` in `serializers/plants.ts`). Only
   the tests that read it should fail.
-- [ ] Set `fileParallelism: true` (or pass `--fileParallelism`) and run once. Note what collides, if anything;
+- [x] Set `fileParallelism: true` (or pass `--fileParallelism`) and run once. Note what collides, if anything;
   the default stays serial.
 
 ### Layering checks (from the dsl-tests skill)
 
-- [ ] `grep -rn "fetch(" test/acceptance` → only `support/http-client.ts`
-- [ ] `grep -rnE "\bexpect\(|import \{[^}]*\bexpect\b" test/acceptance` → only `drivers/assertions.ts`
-- [ ] `grep -rn "\.\(get\|post\|put\|patch\|del\)(" test/acceptance/dsl` → nothing but `Map.get`
-- [ ] `grep -rn "^import\|require(" test/acceptance/specs` → the DSL entry and `vitest` (`describe`, `it`, `afterEach`) only, plus `dsl-misuse` in its spec
-- [ ] `grep -rn "src/" test/acceptance` → nothing
-- [ ] `grep -rn "DocumentsCurrentBehavior" test/acceptance` → every pinned test, all in `specs/`
+- [x] `grep -rn "fetch(" test/acceptance` → only `support/http-client.ts`
+- [x] `grep -rnE "\bexpect\(|import \{[^}]*\bexpect\b" test/acceptance` → only `drivers/assertions.ts`
+- [x] `grep -rn "\.\(get\|post\|put\|patch\|del\)(" test/acceptance/dsl` → nothing but `Map.get`
+- [x] `grep -rn "^import\|require(" test/acceptance/specs` → the DSL entry and `vitest` (`describe`, `it`, `afterEach`) only, plus `dsl-misuse` in its spec
+- [x] `grep -rn "src/" test/acceptance` → nothing
+- [x] `grep -rn "DocumentsCurrentBehavior" test/acceptance` → every pinned test, all in `specs/`
 
 ### Docs
 
-- [ ] `test/acceptance/README.md` exists since Phase 4: the rules, running, the test user, adding a
+- [x] `test/acceptance/README.md` exists since Phase 4: the rules, running, the test user, adding a
   test, and leftover cleanup. Still to add: the known-broken table (each pin and what it should be).
-- [ ] Changelogs are kept up as each commit lands, following the feature-changelog skill:
+- [x] Changelogs are kept up as each commit lands, following the feature-changelog skill:
   - test work goes in `2026-02-21-1-testing.md`, which starts with the original jest commit
     (`831accf`);
   - the delete APIs go in a file of their own, created in Phase 2.
@@ -973,10 +1037,10 @@ targeted ways (by hand, then revert) and check that each break fails exactly wha
 
 ### Final verification
 
-- [ ] Both services running; `npm run test:acceptance` is green.
-- [ ] Run it twice more back to back: no collisions, and the residue check passes each time.
-- [ ] The REPORT in `scripts/foreign-key-orphans.sql` shows 0 for all 14 relationships.
-- [ ] `npm run build` and `npm run tsc:acceptance` are clean.
+- [x] Both services running; `npm run test:acceptance` is green.
+- [x] Run it twice more back to back: no collisions, and the residue check passes each time.
+- [x] The REPORT in `scripts/foreign-key-orphans.sql` shows 0 for all 14 relationships.
+- [x] `npm run build` and `npm run tsc:acceptance` are clean.
 
 ---
 
@@ -1191,3 +1255,8 @@ counts once there are any.
   **A claim from Phase 3 was wrong:** a split overflow is still a 500, not a 400. It's now pinned as
   S-split, and the changelog corrects it. New findings: B-types, B-stats, B-patch, B-list, S-assign.
   The cleanup retry was seen to fire. Awaiting review before commit.
+- **2026-10-31**: Phase 5 committed as `83a7084`. Phase 6 done: 20 deliberate breaks, 18 caught, and the
+  2 survivors explained (the 1451 mapping needs a race, and S-B2 doesn't change the response). A pin
+  flip failed its pin. Parallel run clean. The README gained the known-broken table. Awaiting review
+  before commit.
+- **2026-10-31**: Phase 6 committed. Paused before Phase 7; see *Picking this back up* at the top.

@@ -128,7 +128,31 @@ driver method names today's status, and is what the fix renames.
 it('rejects a harvest list that is missing', async () => {
 ```
 
-`grep -rn DocumentsCurrentBehavior test/acceptance` lists them.
+`grep -rn DocumentsCurrentBehavior test/acceptance` lists them. When one is fixed, its test goes red:
+rename the driver method, update the DSL line, delete the marker, and remove its row here.
+
+| Area | Today | Should be |
+| --- | --- | --- |
+| Plants | An unknown `plantId` with a taken name answers 404, having overwritten the plant holding the name | Rejected, changing nothing |
+| Plants | `sowing.indoor` and `.direct` come back as `"1"` and `"0"`, and `planting.depthInInches` as a string | The booleans and number sent |
+| Plants | Assigning schedules with no lists answers 500 | 400 |
+| Plots | A taken name answers 201 with an id that doesn't exist, having overwritten the plot holding it | Rejected, changing nothing |
+| Plots | A write answers `isActive: true`, a read answers `1` | The same on both |
+| Plots | `isActive: false` is ignored | Deactivates the plot |
+| Plantings | Splitting out as many as a planting holds answers 500 | 400 |
+| Plantings | Creating one with no name answers 500 | 400 |
+| Plantings | An empty value is skipped, and the old one stays | Clears the field |
+| Plantings | A non-numeric `plantingYear` answers 500 | 400 |
+| Harvests | Saving with no `harvests` list answers 500 | 400 |
+| Harvests | Searching with no year answers 500 | 400, as the summary does |
+| Harvests | Plant stats report `statsType: "Planting"` | `"Plant"` |
+| Planning | A non-numeric year answers 500 | 400 |
+| Journal | An entry with no date answers 500 | 400 |
+| Journal | A non-numeric year answers 500 | 400 |
+| Activity log | An entry with no date answers 500 | 400 |
+| Activity log | A non-numeric year answers 500 | 400 |
+| Activity schedules | `PATCH` blanks whatever it wasn't sent | Keeps it |
+| Activity schedules | Updating an item through a schedule that doesn't hold it succeeds | 404 |
 
 ## The DSL dependency
 
