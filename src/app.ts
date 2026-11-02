@@ -8,6 +8,7 @@ const getApp = (appRoot: string, port: string): Express => {
   const app: Express = express();
 
   app.set('port', port);
+  app.disable('x-powered-by');
 
   app.use(express.urlencoded({ extended: false, }));
   app.use(bodyParser.json());

@@ -7,6 +7,10 @@ import { World } from './world';
 export interface ServiceInfoDsl {
   /** `as`. Asserts the service answers, and says which service it is. */
   checkServiceInfo(...args: string[]): Promise<void>,
+  /** `as`. Asserts the health route answers that the process is serving. */
+  checkHealth(...args: string[]): Promise<void>,
+  /** `as`. Asserts that no response says what the service is built with. */
+  checkFrameworkIsNotNamed(...args: string[]): Promise<void>,
 }
 
 export function createServiceInfoDsl(world: World, serviceInfo: ServiceInfoDriver): ServiceInfoDsl {
@@ -15,6 +19,18 @@ export function createServiceInfoDsl(world: World, serviceInfo: ServiceInfoDrive
       const params = parseDslArgs(args, { as: actor(), });
 
       await serviceInfo.getReturnsServiceInfo(await world.actorFor(params.as));
+    },
+
+    async checkHealth(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), });
+
+      await serviceInfo.getHealthReturnsOk(await world.actorFor(params.as));
+    },
+
+    async checkFrameworkIsNotNamed(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), });
+
+      await serviceInfo.responsesDoNotNameTheFramework(await world.actorFor(params.as));
     },
   };
 }

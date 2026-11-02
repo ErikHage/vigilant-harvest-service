@@ -61,10 +61,17 @@ const initApp = async () => {
     process.exit(1);
   }
 
-  http.createServer(app)
+  const server = http.createServer(app)
     .listen(port)
     .on('error', onError(port))
     .on('listening', onListening(port));
+
+  // As PID 1 in Docker, node ignores these signals unless it handles them
+  // itself, and `docker stop` waits 10s, then kills it. close() lets requests
+  // in flight finish; each closes its own database connection.
+  const shutDown = () => server.close(() => process.exit(0));
+  process.on('SIGTERM', shutDown);
+  process.on('SIGINT', shutDown);
 };
 
 initApp();

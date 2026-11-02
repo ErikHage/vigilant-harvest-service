@@ -1,5 +1,6 @@
 import Router, { Express } from 'express';
 
+import getHealth from '../handlers/health-handler';
 import getServiceInfo from '../handlers/service-info-handler';
 import plotHandlers from '../handlers/plot-handlers';
 import plantingHandlers from '../handlers/planting-handlers';
@@ -18,6 +19,13 @@ import errorHandler from '../middleware/error-handler';
 const apiRouter: Express = Router();
 
 const buildRouter = (): Express => {
+  // `Router` here is express() itself, so this is a mounted app with its own
+  // settings: disabling the header in app.ts alone doesn't reach these routes.
+  apiRouter.disable('x-powered-by');
+
+  // Before the request log, so the HEALTHCHECK doesn't add a line every 30s.
+  apiRouter.get('/health', getHealth);
+
   apiRouter.use(logRequests);
 
   apiRouter.get('/service-info', getServiceInfo);

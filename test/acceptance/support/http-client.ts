@@ -13,6 +13,8 @@ export interface ApiResponse {
   /** Parsed JSON, or undefined when the body was empty or not JSON. */
   body: unknown,
   rawBody: string,
+  /** Response headers, with lower-case names. */
+  headers: Record<string, string>,
   method: HttpMethod,
   path: string,
 }
@@ -85,7 +87,14 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
 
     const rawBody = await response.text();
 
-    return { status: response.status, body: parseBody(rawBody), rawBody, method, path, };
+    return {
+      status: response.status,
+      body: parseBody(rawBody),
+      rawBody,
+      headers: Object.fromEntries(response.headers.entries()),
+      method,
+      path,
+    };
   }
 
   return {

@@ -93,6 +93,15 @@ export function expectBodyToHaveKeys(response: ApiResponse, keys: string[], what
   }
 }
 
+export function expectNoHeader(response: ApiResponse, name: string, what: string): void {
+  const value = response.headers[name.toLowerCase()];
+
+  expect(
+    value,
+    failureMessage(what, `no ${name} header, but it was "${value}"`, response)
+  ).toBeUndefined();
+}
+
 export function expectListEntries(response: ApiResponse, what: string): Record<string, unknown>[] {
   return asArray(response, what);
 }

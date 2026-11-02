@@ -8,4 +8,12 @@ describe('service info', () => {
   it('says which service it is, without a token', async () => {
     await serviceInfo.checkServiceInfo('as: anonymous');
   });
+
+  it('reports that it is healthy, without a token', async () => {
+    await serviceInfo.checkHealth('as: anonymous');
+  });
+
+  it('does not say what it is built with', async () => {
+    await serviceInfo.checkFrameworkIsNotNamed('as: gardener');
+  });
 });
