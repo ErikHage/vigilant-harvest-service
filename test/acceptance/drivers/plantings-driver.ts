@@ -30,7 +30,7 @@ export interface PlantingsDriver {
   comment(caller: Actor, planting: CreatedPlanting, comment: string): Promise<void>,
   split(caller: Actor, planting: CreatedPlanting, name: string, count: number): Promise<CreatedPlanting>,
   actionOutOfOrderIsRejectedAsBadRequest(caller: Actor, planting: CreatedPlanting, actionType: string): Promise<void>,
-  splitOverflowFailsWithServerError(caller: Actor, planting: CreatedPlanting, count: number): Promise<void>,
+  splitOverflowIsRejectedAsBadRequest(caller: Actor, planting: CreatedPlanting, count: number): Promise<void>,
   updateChangesSeedSource(caller: Actor, planting: CreatedPlanting, seedSource: string): Promise<void>,
   updateToEmptyValueKeepsTheOldOne(caller: Actor, planting: CreatedPlanting, seedSource: string): Promise<void>,
   updateOfFieldNotAllowedIsRejectedAsBadRequest(caller: Actor, planting: CreatedPlanting): Promise<void>,
@@ -229,14 +229,14 @@ export function createPlantingsDriver(client: HttpClient, registry: ResourceRegi
       expectRejection(response, status.BAD_REQUEST, 'Lifecycle transition', what);
     },
 
-    async splitOverflowFailsWithServerError(caller: Actor, planting: CreatedPlanting, count: number): Promise<void> {
+    async splitOverflowIsRejectedAsBadRequest(caller: Actor, planting: CreatedPlanting, count: number): Promise<void> {
       const what = `splitting ${count} out of planting "${planting.name}", more than it holds`;
       const response = await as(caller).post(`/plantings/${planting.plantingId}`, {
         actionType: 'SPLIT',
         splits: [ { name: `${planting.name}-overflow`, count, }, ],
       });
 
-      expectStatus(response, status.INTERNAL_SERVER_ERROR, what);
+      expectRejection(response, status.BAD_REQUEST, 'meets or exceeds', what);
     },
 
     async updateChangesSeedSource(caller: Actor, planting: CreatedPlanting, seedSource: string): Promise<void> {

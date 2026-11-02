@@ -12,6 +12,10 @@ keeps the history.
 - **Then the full suite:** 112 passing at the start, more as tests are added, and no residue.
 - **Pinned behaviour:** where a fix changes it, the pinned test goes red. Rename the driver method,
   update the DSL line, delete the marker, and remove its row from the README table.
+- **Run the service as a built server, not through nodemon:** `npm run build`, then
+  `node dist/src/server.js`, restarted by hand after each change. On Windows, nodemon's restart can
+  leave the old server holding port 8002, and the new one dies with "already in use". Before trusting a
+  run, check that the listener started after `dist` was written.
 - **Changelog:** a new entry, appended to the code-review doc.
 - **Commits:** stop for review before each commit, with a suggested message. One commit per phase.
 
@@ -22,8 +26,8 @@ keeps the history.
 | 1 | H1 · flat error bodies | done |
 | 2 | H2 · JSON 400 for malformed bodies, `NODE_ENV=production` | done |
 | 3 | H3 · log every error in prod | done |
-| 4 | M1 · keep causes in planting actions; M10 · drop `multipleStatements` | in progress |
-| 5 | H4 · PLANT in one transaction | — |
+| 4 | M1 · keep causes in planting actions; M10 · drop `multipleStatements` | done |
+| 5 | H4 · PLANT in one transaction | in progress |
 | 6 | H5 · input validation, route by route | to plan when reached |
 
 ## Phase 1 — H1: one flat error per body
@@ -79,11 +83,16 @@ keeps the history.
 
 ## Phase 4 — M1 and M10
 
-- [ ] Each planting action's `catch` passes the cause. (`harvests-service.ts:161` already throws the
-      wrapper; that went in with Phase 3, since its log line was removed there.)
-- [ ] The pinned "splitting out as many as a planting holds answers 500" turns 400. Retire the pin.
-- [ ] Remove `multipleStatements` from `database/config.ts`.
-- [ ] Changelog entry, then stop for commit review
+- [x] Each planting action's `catch` passes the cause. That's six actions; START was missing from the
+      review's list. (`harvests-service.ts:161` already throws the wrapper; that went in with Phase 3,
+      since its log line was removed there.)
+- [x] The pinned "splitting out as many as a planting holds answers 500" turns 400. It also needed
+      `SplitActionOverflowError` to set status 400. Pin retired: 19 left.
+- [x] Remove `multipleStatements` from `database/config.ts`.
+- [x] Suite: 114 passed, against a freshly started build. This also covers Phase 3's final code (see the
+      log).
+- [x] Changelog entry
+- [x] Stop for commit review
 
 ## Phase 5 — H4: PLANT in one transaction
 
@@ -105,3 +114,9 @@ Planned when Phase 5 is done. Expect a sub-phase per route group, each retiring 
 - 2026-11-02: Phase 2 done and committed. Along the way, a nested ternary in the suite's
   client failed lint, which `npm run build` runs over test files too, and stopped the dev server.
 - 2026-11-02: Phase 3 done and committed.
+- 2026-11-02: Phase 4. The first suite run passed with the pinned split test still green, which was
+  wrong. The orphaned nodemon server from 17:09 was still serving, and every rebuild since had died
+  with "Port 8002 is already in use". That includes the last Phase 3 build, so the Phase 3 suite run
+  may have tested a mid-edit build. The Phase 3 logging itself was verified on port 8013 from the final
+  build. After a fresh start, exactly the split pin failed. It is retired, and 114 passed. Phase 4 is
+  done and committed.

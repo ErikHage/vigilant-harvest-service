@@ -1,14 +1,14 @@
 import { PlantingAction } from './planting-action';
 import { PerformActionRequest, Planting } from '../types';
 import datasource from '../plantings-mysql-datasource';
-import { FeralError } from '../../../errors';
+import { ensureError, FeralError } from '../../../errors';
 
 export class DeleteAction implements PlantingAction {
   async performAction(currentPlanting: Planting, plantingActionRequest: PerformActionRequest): Promise<Planting> {
     try {
       await datasource.deletePlantingById(plantingActionRequest.plantingId);
     } catch (err) {
-      throw new DeleteActionError().withDebugParams({ plantingActionRequest, });
+      throw new DeleteActionError(ensureError(err)).withDebugParams({ plantingActionRequest, });
     }
 
     // to fit the pattern, doesn't really matter
@@ -25,7 +25,7 @@ export class DeleteAction implements PlantingAction {
 }
 
 class DeleteActionError extends FeralError {
-  constructor() {
-    super('Error performing DELETE action for planting');
+  constructor(cause?: FeralError) {
+    super('Error performing DELETE action for planting', cause);
   }
 }

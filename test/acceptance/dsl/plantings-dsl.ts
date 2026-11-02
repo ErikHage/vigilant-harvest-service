@@ -201,7 +201,7 @@ export function createPlantingsDsl(world: World, plantings: PlantingsDriver): Pl
     async checkSplitOverflowIsRejected(...args: string[]): Promise<void> {
       const params = parseDslArgs(args, { as: actor(), planting: alias(), count: required().asInteger(), });
 
-      await plantings.splitOverflowFailsWithServerError(
+      await plantings.splitOverflowIsRejectedAsBadRequest(
         await world.actorFor(params.as),
         world.plantingNamed(params.planting),
         params.count

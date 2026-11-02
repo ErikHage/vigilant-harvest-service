@@ -2,7 +2,7 @@ import { PlantingAction } from './planting-action';
 import { PerformActionRequest, Planting } from '../types';
 
 import datasource from '../plantings-mysql-datasource';
-import { FeralError } from '../../../errors';
+import { ensureError, FeralError } from '../../../errors';
 import constants from '../../../util/constants';
 
 export class StartAction implements PlantingAction {
@@ -19,7 +19,7 @@ export class StartAction implements PlantingAction {
         constants.plantings.statuses.started,
         plantingActionRequest.sowActionData?.comment ?? '---');
     } catch (err) {
-      throw new SowActionError().withDebugParams({ plantingActionRequest, });
+      throw new SowActionError(ensureError(err)).withDebugParams({ plantingActionRequest, });
     }
 
     return await datasource.getPlantingById(plantingActionRequest.plantingId);
@@ -27,7 +27,7 @@ export class StartAction implements PlantingAction {
 }
 
 class SowActionError extends FeralError {
-  constructor() {
-    super('Error performing START action for planting');
+  constructor(cause?: FeralError) {
+    super('Error performing START action for planting', cause);
   }
 }

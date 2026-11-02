@@ -1,7 +1,7 @@
 import { PlantingAction } from './planting-action';
 import { PerformActionRequest, Planting, SplitData } from '../types';
 import datasource from '../plantings-mysql-datasource';
-import { FeralError } from '../../../errors';
+import { ensureError, FeralError } from '../../../errors';
 
 export class SplitAction implements PlantingAction {
   async performAction(currentPlanting: Planting, plantingActionRequest: PerformActionRequest): Promise<Planting> {
@@ -10,7 +10,7 @@ export class SplitAction implements PlantingAction {
       validateSplitCount(currentPlanting, plantingActionRequest.plantingId, splits);
       await datasource.splitPlanting(plantingActionRequest.plantingId, splits);
     } catch (err) {
-      throw new SplitActionError().withDebugParams({ plantingActionRequest, });
+      throw new SplitActionError(ensureError(err)).withDebugParams({ plantingActionRequest, });
     }
 
     return await datasource.getPlantingById(plantingActionRequest.plantingId);
@@ -32,13 +32,14 @@ function validateSplitCount(
 }
 
 class SplitActionError extends FeralError {
-  constructor() {
-    super('Error performing SPLIT action for planting');
+  constructor(cause?: FeralError) {
+    super('Error performing SPLIT action for planting', cause);
   }
 }
 
 class SplitActionOverflowError extends FeralError {
   constructor(sourceCount: number, splitCount: number) {
     super(`Total split count [${splitCount}] meets or exceeds source planting numberSown [${sourceCount}]`);
+    this.status = 400;
   }
 }

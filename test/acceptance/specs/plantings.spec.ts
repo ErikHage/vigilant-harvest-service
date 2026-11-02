@@ -66,7 +66,6 @@ describe('plantings', () => {
     await plantings.checkNumberSown('as: gardener', 'planting: leftovers', 'numberSown: 6');
   });
 
-  // DocumentsCurrentBehavior: replies 500, because SplitAction wraps the error and loses it. Should be 400.
   it('rejects splitting out as many as a planting holds', async () => {
     await plantings.createPlanting('as: gardener', 'planting: row-one', 'plant: tomato');
     await plantings.start('as: gardener', 'planting: row-one', 'numberSown: 10');

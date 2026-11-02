@@ -1,7 +1,7 @@
 import { PlantingAction } from './planting-action';
 import { PerformActionRequest, Planting } from '../types';
 import datasource from '../plantings-mysql-datasource';
-import { FeralError } from '../../../errors';
+import { ensureError, FeralError } from '../../../errors';
 import constants from '../../../util/constants';
 
 export class RetireAction implements PlantingAction {
@@ -17,7 +17,7 @@ export class RetireAction implements PlantingAction {
         constants.plantings.statuses.retired,
         plantingActionRequest.retireActionData?.comment ?? '---');
     } catch (err) {
-      throw new RetireActionError().withDebugParams({ plantingActionRequest, });
+      throw new RetireActionError(ensureError(err)).withDebugParams({ plantingActionRequest, });
     }
 
     return await datasource.getPlantingById(plantingActionRequest.plantingId);
@@ -26,7 +26,7 @@ export class RetireAction implements PlantingAction {
 }
 
 class RetireActionError extends FeralError {
-  constructor() {
-    super('Error performing RETIRE action for planting');
+  constructor(cause?: FeralError) {
+    super('Error performing RETIRE action for planting', cause);
   }
 }

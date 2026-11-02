@@ -12,7 +12,6 @@ function getDbConfig() {
     database: process.env.MYSQL_DATABASE,
     namedPlaceholders: true,
     dateStrings: true,
-    multipleStatements: true,
   }
 
   return dbConfig;

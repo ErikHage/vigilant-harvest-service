@@ -1,7 +1,7 @@
 import { PlantingAction } from './planting-action';
 import { PerformActionRequest, Planting } from '../types';
 import datasource from '../plantings-mysql-datasource';
-import { FeralError } from '../../../errors';
+import { ensureError, FeralError } from '../../../errors';
 import constants from '../../../util/constants';
 import { getLogger } from '../../../logging';
 
@@ -23,7 +23,7 @@ export class PlantAction implements PlantingAction {
         constants.plantings.statuses.planted,
         plantingActionRequest.transplantActionData?.comment ?? '---');
     } catch (err) {
-      throw new TransplantActionError().withDebugParams({ currentPlanting, plantingActionRequest, });
+      throw new TransplantActionError(ensureError(err)).withDebugParams({ currentPlanting, plantingActionRequest, });
     }
 
     return await datasource.getPlantingById(plantingActionRequest.plantingId);
@@ -49,7 +49,7 @@ async function splitOutRemainder(currentPlanting: Planting, plantingActionReques
 }
 
 class TransplantActionError extends FeralError {
-  constructor() {
-    super('Error performing PLANT action for planting');
+  constructor(cause?: FeralError) {
+    super('Error performing PLANT action for planting', cause);
   }
 }
