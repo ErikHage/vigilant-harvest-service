@@ -30,7 +30,8 @@ npm run test:acceptance
 `npm run test:acceptance:watch` reruns on change, and `npm run tsc:acceptance` type-checks the suite.
 
 A preflight probes everything first, and turns each way the suite can be misconfigured into one
-message that names the fix.
+message that names the fix. The message comes first. vitest 5.0 then adds "No test files found" and
+a `TypeError` from printing the same error; ignore those.
 
 ## How it hangs together
 

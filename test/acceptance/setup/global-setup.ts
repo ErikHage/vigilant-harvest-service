@@ -15,6 +15,18 @@ import { status } from '../support/status-codes';
  * matters.
  */
 export default async function globalSetup(): Promise<() => Promise<void>> {
+  try {
+    return await runPreflight();
+  } catch (err) {
+    // vitest 5.0 can fail while printing an error thrown from here: vite's
+    // source-map lookup throws a TypeError, and the run ends with "No test
+    // files found" and no message. So the message is written here as well.
+    process.stderr.write(`\n${err instanceof Error ? err.message : String(err)}\n\n`);
+    throw err;
+  }
+}
+
+async function runPreflight(): Promise<() => Promise<void>> {
   const config = loadConfigOrExplain();
 
   await assertServiceIsUp(config);
