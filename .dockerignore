@@ -2,3 +2,15 @@
 .env
 
 docker-compose.yml
+
+# Built or installed inside the image, and large to send to the daemon
+node_modules
+dist
+
+# Not part of the image
+.git
+.idea
+test
+scripts
+docs
+*.pid
