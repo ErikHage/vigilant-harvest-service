@@ -1,7 +1,8 @@
 import { PlantingAction } from './planting-action';
-import { PerformActionRequest, Planting } from '../types';
+import { PerformActionRequest, Planting, SplitData, TransplantActionData } from '../types';
 import datasource from '../plantings-mysql-datasource';
 import { ensureError, FeralError } from '../../../errors';
+import { BadRequestError } from '../../../errors/common';
 import constants from '../../../util/constants';
 import { getLogger } from '../../../logging';
 
@@ -9,19 +10,21 @@ const logger = getLogger('plant-action');
 
 export class PlantAction implements PlantingAction {
   async performAction(currentPlanting: Planting, plantingActionRequest: PerformActionRequest): Promise<Planting> {
-    try {
-      // split out the remaining number sown to stay as a STARTED planting
-      await splitOutRemainder(currentPlanting, plantingActionRequest);
+    const actionData = plantingActionRequest.transplantActionData!;
 
-      // TODO do in a transaction?
-      await datasource.updatePlanting(plantingActionRequest.plantingId, {
-        status: constants.plantings.statuses.planted,
-        ...plantingActionRequest.transplantActionData,
-      });
-      await datasource.insertStatusHistory(
-        plantingActionRequest.plantingId,
-        constants.plantings.statuses.planted,
-        plantingActionRequest.transplantActionData?.comment ?? '---');
+    // checked first, so a missing plot is the client's mistake by name, not a foreign key failure
+    if (actionData.plotId && !await datasource.plotExists(actionData.plotId)) {
+      throw new BadRequestError(`Unknown plot id: ${actionData.plotId}`)
+        .withDebugParams({ plantingActionRequest, });
+    }
+
+    try {
+      // the remainder split, the move to PLANTED and its history row are one transaction
+      await datasource.plantPlanting(
+        currentPlanting,
+        { status: constants.plantings.statuses.planted, ...actionData, },
+        remainderToSplitOff(currentPlanting, actionData),
+        actionData.comment);
     } catch (err) {
       throw new TransplantActionError(ensureError(err)).withDebugParams({ currentPlanting, plantingActionRequest, });
     }
@@ -30,22 +33,20 @@ export class PlantAction implements PlantingAction {
   }
 }
 
-async function splitOutRemainder(currentPlanting: Planting, plantingActionRequest: PerformActionRequest) {
-  const actionData = plantingActionRequest.transplantActionData!;
-
-  logger.info(`Checking if split needed for planting. Current number sown [${currentPlanting.numberSown!}]
-                and number to be planted [${actionData.numberTransplanted!}]`);
-  if (currentPlanting.numberSown! > actionData.numberTransplanted!) {
-    const newNumberSown = currentPlanting.numberSown! - actionData.numberTransplanted!;
-    logger.info(`Number sown greater than number to be planted. Splitting out ${newNumberSown} remaining plants`);
-
-    await datasource.splitPlanting(plantingActionRequest.plantingId, [
-      {
-        name: currentPlanting.name + `(${newNumberSown} Remaining)`,
-        count: newNumberSown,
-      },
-    ]);
+/** The plants left over when fewer are planted out than were sown; they stay a STARTED planting. */
+function remainderToSplitOff(currentPlanting: Planting, actionData: TransplantActionData): SplitData | undefined {
+  if (!(currentPlanting.numberSown! > actionData.numberTransplanted!)) {
+    return undefined;
   }
+
+  const remaining = currentPlanting.numberSown! - actionData.numberTransplanted!;
+  logger.info(`Planting out ${actionData.numberTransplanted!} of ${currentPlanting.numberSown!}; ` +
+    `splitting off the ${remaining} remaining`);
+
+  return {
+    name: currentPlanting.name + `(${remaining} Remaining)`,
+    count: remaining,
+  };
 }
 
 class TransplantActionError extends FeralError {

@@ -66,6 +66,13 @@ describe('plantings', () => {
     await plantings.checkNumberSown('as: gardener', 'planting: leftovers', 'numberSown: 6');
   });
 
+  it('rejects planting out into a plot that does not exist, and writes nothing', async () => {
+    await plantings.createPlanting('as: gardener', 'planting: row-one', 'plant: tomato');
+    await plantings.start('as: gardener', 'planting: row-one', 'numberSown: 10');
+
+    await plantings.checkPlantInUnknownPlotIsRejected('as: gardener', 'planting: row-one', 'numberTransplanted: 4');
+  });
+
   it('rejects splitting out as many as a planting holds', async () => {
     await plantings.createPlanting('as: gardener', 'planting: row-one', 'plant: tomato');
     await plantings.start('as: gardener', 'planting: row-one', 'numberSown: 10');

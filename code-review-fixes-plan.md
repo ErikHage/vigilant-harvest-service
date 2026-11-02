@@ -27,8 +27,8 @@ keeps the history.
 | 2 | H2 · JSON 400 for malformed bodies, `NODE_ENV=production` | done |
 | 3 | H3 · log every error in prod | done |
 | 4 | M1 · keep causes in planting actions; M10 · drop `multipleStatements` | done |
-| 5 | H4 · PLANT in one transaction | in progress |
-| 6 | H5 · input validation, route by route | to plan when reached |
+| 5 | H4 · PLANT in one transaction | done |
+| 6 | H5 · input validation, route by route | planning |
 
 ## Phase 1 — H1: one flat error per body
 
@@ -96,11 +96,16 @@ keeps the history.
 
 ## Phase 5 — H4: PLANT in one transaction
 
-- [ ] Acceptance test: PLANT into a plot that doesn't exist answers 400, and writes nothing. Seen to
-      fail; it answers 500 and leaves a `(N Remaining)` planting today.
-- [ ] The split, the update and the history row go into one `execTransactionQuery` list. Check the
-      plot first.
-- [ ] Changelog entry, then stop for commit review
+- [x] Acceptance test: PLANT into a plot that doesn't exist answers 400, and writes nothing. Seen to
+      fail: after Phase 4 it already answered 400 (the foreign key's), but it left
+      `acc-row-one-…(6 Remaining)`. The driver registers whatever is in the year before it asserts,
+      so the stray split was cleaned up.
+- [x] The split, the update and the history row go into one `execTransactionQuery` list
+      (`plantPlanting`, built from `_buildSplitQueries`, which `splitPlanting` now uses too). The plot
+      is checked first: `Unknown plot id: …`.
+- [x] Suite: 115 passed, against a build whose listener started after `dist` was written.
+- [x] Changelog entry
+- [x] Stop for commit review
 
 ## Phase 6 — H5: validation
 
@@ -120,3 +125,4 @@ Planned when Phase 5 is done. Expect a sub-phase per route group, each retiring 
   may have tested a mid-edit build. The Phase 3 logging itself was verified on port 8013 from the final
   build. After a fresh start, exactly the split pin failed. It is retired, and 114 passed. Phase 4 is
   done and committed.
+- 2026-11-02: Phase 5 done and committed. Phase 6 (H5) needs its own plan first.

@@ -41,9 +41,53 @@ async function insertPlanting(planting: Planting): Promise<Planting> {
 }
 
 async function splitPlanting(sourcePlantingId: string, splits: SplitData[]): Promise<void> {
-  const transaction: QueryPayload[] = [];
-
   const sourcePlanting = await getPlantingById(sourcePlantingId);
+  const transaction: QueryPayload[] = _buildSplitQueries(sourcePlanting, splits);
+
+  try {
+    await db.execTransactionQuery(transaction);
+  } catch (err) {
+    throw new FeralError('Error cloning planting', ensureError(err))
+      .withDebugParams({ transaction, });
+  }
+}
+
+/**
+ * PLANT, in one transaction: the remainder split off (when fewer are planted
+ * than were sown), the planting moved to PLANTED, and its history row. If any
+ * part fails, none of it is written.
+ */
+async function plantPlanting(
+  planting: Planting,
+  plantingUpdate: PlantingUpdate,
+  remainder: SplitData | undefined,
+  comment: string
+): Promise<void> {
+  const transaction: QueryPayload[] = [
+    ...(remainder ? _buildSplitQueries(planting, [ remainder, ]) : []),
+    {
+      sql: queries.plantings.buildUpdateQuery(plantingUpdate),
+      params: rowMapper.plantings.update.toParams(planting.plantingId, plantingUpdate),
+    },
+    _getInsertStatusHistoryQueryAndParams(planting.plantingId, plantingUpdate.status, comment),
+  ];
+
+  try {
+    await db.execTransactionQuery(transaction);
+  } catch (err) {
+    throw new FeralError('Error planting out planting', ensureError(err))
+      .withDebugParams({ transaction, });
+  }
+}
+
+async function plotExists(plotId: string): Promise<boolean> {
+  return await db.execCountQuery({ sql: queries.plantings.countPlotsById, params: [ plotId, ], }) > 0;
+}
+
+/** The queries that split `splits` off a planting, in order, for one transaction. */
+function _buildSplitQueries(sourcePlanting: Planting, splits: SplitData[]): QueryPayload[] {
+  const transaction: QueryPayload[] = [];
+  const sourcePlantingId = sourcePlanting.plantingId;
 
   let sourceCount: number = sourcePlanting.numberSown!;
   for (const split of splits) {
@@ -99,12 +143,8 @@ async function splitPlanting(sourcePlantingId: string, splits: SplitData[]): Pro
 
     sourceCount -= split.count;
   }
-  try {
-    await db.execTransactionQuery(transaction);
-  } catch (err) {
-    throw new FeralError('Error cloning planting', ensureError(err))
-      .withDebugParams({ transaction, });
-  }
+
+  return transaction;
 }
 
 function _buildInsertComment(planting: Planting): string {
@@ -268,6 +308,8 @@ async function deletePlantingById(plantingId: string): Promise<void> {
 export default {
   insertPlanting,
   splitPlanting,
+  plantPlanting,
+  plotExists,
   updatePlanting,
   getPlantingById,
   getPlantingsBreakdown,

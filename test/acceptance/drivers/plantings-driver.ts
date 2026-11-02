@@ -31,6 +31,11 @@ export interface PlantingsDriver {
   split(caller: Actor, planting: CreatedPlanting, name: string, count: number): Promise<CreatedPlanting>,
   actionOutOfOrderIsRejectedAsBadRequest(caller: Actor, planting: CreatedPlanting, actionType: string): Promise<void>,
   splitOverflowIsRejectedAsBadRequest(caller: Actor, planting: CreatedPlanting, count: number): Promise<void>,
+  /**
+   * PLANT into a plot that doesn't exist: rejected, and nothing written. No
+   * remainder split off, and the planting's status and count unchanged.
+   */
+  plantInUnknownPlotIsRejectedAsBadRequest(caller: Actor, planting: CreatedPlanting, numberTransplanted: number): Promise<void>,
   updateChangesSeedSource(caller: Actor, planting: CreatedPlanting, seedSource: string): Promise<void>,
   updateToEmptyValueKeepsTheOldOne(caller: Actor, planting: CreatedPlanting, seedSource: string): Promise<void>,
   updateOfFieldNotAllowedIsRejectedAsBadRequest(caller: Actor, planting: CreatedPlanting): Promise<void>,
@@ -200,6 +205,41 @@ export function createPlantingsDriver(client: HttpClient, registry: ResourceRegi
         `planting "${planting.name}" in plot "${plot.friendlyName}"`
       );
       await registerWhatTheServiceMade(caller, planting.plantingYear);
+    },
+
+    async plantInUnknownPlotIsRejectedAsBadRequest(
+      caller: Actor,
+      planting: CreatedPlanting,
+      numberTransplanted: number
+    ): Promise<void> {
+      const what = `planting "${planting.name}" in a plot that does not exist`;
+      const before = (await get(caller, planting, `${what}: reading it first`)).body as Record<string, unknown>;
+      const plantingsBefore = await listForYear(caller, planting.plantingYear, `${what}: listing its year first`);
+
+      const response = await as(caller).post(`/plantings/${planting.plantingId}`, {
+        actionType: 'PLANT',
+        plotId: '00000000-0000-0000-0000-000000000000',
+        transplantDate: '2026-05-20',
+        numberTransplanted,
+      });
+
+      // a remainder split that wrongly survived must still be cleaned up
+      await registerWhatTheServiceMade(caller, planting.plantingYear);
+      const plantingsAfter = await listForYear(caller, planting.plantingYear, `${what}: listing its year again`);
+
+      expectThat(
+        plantingsAfter.length === plantingsBefore.length,
+        `still ${plantingsBefore.length} planting(s) in ${planting.plantingYear}, with no remainder split off, ` +
+          `but found ${plantingsAfter.map(entry => entry.name).join(', ')}`,
+        response,
+        what
+      );
+      expectBodyToContain(
+        await get(caller, planting, `${what}: re-reading it`),
+        { currentStatus: before.currentStatus, numberSown: before.numberSown, },
+        what
+      );
+      expectRejection(response, status.BAD_REQUEST, 'Unknown plot', what);
     },
 
     async retire(caller: Actor, planting: CreatedPlanting): Promise<void> {

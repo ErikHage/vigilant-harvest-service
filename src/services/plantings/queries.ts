@@ -148,6 +148,8 @@ const plantings = {
 
   countHarvestsByPlantingId: 'SELECT COUNT(*) AS count FROM harvests WHERE planting_id = ?',
 
+  countPlotsById: 'SELECT COUNT(*) AS count FROM plots WHERE plot_id = ?',
+
   deleteById: 'DELETE FROM plantings WHERE planting_id = ?',
 };
 

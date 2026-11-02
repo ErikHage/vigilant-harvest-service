@@ -38,6 +38,8 @@ export interface PlantingsDsl {
   checkActionIsRejected(...args: string[]): Promise<void>,
   /** `as`, `planting`, `count`. */
   checkSplitOverflowIsRejected(...args: string[]): Promise<void>,
+  /** `as`, `planting`, `numberTransplanted`. Asserts PLANT into a missing plot is rejected, and writes nothing. */
+  checkPlantInUnknownPlotIsRejected(...args: string[]): Promise<void>,
   /** `as`, `planting`, `seedSource`. */
   update(...args: string[]): Promise<void>,
   /** `as`, `planting`, `seedSource`, what it holds now. */
@@ -150,6 +152,20 @@ export function createPlantingsDsl(world: World, plantings: PlantingsDriver): Pl
         await world.actorFor(params.as),
         world.plantingNamed(params.planting),
         world.plotNamed(params.plot),
+        params.numberTransplanted
+      );
+    },
+
+    async checkPlantInUnknownPlotIsRejected(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, {
+        as: actor(),
+        planting: alias(),
+        numberTransplanted: required().asInteger(),
+      });
+
+      await plantings.plantInUnknownPlotIsRejectedAsBadRequest(
+        await world.actorFor(params.as),
+        world.plantingNamed(params.planting),
         params.numberTransplanted
       );
     },
