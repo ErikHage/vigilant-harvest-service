@@ -80,13 +80,20 @@ export class FeralError extends Error {
       : this;
   }
 
-  /** The whole chain, debug parameters included: for logs, never for responses. */
+  /**
+   * The whole chain, debug parameters included: for logs, never for responses.
+   * It follows `feralCause`, and then a standard `cause` where that is all an
+   * error has: MysqlError keeps the driver's own message ("Duplicate entry
+   * ... for key ...") there.
+   */
   toObject(): FeralErrorDetails {
+    const next = this.feralCause ?? (this.cause instanceof FeralError ? this.cause : undefined);
+
     return {
       name: this.name,
       message: this.message,
       status: this.status,
-      cause: this.feralCause ? this.feralCause.toObject() : undefined,
+      cause: next ? next.toObject() : undefined,
       debugParams: this.debugParams,
     };
   }

@@ -8,8 +8,9 @@ export class BadRequestError extends FeralError {
 }
 
 export class UnauthorizedError extends FeralError {
-  constructor() {
-    super('Unauthorized');
+  /** `cause` says why, for the log; the client only ever sees "Unauthorized". */
+  constructor(cause?: FeralError) {
+    super('Unauthorized', cause);
     this.status = 401;
   }
 }

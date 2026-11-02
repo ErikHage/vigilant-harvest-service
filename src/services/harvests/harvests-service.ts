@@ -11,13 +11,10 @@ import {
 
 import datasource from './harvests-mysql-datasource';
 import { ensureError, FeralError } from '../../errors';
-import { getLogger } from '../../logging';
 import stats from './stats';
 import { UNSPECIFIED_HARVEST_TYPE_ID } from '../harvest-types/types';
 import { BadRequestError } from '../../errors/common';
 import harvestTypesService from '../harvest-types/harvest-types-service';
-
-const logger = getLogger('harvests-service');
 
 async function upsertHarvests(harvestRequests: HarvestRequest[]): Promise<Harvest[]> {
   // deliberately outside the try below, which would re-wrap the 400 as a 500
@@ -61,10 +58,8 @@ async function upsertHarvests(harvestRequests: HarvestRequest[]): Promise<Harves
 
     return await datasource.upsertHarvests(harvests);
   } catch (err) {
-    const error = new FeralError('Error upserting harvests', ensureError(err))
+    throw new FeralError('Error upserting harvests', ensureError(err))
       .withDebugParams({ harvestRequests, });
-    logger.error(error, 'Error upserting harvests');
-    throw error;
   }
 }
 
@@ -133,10 +128,8 @@ async function findMergeTarget(
 
     return maybeMergeTarget;
   } catch (err) {
-    const error = new FeralError('Error merging harvest', ensureError(err))
+    throw new FeralError('Error merging harvest', ensureError(err))
       .withDebugParams({ request, harvestTypeId, });
-    logger.error(error, 'Error merging harvest', { request, harvestTypeId, });
-    throw error;
   }
 }
 
@@ -144,10 +137,8 @@ async function getHarvestSummary(request: HarvestSummaryRequest): Promise<Harves
   try {
     return await datasource.getHarvestSummary(request);
   } catch (err) {
-    const error = new FeralError('Error getting harvest summary', ensureError(err))
+    throw new FeralError('Error getting harvest summary', ensureError(err))
       .withDebugParams({ request, });
-    logger.error(error, 'Error getting harvest summary', { request, });
-    throw error;
   }
 }
 
@@ -155,10 +146,8 @@ async function searchHarvests(request: HarvestSearchRequest): Promise<Harvest[]>
   try {
     return await datasource.searchHarvests(request);
   } catch (err) {
-    const error = new FeralError('Error searching harvests', ensureError(err))
+    throw new FeralError('Error searching harvests', ensureError(err))
       .withDebugParams({ request, });
-    logger.error(error, 'Error searching harvests', { request, });
-    throw err;
   }
 }
 
@@ -167,10 +156,8 @@ async function getHarvestStats(request: HarvestStatsRequest): Promise<HarvestSta
     const harvests: HydratedHarvest[] = await datasource.getHydratedHarvestsByYear(request.year);
     return stats.calculate(harvests, request.type);
   } catch (err) {
-    const error = new FeralError('Error getting harvest stats', ensureError(err))
+    throw new FeralError('Error getting harvest stats', ensureError(err))
       .withDebugParams({ request, });
-    logger.error(error, 'Error getting harvest stats', { request, });
-    throw error;
   }
 }
 
@@ -178,10 +165,8 @@ async function deleteHarvestById(harvestId: string): Promise<void> {
   try {
     await datasource.deleteHarvestById(harvestId);
   } catch (err) {
-    const error = new FeralError('Error deleting harvests by id', ensureError(err))
+    throw new FeralError('Error deleting harvests by id', ensureError(err))
       .withDebugParams({ harvestId, });
-    logger.error(error, 'Error deleting harvest by id %s', harvestId);
-    throw error;
   }
 }
 

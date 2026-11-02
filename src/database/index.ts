@@ -33,8 +33,7 @@ async function execQuery<T extends QueryResult>(queryPayload: QueryPayload): Pro
     const result = await conn.query<T>(queryPayload.sql, queryPayload.params);
     return result[0];
   } catch (err) {
-    const error = ensureError(err);
-    logger.error(error, 'Error performing query');
+    // logged once, by the error handler, with the driver's message as the cause
     throw toMysqlError('Error performing query', { queryPayload, }, err);
   } finally {
     await mysqlClient.closeConnection(conn);
@@ -67,8 +66,6 @@ async function execTransactionQuery<T extends QueryResult>(queriesArray: Array<Q
     // a failed rollback must not hide the error that caused it
     await conn.rollback().catch(rollbackErr => logger.error(ensureError(rollbackErr), 'Error rolling back transaction'));
     const sql: string[] = queriesArray.map(q => q.sql);
-    const error = ensureError(err);
-    logger.error(error, 'Error performing queries');
     throw toMysqlError('Error performing transaction query', { sql, }, err);
   } finally {
     await mysqlClient.closeConnection(conn);

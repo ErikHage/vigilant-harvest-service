@@ -34,8 +34,18 @@ export default (
 {
   const error: FeralError = toFeralError(err);
 
-  if (process.env.DEPLOYMENT_ENVIRONMENT === 'dev') {
-    logger.error(error, 'Error caught by middleware');
+  // The one place a failed request is logged, in every environment: the
+  // layers below throw and leave the logging to this.
+  const details = {
+    method: request.method,
+    path: request.originalUrl,
+    status: error.status,
+    error: error.toObject(),
+  };
+  if (error.status >= 500) {
+    logger.error({ ...details, stack: error.stack, }, 'Request failed');
+  } else {
+    logger.warn(details, 'Request rejected');
   }
 
   response.status(error.status).send({

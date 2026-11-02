@@ -2,13 +2,10 @@ import { NextFunction, Request, Response } from 'express';
 
 import { BadRequestError, UnauthorizedError } from '../errors/common';
 
-import { getLogger } from '../logging';
 import { ensureError, FeralError } from '../errors';
 import { JwtSigner, JwtVerifyError } from '../jwt';
 import environment from '../util/environment';
 import { Actor } from '../jwt/types';
-
-const logger = getLogger('attach-actor-middleware');
 
 const signer: JwtSigner = new JwtSigner(
   () => '', // don't need this
@@ -20,16 +17,6 @@ const signer: JwtSigner = new JwtSigner(
     },
   }
 );
-
-async function verifySessionToken(token: string): Promise<Actor> {
-  try {
-    return signer.verify<Actor>(token);
-  } catch (err) {
-    const error = ensureError(err);
-    logger.error(error, 'Error parsing session token');
-    throw error;
-  }
-}
 
 export default async function(request: Request, response: Response, next: NextFunction) {
   const feralAuthToken = request.headers['x-feral-auth-token'];
@@ -45,15 +32,15 @@ export default async function(request: Request, response: Response, next: NextFu
   }
 
   try {
-    request.actor = await verifySessionToken(feralAuthToken);
+    request.actor = await signer.verify<Actor>(feralAuthToken);
     next();
   } catch (err) {
+    // the error handler logs it, with the reason as the cause
     const error = ensureError(err);
-    logger.error(error, 'Failed to attach actor');
     if (error instanceof JwtVerifyError) {
-      next(new UnauthorizedError());
+      next(new UnauthorizedError(error));
     } else {
-      next(new FeralError('Unknown error authenticating token'));
+      next(new FeralError('Unknown error authenticating token', error));
     }
   }
 }

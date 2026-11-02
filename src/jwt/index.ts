@@ -97,9 +97,8 @@ export class JwtSigner {
         })
       });
     } catch (err) {
-      const error = new JwtVerifyError('Error verifying jwt token', ensureError(err));
-      logger.error(error, 'Error verifying jwt token');
-      throw error;
+      // a rejected token is the caller's to report; attach-actor turns it into a 401
+      throw new JwtVerifyError('Error verifying jwt token', ensureError(err));
     }
   }
 }

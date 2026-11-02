@@ -21,8 +21,8 @@ keeps the history.
 |---|---|---|
 | 1 | H1 · flat error bodies | done |
 | 2 | H2 · JSON 400 for malformed bodies, `NODE_ENV=production` | done |
-| 3 | H3 · log every error in prod | in progress |
-| 4 | M1 · keep causes in planting actions; M10 · drop `multipleStatements` | — |
+| 3 | H3 · log every error in prod | done |
+| 4 | M1 · keep causes in planting actions; M10 · drop `multipleStatements` | in progress |
 | 5 | H4 · PLANT in one transaction | — |
 | 6 | H5 · input validation, route by route | to plan when reached |
 
@@ -64,16 +64,23 @@ keeps the history.
 
 ## Phase 3 — H3: log every error
 
-- [ ] The error handler logs every error with its full chain: `warn` for 4xx, `error` for 5xx, with the
-      method and path.
-- [ ] The try-decorator stops logging on its own, so no error is logged twice. Rename its logger (L5).
-- [ ] Request-body logging stays dev-only.
-- [ ] Seen in a production-mode run: a 500 and a 409 each leave one log line.
-- [ ] Changelog entry, then stop for commit review
+- [x] The error handler logs every error with its full chain: `warn` for 4xx, and `error` with the
+      stack for 5xx, with the method and path.
+- [x] The try-decorator stops logging, and its misnamed logger is gone (L5). So do the other 11
+      log-and-rethrow sites: `database/index.ts` (2), `jwt/index.ts` verify, `attach-actor.ts` (2), and
+      the harvest services (7). A rollback failure still logs, as a separate error.
+- [x] `UnauthorizedError` takes a cause, so a 401's line says why the token was rejected.
+- [x] `toObject()` also follows a standard `cause`, so the line reaches MySQL's own message.
+- [x] Request-body logging stays dev-only.
+- [x] Seen in a production-mode run: 2 × 401, 400, 404, 409 and 500 each left exactly one line.
+- [x] Suite: 114 passed.
+- [x] Changelog entry
+- [x] Stop for commit review
 
 ## Phase 4 — M1 and M10
 
-- [ ] Each planting action's `catch` passes the cause. `harvests-service.ts:161` throws the wrapper.
+- [ ] Each planting action's `catch` passes the cause. (`harvests-service.ts:161` already throws the
+      wrapper; that went in with Phase 3, since its log line was removed there.)
 - [ ] The pinned "splitting out as many as a planting holds answers 500" turns 400. Retire the pin.
 - [ ] Remove `multipleStatements` from `database/config.ts`.
 - [ ] Changelog entry, then stop for commit review
@@ -97,3 +104,4 @@ Planned when Phase 5 is done. Expect a sub-phase per route group, each retiring 
   Committed.
 - 2026-11-02: Phase 2 done and committed. Along the way, a nested ternary in the suite's
   client failed lint, which `npm run build` runs over test files too, and stopped the dev server.
+- 2026-11-02: Phase 3 done and committed.
