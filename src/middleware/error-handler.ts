@@ -20,7 +20,7 @@ export default (
 
   response.status(error.status).send({
     errors: [
-      error.toObject(),
+      error.toResponse(),
     ],
   });
 };

@@ -23,6 +23,13 @@ export function ensureError(value: unknown): FeralError {
   return new FeralError(`This value was thrown as is, not through an Error: ${stringValue}`);
 }
 
+/** What a client is told: no wrapped causes and no debug parameters. */
+export interface FeralErrorResponse {
+  name: string,
+  message: string,
+  status: number,
+}
+
 interface FeralErrorDetails {
   name: string,
   message: string,
@@ -50,6 +57,30 @@ export class FeralError extends Error {
     return this;
   }
 
+  /**
+   * The error as a client sees it. A client error is described by the error
+   * that set its status, the deepest one in the chain to carry it: that one
+   * says why ("Planting has harvests"), where the wrappers above it only say
+   * what was being done. A server error is described by the outermost one, so
+   * nothing about its cause reaches the client.
+   */
+  toResponse(): FeralErrorResponse {
+    const source = this.status >= 400 && this.status < 500 ? this.originOfStatus() : this;
+
+    return {
+      name: source.name,
+      message: source.message,
+      status: this.status,
+    };
+  }
+
+  private originOfStatus(): FeralError {
+    return this.feralCause !== undefined && this.feralCause.status === this.status
+      ? this.feralCause.originOfStatus()
+      : this;
+  }
+
+  /** The whole chain, debug parameters included: for logs, never for responses. */
   toObject(): FeralErrorDetails {
     return {
       name: this.name,

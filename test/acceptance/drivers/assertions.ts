@@ -34,6 +34,25 @@ export function expectStatus(response: ApiResponse, expected: number, what: stri
     response.status,
     failureMessage(what, `status ${expected}`, response)
   ).toBe(expected);
+
+  if (expected >= 400) {
+    expectNoInternals(response, what);
+  }
+}
+
+/**
+ * An error body says what went wrong and nothing about how: no wrapped causes,
+ * and no debug parameters, which carry SQL, query params and request bodies.
+ * Every error status a driver expects is checked, so each rejection test
+ * guards it.
+ */
+function expectNoInternals(response: ApiResponse, what: string): void {
+  for (const field of [ '"cause"', '"debugParams"', ]) {
+    expect(
+      response.rawBody.includes(field),
+      failureMessage(what, `an error body with no ${field} field`, response)
+    ).toBe(false);
+  }
 }
 
 /**
