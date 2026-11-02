@@ -10,11 +10,11 @@ the changelogs it isn't append-only: tick items off, edit the plan when it chang
 anything that changed course in the progress log at the bottom.
 
 - **Started:** 2026-10-29
-- **Status:** Phases 0–6 done and committed; paused on 2026-10-31 before Phase 7
+- **Status:** Phases 0–6 committed; Phase 7 done and awaiting review
 - **Changelogs:** test work in `ai-changelogs/projects/vigilant-harvest-service/2026-02-21-1-testing.md`;
   the delete APIs and foreign keys (Phases 2 and 3) in `2026-10-29-1-delete-apis.md`; status-code
   fixes in `2026-10-30-1-status-code-fixes.md`. Append an entry before each commit.
-- **Next:** Phase 7. Separately, the user diagnoses and cleans prod with
+- **Next:** Phase 7, then Phase 8. Separately, the user diagnoses and cleans prod with
   `scripts/foreign-key-orphans-diagnose.sql`, then `scripts/foreign-key-orphans.sql`, and deploys
   Phase 3. The suite runs locally, so it doesn't wait on prod.
 - **Reference suite:** `../feral-authentication-service/test/acceptance/`. Its README and
@@ -34,11 +34,18 @@ Paused on 2026-10-31. Everything is committed in all three repos. Nothing has be
 2. `npm run test:acceptance` should show 110 tests in 14 files passing, in about 10 seconds. The
    preflight explains anything that's misconfigured.
 
-**The next step is Phase 7:** vitest 5, Node 24 and `@types/node` 24. It's the last phase, and it ends by
-deleting this file.
-- **Open question for the user first:** is Docker available on this machine? Phase 7 moves the Dockerfile
-  to `node:24-alpine`, which changes the production runtime, so it needs a real image build and run to
-  verify. If there's no Docker here, decide how to verify that before starting.
+**The next steps are Phase 7, then Phase 8:**
+- **Phase 7:** vitest 5 and `@types/node` 24.
+- **Phase 8,** added on 2026-11-02: deployment readiness. It comes from
+  `ai-changelogs/cross-cutting/2026-11-01-1-service-deployment.md`, and covers:
+  - Node 24 in the image
+  - `USER node`, `CMD node`
+  - a health route and `HEALTHCHECK`
+  - a shutdown handler
+  - removing `X-Powered-By`
+
+  Phase 8 is the last phase, and it ends by deleting this file.
+- **Docker:** installed, but Docker Desktop has to be started before Phase 8's image steps.
 
 **Waiting on the user, and not blocking Phase 7:**
 - Prod orphans: run `scripts/foreign-key-orphans-diagnose.sql`, repair what its queries 5–7 list, then run
@@ -70,8 +77,9 @@ temporary folder. The suite replaces the first, and Phase 6's results table reco
 | — | Four small fixes before the suite | done (`d902372`) |
 | 4 | Suite scaffolding, preflight, teardown, residue check, first specs | done (`c7d7e3f`) |
 | 5 | Specs per API grouping | done (`83a7084`) |
-| 6 | Prove the suite can fail, layering checks, docs | done |
-| 7 | Upgrade to vitest 5 and Node 24 | not started |
+| 6 | Prove the suite can fail, layering checks, docs | done (`9e80afc`) |
+| 7 | Upgrade to vitest 5 and `@types/node` 24 | done; awaiting review and commit |
+| 8 | Deployment readiness: Node 24 image, non-root, health, shutdown, headers | not started |
 
 ---
 
@@ -1050,17 +1058,105 @@ Requested by the user on 2026-10-29, when vitest 5 turned out to need a newer No
 project targets (see Phase 1). It's the final step, so the suite is complete and green before
 the runtime moves under it.
 
-- [ ] Bump `@types/node` to `^24`.
-- [ ] Move both `Dockerfile` stages from `node:20-alpine` to `node:24-alpine` (T-7). Node 20
-  reached end of life in April 2026.
-- [ ] `npm install --save-dev vitest@^5`. Check the vitest 5 migration notes against the suite's
-  config: `globalSetup`'s `teardown`, `fileParallelism`, reporters.
-- [ ] Build the Docker image, and run it once against the local database. Confirm the service
-  starts, migrations run, and `GET /service-info` answers.
-- [ ] `npm run build`, `npm run tsc:acceptance` and the full `npm run test:acceptance` are green,
-  with the same counts as at the end of Phase 6.
-- [ ] Note in the changelog that feral is still on vitest 1.6, in case the two suites drift.
-- [ ] Delete this file once the changelogs hold the history.
+The Dockerfile's move to Node 24 went to Phase 8 on 2026-11-02, so that the image is changed and
+verified once, as a whole.
+
+**Checked on 2026-11-02:**
+- vitest 5.0.5 needs Node `^22.12 || ^24 || >=26`, and `@types/node` `^22 || >=24`.
+- **vite is now a required peer,** not a dependency. vite 8.3.5 was already installed through
+  vitest 4.
+- Nothing in the migration notes touches this suite's config: `globalSetup`, `fileParallelism`,
+  the timeouts, the `verbose` reporter. They don't mention teardown exit codes, so that gets
+  rechecked.
+- Unawaited async assertions now fail the test.
+
+**The steps:**
+- [x] `npm install --save-dev vitest@^5 @types/node@^24 vite@^8`. Adding vite explicitly records
+  the peer.
+- [x] `npm ls vitest vite @types/node` is clean.
+- [x] `npm run build`, `npm run tsc:acceptance` and the full `npm run test:acceptance` (twice) are
+  green, with the same counts as at the end of Phase 6.
+- [x] Rerun one Phase 6 break: a wrong plot-teardown path. The residue check must still fail the
+  run. It did: every test passed, and the run exited 1, naming 24 plots. They were deleted over the
+  API.
+- [x] If runs create `.vitest/`, gitignore it. None appeared.
+- [x] Note in the changelog that feral is still on vitest 1.6, in case the two suites drift.
+
+---
+
+## Phase 8: Deployment readiness
+
+Added on 2026-11-02 from `ai-changelogs/cross-cutting/2026-11-01-1-service-deployment.md`. That
+doc holds the lessons of the first `personal-website` deploy, and lists this service's image as
+needing the most work.
+
+**What the server runs.** These are from the user's server files; values were not shared.
+
+| Setting | Value |
+|---|---|
+| `PORT` | `8002` |
+| `DEPLOYMENT_ENVIRONMENT` | `production`, so the service sleeps 20 s before migrating |
+| `MYSQL_HOST` | `feral-rooster-database`, a service in the same compose file |
+| `image` | `ehage/vigilant-harvest-service`, untagged, so `latest` |
+| `ports` | `12910:8002` |
+| `env_file` | `vigilant-harvest-service.env` |
+| `environment` | `TZ=America/New_York` |
+| `volumes` | none |
+| `restart` | none |
+
+**Where the service starts from:**
+- There's no connection pool: a connection is opened and closed per query.
+- `server.ts` handles no signals.
+- Express sends `X-Powered-By`.
+- The Dockerfile `EXPOSE`s 3000, although the service listens on 8002.
+- The runtime stage copies dev dependencies too.
+
+**Commit A: the service**
+- [ ] `GET /api/vigilant-harvest-service/v0/health` → 200 `{ status: 'ok' }`, with no token and
+  no database. It's registered before `logRequests`, so a health check every 30 s doesn't fill
+  the log.
+- [ ] `app.disable('x-powered-by')`.
+- [ ] Shut down on `SIGTERM` and `SIGINT`: `server.close(() => process.exit(0))`, the doc's tested
+  shape. There's no pool to close.
+- [ ] A spec, through the DSL and a driver:
+  - `/health` answers 200 without a token;
+  - no response carries `X-Powered-By`.
+
+  Each part is seen to fail by briefly reverting its change.
+
+**Commit B: the image**
+- [ ] The doc's three-stage shape on `node:24-alpine`: build with `npm ci`, a dependency stage with
+  `npm ci --omit=dev`, then a final stage.
+- [ ] In the final stage:
+  - `USER node`, and `CMD [ "node", "dist/src/server.js" ]`;
+  - `EXPOSE 8002`;
+  - `LABEL maintainer`, in place of `MAINTAINER`;
+  - no `apk update` or `nano`.
+- [ ] A `HEALTHCHECK` on `/health`, with `--start-period=60s` to cover the 20 s sleep and the
+  migrations.
+
+**The doc's "Before deploying" checklist, run locally.** Record the results in the changelog.
+- [ ] `npm ci`, the suite and `npm audit`. Report the audit, but don't fix it here.
+- [ ] Build the image, and run it as on the server:
+  - `-p 8012:8002`, with `.env` mounted read-only;
+  - `MYSQL_HOST=host.docker.internal`;
+  - `DEPLOYMENT_ENVIRONMENT=production`, `TZ=America/New_York`.
+- [ ] `TZ` takes effect on Node 24 alpine, the same as on the old image.
+- [ ] Migrations run, and the container reads `node healthy`.
+- [ ] The full suite passes against the container.
+- [ ] `time docker stop` is under 1 s and exits 0, also with a keep-alive connection open. Time the
+  old image first, as a baseline.
+- [ ] No `X-Powered-By`, and JSON bodies on a 404, a 401 and a 409.
+
+**Close out:**
+- [ ] Tick the done *Changes* in the cross-cutting doc's `vigilant-harvest-service` section.
+- [ ] Move what's still open into the changelogs: the *Ideas* list, the prod work, and the
+  server-side items for the user.
+  - Add `restart: always` to this service and to `feral-authentication-service`.
+  - Check whether `12567` is reachable from the internet.
+  - Check whether nginx replaces this service's JSON 404 and 500.
+  - Consider `depends_on` with a health condition, in place of the 20 s sleep.
+- [ ] Delete this file, and the in-progress memory.
 
 ---
 
@@ -1260,3 +1356,6 @@ counts once there are any.
   flip failed its pin. Parallel run clean. The README gained the known-broken table. Awaiting review
   before commit.
 - **2026-10-31**: Phase 6 committed. Paused before Phase 7; see *Picking this back up* at the top.
+- **2026-11-02**: Resumed. The cross-cutting deployment doc added Phase 8. Phase 7 done: vitest 5.0.5,
+  `@types/node` 24.19.2, `vite` explicit. Three clean runs of 110, and the residue check still fails a
+  run with residue. Awaiting review before commit.
