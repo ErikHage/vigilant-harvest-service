@@ -1,5 +1,5 @@
 import { Actor } from '../support/actors';
-import { expectBodyToContain, expectBodyToHaveKeys, expectNoHeader, expectStatus } from './assertions';
+import { expectBodyToContain, expectBodyToHaveKeys, expectNoHeader, expectStatus, expectThat } from './assertions';
 import { HttpClient } from '../support/http-client';
 import { status } from '../support/status-codes';
 
@@ -17,6 +17,12 @@ export interface ServiceInfoDriver {
    * exist, which Express answers itself.
    */
   responsesDoNotNameTheFramework(caller: Actor): Promise<void>,
+  /**
+   * Asserts that a body that isn't valid JSON is rejected as a bad request, in
+   * the service's own error shape, with no stack trace. Bodies are parsed before
+   * the token is checked, so this holds with or without one.
+   */
+  malformedBodyIsRejectedAsBadRequest(caller: Actor): Promise<void>,
 }
 
 export function createServiceInfoDriver(client: HttpClient): ServiceInfoDriver {
@@ -49,6 +55,20 @@ export function createServiceInfoDriver(client: HttpClient): ServiceInfoDriver {
       for (const call of calls) {
         expectNoHeader(await callerClient.get(call.path), POWERED_BY_HEADER, call.what);
       }
+    },
+
+    async malformedBodyIsRejectedAsBadRequest(caller: Actor): Promise<void> {
+      const what = 'saving a journal entry whose body is not valid JSON';
+      const response = await client.withToken(caller.token).putRaw('/journal', '{"entry": ');
+
+      expectStatus(response, status.BAD_REQUEST, what);
+      expectBodyToHaveKeys(response, [ 'errors', ], what);
+      expectThat(
+        !/node_modules|\bat [^\n]*\(/.test(response.rawBody),
+        'no stack trace in the body',
+        response,
+        what
+      );
     },
   };
 }

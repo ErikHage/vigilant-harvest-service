@@ -16,4 +16,12 @@ describe('service info', () => {
   it('does not say what it is built with', async () => {
     await serviceInfo.checkFrameworkIsNotNamed('as: gardener');
   });
+
+  it('rejects a body that is not JSON', async () => {
+    await serviceInfo.checkMalformedBodyIsRejected('as: gardener');
+  });
+
+  it('rejects a body that is not JSON, before asking for a token', async () => {
+    await serviceInfo.checkMalformedBodyIsRejected('as: anonymous');
+  });
 });

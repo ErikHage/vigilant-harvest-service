@@ -21,6 +21,17 @@ export class ConflictError extends FeralError {
   }
 }
 
+/**
+ * A client error raised before the service's own code runs, by a body parser,
+ * which knows its status (400 for malformed JSON, 413 for a body too large).
+ */
+export class RequestError extends FeralError {
+  constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
+  }
+}
+
 export class ValidationError extends FeralError {
   constructor(message: string) {
     super(message);

@@ -20,8 +20,8 @@ keeps the history.
 | Phase | Findings | State |
 |---|---|---|
 | 1 | H1 · flat error bodies | done |
-| 2 | H2 · JSON 400 for malformed bodies, `NODE_ENV=production` | next |
-| 3 | H3 · log every error in prod | — |
+| 2 | H2 · JSON 400 for malformed bodies, `NODE_ENV=production` | done |
+| 3 | H3 · log every error in prod | in progress |
 | 4 | M1 · keep causes in planting actions; M10 · drop `multipleStatements` | — |
 | 5 | H4 · PLANT in one transaction | — |
 | 6 | H5 · input validation, route by route | to plan when reached |
@@ -51,12 +51,16 @@ keeps the history.
 
 ## Phase 2 — H2: malformed bodies answer JSON
 
-- [ ] Acceptance test: malformed JSON, with and without a token → a JSON 400, with no stack. Seen to
-      fail.
-- [ ] An app-level error handler in `app.ts`, after the router, that answers in the Phase 1 shape.
-- [ ] `ENV NODE_ENV=production` in the `Dockerfile`'s final stage. Check that the image still starts
-      and reports healthy.
-- [ ] Changelog entry, then stop for commit review
+- [x] Acceptance test: malformed JSON, with and without a token → a JSON 400, with no stack. Seen to
+      fail: both got Express's HTML 400. The suite's client gained `putRaw`.
+- [x] An app-level error handler in `app.ts`, after the router, that answers in the Phase 1 shape. It's
+      the same handler, which now keeps a body parser's own 4xx status (`expose` + `status`).
+- [x] `ENV NODE_ENV=production` in the `Dockerfile`'s final stage. Checked: db-migrate doesn't read it.
+      The image ran against an empty MySQL 8.0.42 database: 28 migrations, healthy at ~36 s,
+      `docker stop` in 596 ms with exit 0.
+- [x] Suite: 114 passed (112 + 2).
+- [x] Changelog entry
+- [x] Stop for commit review
 
 ## Phase 3 — H3: log every error
 
@@ -91,3 +95,5 @@ Planned when Phase 5 is done. Expect a sub-phase per route group, each retiring 
 - 2026-11-02: plan written. Phase 1 started.
 - 2026-11-02: Phase 1 done. vigilant-harvest-app checked for dependence on the old error shape: none.
   Committed.
+- 2026-11-02: Phase 2 done and committed. Along the way, a nested ternary in the suite's
+  client failed lint, which `npm run build` runs over test files too, and stopped the dev server.

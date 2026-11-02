@@ -35,6 +35,8 @@ LABEL maintainer="Erik Hage <ehage4@gmail.com>" \
       description="Vigilant Harvest Service"
 
 ENV HOME=/srv/package
+# Express shows stack traces in its default error pages unless this is set.
+ENV NODE_ENV=production
 
 WORKDIR ${HOME}
 

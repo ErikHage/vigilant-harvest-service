@@ -23,6 +23,8 @@ export interface HttpClient {
   get(path: string): Promise<ApiResponse>,
   post(path: string, body?: unknown): Promise<ApiResponse>,
   put(path: string, body?: unknown): Promise<ApiResponse>,
+  /** Sends `rawBody` as is, labelled as JSON: for bodies that aren't valid JSON. */
+  putRaw(path: string, rawBody: string): Promise<ApiResponse>,
   patch(path: string, body?: unknown): Promise<ApiResponse>,
   del(path: string): Promise<ApiResponse>,
   withToken(token: string | undefined): HttpClient,
@@ -55,7 +57,7 @@ function parseBody(rawBody: string): unknown {
 export function createHttpClient(options: HttpClientOptions): HttpClient {
   const { baseUrl, token, timeoutMs, } = options;
 
-  async function send(method: HttpMethod, path: string, body?: unknown): Promise<ApiResponse> {
+  async function send(method: HttpMethod, path: string, body?: unknown, raw = false): Promise<ApiResponse> {
     const headers: Record<string, string> = { accept: 'application/json', };
 
     if (token !== undefined) {
@@ -65,13 +67,18 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
       headers['content-type'] = 'application/json';
     }
 
+    let requestBody: string | undefined;
+    if (body !== undefined) {
+      requestBody = raw ? String(body) : JSON.stringify(body);
+    }
+
     let response: Response;
 
     try {
       response = await fetch(`${baseUrl}${path}`, {
         method,
         headers,
-        body: body === undefined ? undefined : JSON.stringify(body),
+        body: requestBody,
         signal: AbortSignal.timeout(timeoutMs),
       });
     } catch (err) {
@@ -101,6 +108,7 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
     get: (path: string) => send('GET', path),
     post: (path: string, body?: unknown) => send('POST', path, body),
     put: (path: string, body?: unknown) => send('PUT', path, body),
+    putRaw: (path: string, rawBody: string) => send('PUT', path, rawBody, true),
     patch: (path: string, body?: unknown) => send('PATCH', path, body),
     del: (path: string) => send('DELETE', path),
     withToken: (nextToken: string | undefined) => createHttpClient({ ...options, token: nextToken, }),

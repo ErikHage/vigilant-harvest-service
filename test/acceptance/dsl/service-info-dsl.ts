@@ -11,6 +11,8 @@ export interface ServiceInfoDsl {
   checkHealth(...args: string[]): Promise<void>,
   /** `as`. Asserts that no response says what the service is built with. */
   checkFrameworkIsNotNamed(...args: string[]): Promise<void>,
+  /** `as`. Asserts that a body that isn't valid JSON is rejected, in the service's error shape. */
+  checkMalformedBodyIsRejected(...args: string[]): Promise<void>,
 }
 
 export function createServiceInfoDsl(world: World, serviceInfo: ServiceInfoDriver): ServiceInfoDsl {
@@ -31,6 +33,12 @@ export function createServiceInfoDsl(world: World, serviceInfo: ServiceInfoDrive
       const params = parseDslArgs(args, { as: actor(), });
 
       await serviceInfo.responsesDoNotNameTheFramework(await world.actorFor(params.as));
+    },
+
+    async checkMalformedBodyIsRejected(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), });
+
+      await serviceInfo.malformedBodyIsRejectedAsBadRequest(await world.actorFor(params.as));
     },
   };
 }
