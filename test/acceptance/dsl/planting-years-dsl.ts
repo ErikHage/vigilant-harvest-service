@@ -1,8 +1,8 @@
-import { optional, parseDslArgs } from '@feral-auth/ts-simple-dsl';
+import { optional, parseDslArgs, required } from '@feral-auth/ts-simple-dsl';
 
 import { actor, alias } from './params';
 import { aPlantingYear } from '../support/fixtures';
-import { PlantingYearsDriver } from '../drivers/planting-years-driver';
+import { NEW_YEAR_PROBLEMS, PlantingYearsDriver } from '../drivers/planting-years-driver';
 import { World } from './world';
 
 export interface PlantingYearsDsl {
@@ -24,6 +24,10 @@ export interface PlantingYearsDsl {
   checkDeleteIsRejectedWhileInUse(...args: string[]): Promise<void>,
   /** `as`, `year`. Asserts it is gone. */
   deleteYear(...args: string[]): Promise<void>,
+  /** `as`, `problem`, one of the driver's NEW_YEAR_PROBLEMS. For a year from the test range. */
+  checkInvalidYearIsRejected(...args: string[]): Promise<void>,
+  /** `as`. Creates a year from the test range the way vigilant-harvest-app does. */
+  checkYearAsTheAppSendsItIsAccepted(...args: string[]): Promise<void>,
 }
 
 export function createPlantingYearsDsl(world: World, plantingYears: PlantingYearsDriver): PlantingYearsDsl {
@@ -37,6 +41,24 @@ export function createPlantingYearsDsl(world: World, plantingYears: PlantingYear
       const input = aPlantingYear(await world.unusedYear(caller), previous);
 
       world.nameYear(params.year, await plantingYears.createYear(caller, input));
+    },
+
+    async checkInvalidYearIsRejected(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), problem: required().allowedValues(...NEW_YEAR_PROBLEMS), });
+      const caller = await world.actorFor(params.as);
+
+      await plantingYears.createOfInvalidYearIsRejectedAsBadRequest(
+        caller,
+        aPlantingYear(await world.unusedYear(caller)),
+        params.problem
+      );
+    },
+
+    async checkYearAsTheAppSendsItIsAccepted(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), });
+      const caller = await world.actorFor(params.as);
+
+      await plantingYears.createAsTheAppSendsItSucceeds(caller, aPlantingYear(await world.unusedYear(caller)));
     },
 
     async checkYear(...args: string[]): Promise<void> {

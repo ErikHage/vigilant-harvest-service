@@ -27,6 +27,21 @@ describe('plots', () => {
     await plots.deletePlot('as: gardener', 'plot: north-bed');
   });
 
+  it.each([
+    'no name',
+    'a name that is too long',
+    'no length',
+    'a length that is not a whole number',
+    'a negative width',
+    'no plot type',
+  ])('rejects a plot with %s', async problem => {
+    await plots.checkInvalidPlotIsRejected('as: gardener', `problem: ${problem}`);
+  });
+
+  it('accepts a plot as the app sends it', async () => {
+    await plots.checkPlotAsTheAppSendsItIsAccepted('as: gardener');
+  });
+
   it('finds no plot that was never created', async () => {
     await plots.checkUnknownPlotIsNotFound('as: gardener');
   });

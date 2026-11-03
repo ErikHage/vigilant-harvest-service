@@ -30,6 +30,41 @@ describe('activity schedules', () => {
     await activitySchedules.checkPartialUpdateKeepsTheRest('as: gardener', 'schedule: watering');
   });
 
+  it.each([
+    'no name',
+    'a blank name',
+    'a name that is too long',
+    'a description that is not a string',
+  ])('rejects a schedule with %s', async problem => {
+    await activitySchedules.checkInvalidScheduleIsRejected('as: gardener', `problem: ${problem}`);
+  });
+
+  it.each([ 'no name', 'a name that is not a string', ])('rejects a schedule update with %s', async problem => {
+    await activitySchedules.createSchedule('as: gardener', 'schedule: watering');
+
+    await activitySchedules.checkInvalidScheduleUpdateIsRejected('as: gardener', 'schedule: watering', `problem: ${problem}`);
+  });
+
+  it.each([
+    'no activity type',
+    'a start date that is not a month and day',
+    'a start date that does not exist',
+    'a year offset out of range',
+    'a year offset that is not a number',
+    'a recurrence rule that is too long',
+  ])('rejects an item with %s', async problem => {
+    await activitySchedules.createSchedule('as: gardener', 'schedule: watering');
+
+    await activitySchedules.checkInvalidItemIsRejected('as: gardener', 'schedule: watering', `problem: ${problem}`);
+  });
+
+  it.each([ 'no activity type', 'an end date that is not a month and day', ])('rejects an item update with %s', async problem => {
+    await activitySchedules.createSchedule('as: gardener', 'schedule: watering');
+    await activitySchedules.addItem('as: gardener', 'item: weekly', 'schedule: watering');
+
+    await activitySchedules.checkInvalidItemUpdateIsRejected('as: gardener', 'item: weekly', `problem: ${problem}`);
+  });
+
   it('finds no schedule that was never created', async () => {
     await activitySchedules.checkUnknownScheduleIsNotFound('as: gardener');
   });

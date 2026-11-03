@@ -1,7 +1,13 @@
 import { optional, parseDslArgs, required } from '@feral-auth/ts-simple-dsl';
 
 import { actor, alias } from './params';
-import { ActivitySchedulesDriver } from '../drivers/activity-schedules-driver';
+import {
+  ActivitySchedulesDriver,
+  ITEM_UPDATE_PROBLEMS,
+  NEW_ITEM_PROBLEMS,
+  NEW_SCHEDULE_PROBLEMS,
+  SCHEDULE_UPDATE_PROBLEMS
+} from '../drivers/activity-schedules-driver';
 import { aSchedule, aScheduleItem, fixtureName } from '../support/fixtures';
 import { World } from './world';
 
@@ -32,6 +38,14 @@ export interface ActivitySchedulesDsl {
   deleteItem(...args: string[]): Promise<void>,
   /** `as`, `schedule`. Asserts it is gone. */
   deleteSchedule(...args: string[]): Promise<void>,
+  /** `as`, `problem`, one of the driver's NEW_SCHEDULE_PROBLEMS. */
+  checkInvalidScheduleIsRejected(...args: string[]): Promise<void>,
+  /** `as`, `schedule`, `problem`, one of the driver's SCHEDULE_UPDATE_PROBLEMS. */
+  checkInvalidScheduleUpdateIsRejected(...args: string[]): Promise<void>,
+  /** `as`, `schedule`, `problem`, one of the driver's NEW_ITEM_PROBLEMS. */
+  checkInvalidItemIsRejected(...args: string[]): Promise<void>,
+  /** `as`, `item`, `problem`, one of the driver's ITEM_UPDATE_PROBLEMS. */
+  checkInvalidItemUpdateIsRejected(...args: string[]): Promise<void>,
 }
 
 export function createActivitySchedulesDsl(world: World, schedules: ActivitySchedulesDriver): ActivitySchedulesDsl {
@@ -126,6 +140,51 @@ export function createActivitySchedulesDsl(world: World, schedules: ActivitySche
       const params = parseDslArgs(args, { as: actor(), item: alias(), });
 
       await schedules.deleteRemovesItem(await world.actorFor(params.as), world.scheduleItemNamed(params.item));
+    },
+
+    async checkInvalidScheduleIsRejected(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), problem: required().allowedValues(...NEW_SCHEDULE_PROBLEMS), });
+
+      await schedules.createOfInvalidScheduleIsRejectedAsBadRequest(await world.actorFor(params.as), aSchedule(), params.problem);
+    },
+
+    async checkInvalidScheduleUpdateIsRejected(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, {
+        as: actor(),
+        schedule: alias(),
+        problem: required().allowedValues(...SCHEDULE_UPDATE_PROBLEMS),
+      });
+
+      await schedules.updateOfInvalidScheduleIsRejectedAsBadRequest(
+        await world.actorFor(params.as),
+        world.scheduleNamed(params.schedule),
+        params.problem
+      );
+    },
+
+    async checkInvalidItemIsRejected(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, {
+        as: actor(),
+        schedule: alias(),
+        problem: required().allowedValues(...NEW_ITEM_PROBLEMS),
+      });
+
+      await schedules.addOfInvalidItemIsRejectedAsBadRequest(
+        await world.actorFor(params.as),
+        world.scheduleNamed(params.schedule),
+        aScheduleItem(),
+        params.problem
+      );
+    },
+
+    async checkInvalidItemUpdateIsRejected(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), item: alias(), problem: required().allowedValues(...ITEM_UPDATE_PROBLEMS), });
+
+      await schedules.updateOfInvalidItemIsRejectedAsBadRequest(
+        await world.actorFor(params.as),
+        world.scheduleItemNamed(params.item),
+        params.problem
+      );
     },
 
     async deleteSchedule(...args: string[]): Promise<void> {

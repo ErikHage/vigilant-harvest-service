@@ -1,9 +1,96 @@
 import { Actor } from '../support/actors';
-import { expectBodyToContain, expectBodyToHaveKeys, expectListEntries, expectStatus, expectThat } from './assertions';
-import { NewSchedule, NewScheduleItem } from '../support/fixtures';
+import {
+  expectBodyToContain,
+  expectBodyToHaveKeys,
+  expectListEntries,
+  expectRejection,
+  expectStatus,
+  expectThat
+} from './assertions';
+import { NewSchedule, NewScheduleItem, tooLong, withoutField } from '../support/fixtures';
 import { ApiResponse, HttpClient } from '../support/http-client';
 import { CreatedSchedule, CreatedScheduleItem, ResourceRegistry } from '../support/resources';
 import { status } from '../support/status-codes';
+
+/** Ways a new schedule can be wrong. Each is a test of its own. */
+export const NEW_SCHEDULE_PROBLEMS = [
+  'no name',
+  'a blank name',
+  'a name that is too long',
+  'a description that is not a string',
+] as const;
+
+export type NewScheduleProblem = (typeof NEW_SCHEDULE_PROBLEMS)[number];
+
+const invalidSchedules: Record<NewScheduleProblem, { body: (good: NewSchedule) => object, reason: string }> = {
+  'no name': { body: good => withoutField(good, 'name'), reason: 'name is required', },
+  'a blank name': { body: good => ({ ...good, name: '  ', }), reason: 'name is required', },
+  'a name that is too long': { body: good => ({ ...good, name: tooLong(255), }), reason: 'name must be at most 255 characters', },
+  'a description that is not a string': {
+    body: good => ({ ...good, description: 42, }),
+    reason: 'description must be a string',
+  },
+};
+
+/** Ways a schedule update can be wrong. PATCH writes every field today, so the name is required. */
+export const SCHEDULE_UPDATE_PROBLEMS = [ 'no name', 'a name that is not a string', ] as const;
+
+export type ScheduleUpdateProblem = (typeof SCHEDULE_UPDATE_PROBLEMS)[number];
+
+const invalidScheduleUpdates: Record<ScheduleUpdateProblem, { body: object, reason: string }> = {
+  'no name': { body: { description: 'No name', }, reason: 'name is required', },
+  'a name that is not a string': { body: { name: 42, }, reason: 'name must be a string', },
+};
+
+/** Ways a new schedule item can be wrong. Each is a test of its own. */
+export const NEW_ITEM_PROBLEMS = [
+  'no activity type',
+  'a start date that is not a month and day',
+  'a start date that does not exist',
+  'a year offset out of range',
+  'a year offset that is not a number',
+  'a recurrence rule that is too long',
+] as const;
+
+export type NewItemProblem = (typeof NEW_ITEM_PROBLEMS)[number];
+
+const invalidItems: Record<NewItemProblem, { body: (good: NewScheduleItem) => object, reason: string }> = {
+  'no activity type': { body: good => withoutField(good, 'activityType'), reason: 'activityType is required', },
+  'a start date that is not a month and day': {
+    body: good => ({ ...good, startDate: '2026-05-01', }),
+    reason: 'startDate must be a month and day, as MM-DD',
+  },
+  'a start date that does not exist': {
+    body: good => ({ ...good, startDate: '13-01', }),
+    reason: 'startDate must be a month and day, as MM-DD',
+  },
+  // the app's offsets are -1, 0 and 1: the previous, current and next year
+  'a year offset out of range': {
+    body: good => ({ ...good, startDateYearOffset: 2, }),
+    reason: 'startDateYearOffset must be at most 1',
+  },
+  'a year offset that is not a number': {
+    body: good => ({ ...good, endDateYearOffset: 'next', }),
+    reason: 'endDateYearOffset must be an integer',
+  },
+  'a recurrence rule that is too long': {
+    body: good => ({ ...good, recurrenceRule: tooLong(255), }),
+    reason: 'recurrenceRule must be at most 255 characters',
+  },
+};
+
+/** Ways an item update can be wrong. PATCH writes every field today, so the type is required. */
+export const ITEM_UPDATE_PROBLEMS = [ 'no activity type', 'an end date that is not a month and day', ] as const;
+
+export type ItemUpdateProblem = (typeof ITEM_UPDATE_PROBLEMS)[number];
+
+const invalidItemUpdates: Record<ItemUpdateProblem, { body: object, reason: string }> = {
+  'no activity type': { body: { notes: 'No type', }, reason: 'activityType is required', },
+  'an end date that is not a month and day': {
+    body: { activityType: 'WATER', endDate: 'September', },
+    reason: 'endDate must be a month and day, as MM-DD',
+  },
+};
 
 export interface ActivitySchedulesDriver {
   createSchedule(caller: Actor, input: NewSchedule): Promise<CreatedSchedule>,
@@ -24,6 +111,15 @@ export interface ActivitySchedulesDriver {
   ): Promise<void>,
   deleteRemovesItem(caller: Actor, item: CreatedScheduleItem): Promise<void>,
   deleteRemovesSchedule(caller: Actor, schedule: CreatedSchedule): Promise<void>,
+  createOfInvalidScheduleIsRejectedAsBadRequest(caller: Actor, good: NewSchedule, problem: NewScheduleProblem): Promise<void>,
+  updateOfInvalidScheduleIsRejectedAsBadRequest(caller: Actor, schedule: CreatedSchedule, problem: ScheduleUpdateProblem): Promise<void>,
+  addOfInvalidItemIsRejectedAsBadRequest(
+    caller: Actor,
+    schedule: CreatedSchedule,
+    good: NewScheduleItem,
+    problem: NewItemProblem
+  ): Promise<void>,
+  updateOfInvalidItemIsRejectedAsBadRequest(caller: Actor, item: CreatedScheduleItem, problem: ItemUpdateProblem): Promise<void>,
 }
 
 export function createActivitySchedulesDriver(client: HttpClient, registry: ResourceRegistry): ActivitySchedulesDriver {
@@ -163,6 +259,68 @@ export function createActivitySchedulesDriver(client: HttpClient, registry: Reso
       const response = await get(caller, item.activityScheduleId, `${what}: re-reading its schedule`);
 
       expectThat(!itemsIn(response).some(each => each.entryId === item.entryId), 'no such item', response, what);
+    },
+
+    async createOfInvalidScheduleIsRejectedAsBadRequest(
+      caller: Actor,
+      good: NewSchedule,
+      problem: NewScheduleProblem
+    ): Promise<void> {
+      const { body, reason, } = invalidSchedules[problem];
+      const response = await as(caller).post('/activity-schedules', body(good));
+
+      if (response.status === status.CREATED) {
+        const { activityScheduleId, } = response.body as { activityScheduleId: string };
+        registry.register({ kind: 'activity schedule', path: schedulePath(activityScheduleId), label: good.name, });
+      }
+      expectRejection(response, status.BAD_REQUEST, reason, `creating a schedule with ${problem}`);
+    },
+
+    async updateOfInvalidScheduleIsRejectedAsBadRequest(
+      caller: Actor,
+      schedule: CreatedSchedule,
+      problem: ScheduleUpdateProblem
+    ): Promise<void> {
+      const { body, reason, } = invalidScheduleUpdates[problem];
+
+      expectRejection(
+        await as(caller).patch(schedulePath(schedule.activityScheduleId), body),
+        status.BAD_REQUEST,
+        reason,
+        `updating schedule "${schedule.name}" with ${problem}`
+      );
+    },
+
+    async addOfInvalidItemIsRejectedAsBadRequest(
+      caller: Actor,
+      schedule: CreatedSchedule,
+      good: NewScheduleItem,
+      problem: NewItemProblem
+    ): Promise<void> {
+      const { body, reason, } = invalidItems[problem];
+
+      // an item wrongly added goes with its schedule, which the spec made and tears down
+      expectRejection(
+        await as(caller).post(`${schedulePath(schedule.activityScheduleId)}/schedule-items`, body(good)),
+        status.BAD_REQUEST,
+        reason,
+        `adding an item with ${problem} to schedule "${schedule.name}"`
+      );
+    },
+
+    async updateOfInvalidItemIsRejectedAsBadRequest(
+      caller: Actor,
+      item: CreatedScheduleItem,
+      problem: ItemUpdateProblem
+    ): Promise<void> {
+      const { body, reason, } = invalidItemUpdates[problem];
+
+      expectRejection(
+        await as(caller).patch(itemPath(item), body),
+        status.BAD_REQUEST,
+        reason,
+        `updating item ${item.entryId} with ${problem}`
+      );
     },
 
     async deleteRemovesSchedule(caller: Actor, schedule: CreatedSchedule): Promise<void> {

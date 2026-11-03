@@ -7,10 +7,37 @@ import {
   expectStatus,
   expectThat
 } from './assertions';
-import { NewPlot } from '../support/fixtures';
-import { HttpClient } from '../support/http-client';
+import { NewPlot, tooLong, withoutField } from '../support/fixtures';
+import { ApiResponse, HttpClient } from '../support/http-client';
 import { CreatedPlot, ResourceRegistry } from '../support/resources';
 import { status } from '../support/status-codes';
+
+/** Ways a plot can be wrong. Each is a test of its own. */
+export const PLOT_PROBLEMS = [
+  'no name',
+  'a name that is too long',
+  'no length',
+  'a length that is not a whole number',
+  'a negative width',
+  'no plot type',
+] as const;
+
+export type PlotProblem = (typeof PLOT_PROBLEMS)[number];
+
+const invalidPlots: Record<PlotProblem, { body: (good: NewPlot) => object, reason: string }> = {
+  'no name': { body: good => withoutField(good, 'friendlyName'), reason: 'friendlyName is required', },
+  'a name that is too long': {
+    body: good => ({ ...good, friendlyName: tooLong(255), }),
+    reason: 'friendlyName must be at most 255 characters',
+  },
+  'no length': { body: good => withoutField(good, 'lengthInInches'), reason: 'lengthInInches is required', },
+  'a length that is not a whole number': {
+    body: good => ({ ...good, lengthInInches: 12.5, }),
+    reason: 'lengthInInches must be an integer',
+  },
+  'a negative width': { body: good => ({ ...good, widthInInches: -1, }), reason: 'widthInInches must be at least 0', },
+  'no plot type': { body: good => withoutField(good, 'plotType'), reason: 'plotType is required', },
+};
 
 export interface PlotsDriver {
   createPlot(caller: Actor, input: NewPlot): Promise<CreatedPlot>,
@@ -23,6 +50,8 @@ export interface PlotsDriver {
   createOfTakenNameOverwritesTheOtherPlot(caller: Actor, plot: CreatedPlot): Promise<void>,
   deleteOfPlotInUseIsRejectedAsConflict(caller: Actor, plot: CreatedPlot): Promise<void>,
   deleteRemovesPlot(caller: Actor, plot: CreatedPlot): Promise<void>,
+  saveOfInvalidPlotIsRejectedAsBadRequest(caller: Actor, good: NewPlot, problem: PlotProblem): Promise<void>,
+  saveAsTheAppSendsItSucceeds(caller: Actor, good: NewPlot): Promise<void>,
 }
 
 export function createPlotsDriver(client: HttpClient, registry: ResourceRegistry): PlotsDriver {
@@ -49,8 +78,35 @@ export function createPlotsDriver(client: HttpClient, registry: ResourceRegistry
     return { plotId, ...input, };
   }
 
+  /**
+   * Files a plot for teardown if a save made one, before anything asserts on it. Any success counts:
+   * a new plot sent with plotId '' used to answer 200, not 201.
+   */
+  function registerIfCreated(response: ApiResponse, label: string): void {
+    if (response.status === status.CREATED || response.status === status.OK) {
+      registry.register({ kind: 'plot', path: `/plots/${(response.body as { plotId: string }).plotId}`, label, });
+    }
+  }
+
   return {
     createPlot,
+
+    async saveOfInvalidPlotIsRejectedAsBadRequest(caller: Actor, good: NewPlot, problem: PlotProblem): Promise<void> {
+      const { body, reason, } = invalidPlots[problem];
+      const response = await as(caller).put('/plots', body(good));
+
+      registerIfCreated(response, good.friendlyName);
+      expectRejection(response, status.BAD_REQUEST, reason, `saving a plot with ${problem}`);
+    },
+
+    async saveAsTheAppSendsItSucceeds(caller: Actor, good: NewPlot): Promise<void> {
+      const what = `saving plot "${good.friendlyName}" as the app sends it`;
+      // The app's plot dialog starts a new plot with plotId '' and isActive false.
+      const response = await as(caller).put('/plots', { ...good, plotId: '', isActive: false, });
+
+      registerIfCreated(response, good.friendlyName);
+      expectStatus(response, status.CREATED, what);
+    },
 
     async getReturnsPlot(caller: Actor, plot: CreatedPlot): Promise<void> {
       const what = `reading plot "${plot.friendlyName}"`;

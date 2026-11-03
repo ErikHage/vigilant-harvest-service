@@ -14,6 +14,20 @@ describe('planting years', () => {
     await plantingYears.checkListed('as: gardener', 'year: this-season');
   });
 
+  it.each([
+    'no year',
+    'a year that is not a number',
+    'a previous year that is not a number',
+    'no last frost date',
+    'an unparseable target date',
+  ])('rejects a year with %s', async problem => {
+    await plantingYears.checkInvalidYearIsRejected('as: gardener', `problem: ${problem}`);
+  });
+
+  it('accepts a year as the app sends it', async () => {
+    await plantingYears.checkYearAsTheAppSendsItIsAccepted('as: gardener');
+  });
+
   it('finds no year that was never created', async () => {
     await plantingYears.checkUnknownYearIsNotFound('as: gardener');
   });

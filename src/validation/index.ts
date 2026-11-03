@@ -279,6 +279,27 @@ export function optionalDate(value: unknown, field: string): Date | undefined {
   return isMissing(value) ? undefined : toDateIn(value, field, DATE_YEARS);
 }
 
+/** A month and day with no year, as a schedule item's VARCHAR(5) holds it: 05-01. */
+const MONTH_DAY = /^(\d{2})-(\d{2})$/;
+/** The longest each month can be; 02-29 is allowed, since the year is not known. */
+const DAYS_IN_MONTH = [ 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31, ];
+
+export function optionalMonthDay(value: unknown, field: string): string | undefined {
+  if (isMissing(value)) {
+    return undefined;
+  }
+
+  const parts = typeof value === 'string' ? MONTH_DAY.exec(value) : null;
+  const month = Number(parts?.[1]);
+  const day = Number(parts?.[2]);
+
+  if (!parts || month < 1 || month > 12 || day < 1 || day > DAYS_IN_MONTH[month - 1]!) {
+    throw new BadRequestError(`${field} must be a month and day, as MM-DD`);
+  }
+
+  return value as string;
+}
+
 /**
  * The JSON body's fields. Express 5 leaves req.body undefined when no body was
  * sent, so that reads as a body with no fields, and each required one is

@@ -28,7 +28,7 @@ keeps the history.
 | 3 | H3 · log every error in prod | done |
 | 4 | M1 · keep causes in planting actions; M10 · drop `multipleStatements` | done |
 | 5 | H4 · PLANT in one transaction | done |
-| 6 | H5 · input validation, route by route | 6a–6e done; 6f next |
+| 6 | H5 · input validation, route by route | done |
 
 ## Phase 1 — H1: one flat error per body
 
@@ -250,8 +250,21 @@ Each throws `BadRequestError('<field> must be …')`. Column sizes come from `mi
     `optionalObject`. The category-id `parseInt`s went.
   - **Seen to fail:** 26 (16 answered 500, 7 saved with 201, 3 answered 400 another way). Then 205
     passed. 9 pins are left.
-- [ ] **6f · plots, planting years, schedules and schedule items.** No pins. Covers the remaining write
-  routes.
+- [x] **6f · plots, planting years, schedules and schedule items.** Done. Notes:
+  - **The app survey:** the plot dialog sends a new plot as `plotId: ''` with `isActive: false`, and
+    its sizes from `v-model.number` boxes. The add-year page sends `v-model.number` years, and picker
+    dates (`null` until picked). Schedules send `{ name, description }`; items send `MM-DD` dates from
+    a month-day picker, offsets of -1, 0 or 1, an RRule string and notes, and the dialog requires them
+    all.
+  - **Found:** a new plot sent as `plotId: ''` was created but answered 200, not 201. The red run's
+    app-shaped test left one behind (the residue check caught it; deleted by id). `''` now means new,
+    and answers 201; the driver registers any 2xx.
+  - **Decided:** PATCH writes every field today (a pin, unchanged), so a schedule's name and an item's
+    type are required on update, and a missing offset is written as 0, its default. Offsets are -1..1,
+    the app's choices. A missing previous year carries nothing forward, as `''` did.
+  - **The module grew:** `optionalMonthDay`.
+  - **Seen to fail:** 26 (17 answered 500; 8 were saved; the app-shaped plot answered 200). Then 232
+    passed. 9 pins are left, none of them validation.
 
 ### Not in Phase 6
 
@@ -285,3 +298,4 @@ Each can be planned after Phase 6.
 - 2026-11-02: 6c done and committed. L7 fixed with it, since nothing depended on it.
 - 2026-11-02: 6d done and committed. Found and fixed a live 500 in the app's create form.
 - 2026-11-02: 6e done and committed. User chose the standard error body for PUT /plants.
+- 2026-11-02: 6f done and committed. That completes Phase 6.

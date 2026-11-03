@@ -2,57 +2,57 @@ import { RowDataPacket } from 'mysql2';
 
 export interface ActivityScheduleCreateRequest {
   name: string,
-  description: string,
+  description?: string,
 }
 
 export interface ActivityScheduleUpdateRequest {
   activityScheduleId: string,
   name: string,
-  description: string,
+  description?: string,
 }
 
 export interface ActivitySchedule {
   activityScheduleId: string,
   name: string,
-  description: string,
+  description: string | null,
   items: ActivityScheduleItem[],
 }
 
 export interface ActivityScheduleResponse {
   activityScheduleId: string,
   name: string,
-  description: string,
+  description: string | null,
   items: ActivityScheduleItemResponse[],
 }
 
 export interface ActivityScheduleRow extends RowDataPacket {
   activity_schedule_id: string,
   name: string,
-  description: string,
+  description: string | null, // TEXT, nullable
 }
 
 export interface ActivityScheduleItemCreateRequest {
   activityScheduleId: string,
   activityType: string,
-  subType: string,
-  recurrenceRule: string,
-  startDate: string,
+  subType?: string,
+  recurrenceRule?: string,
+  startDate?: string, // MM-DD
   startDateYearOffset: number,
-  endDate: string,
+  endDate?: string, // MM-DD
   endDateYearOffset: number,
-  notes: string,
+  notes?: string,
 }
 
 export interface ActivityScheduleItemUpdateRequest {
   entryId: string,
   activityType: string,
-  subType: string,
-  recurrenceRule: string,
-  startDate: string,
+  subType?: string,
+  recurrenceRule?: string,
+  startDate?: string, // MM-DD
   startDateYearOffset: number,
-  endDate: string,
+  endDate?: string, // MM-DD
   endDateYearOffset: number,
-  notes: string,
+  notes?: string,
 }
 
 export interface ActivityScheduleItemDeleteRequest {

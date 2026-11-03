@@ -1,6 +1,6 @@
 import { Actor } from '../support/actors';
 import { expectBodyToContain, expectListEntries, expectRejection, expectStatus, expectThat } from './assertions';
-import { NewPlantingYear } from '../support/fixtures';
+import { NewPlantingYear, withoutField } from '../support/fixtures';
 import { ApiResponse, HttpClient } from '../support/http-client';
 import { CreatedPlantingYear, ResourceRegistry } from '../support/resources';
 import { status } from '../support/status-codes';
@@ -11,6 +11,34 @@ export interface PlantingYearDetails {
   plantedPlantings: number,
   retiredPlantings: number,
 }
+
+/** Ways a new planting year can be wrong. Each is a test of its own. */
+export const NEW_YEAR_PROBLEMS = [
+  'no year',
+  'a year that is not a number',
+  'a previous year that is not a number',
+  'no last frost date',
+  'an unparseable target date',
+] as const;
+
+export type NewYearProblem = (typeof NEW_YEAR_PROBLEMS)[number];
+
+const invalidYears: Record<NewYearProblem, { body: (good: NewPlantingYear) => object, reason: string }> = {
+  'no year': { body: good => withoutField(good, 'plantingYear'), reason: 'plantingYear is required', },
+  'a year that is not a number': {
+    body: good => ({ ...good, plantingYear: 'next', }),
+    reason: 'plantingYear must be an integer',
+  },
+  'a previous year that is not a number': {
+    body: good => ({ ...good, previousPlantingYear: 'last', }),
+    reason: 'previousPlantingYear must be an integer',
+  },
+  'no last frost date': { body: good => withoutField(good, 'lastFrostDate'), reason: 'lastFrostDate is required', },
+  'an unparseable target date': {
+    body: good => ({ ...good, targetPlantingDate: 'mid-May', }),
+    reason: 'targetPlantingDate must be a date',
+  },
+};
 
 export interface PlantingYearsDriver {
   listYears(caller: Actor): Promise<number[]>,
@@ -23,6 +51,8 @@ export interface PlantingYearsDriver {
   createOfTakenYearIsRejectedAsConflict(caller: Actor, year: CreatedPlantingYear): Promise<void>,
   deleteOfYearInUseIsRejectedAsConflict(caller: Actor, year: CreatedPlantingYear): Promise<void>,
   deleteRemovesYear(caller: Actor, year: CreatedPlantingYear): Promise<void>,
+  createOfInvalidYearIsRejectedAsBadRequest(caller: Actor, good: NewPlantingYear, problem: NewYearProblem): Promise<void>,
+  createAsTheAppSendsItSucceeds(caller: Actor, good: NewPlantingYear): Promise<void>,
 }
 
 export function createPlantingYearsDriver(client: HttpClient, registry: ResourceRegistry): PlantingYearsDriver {
@@ -36,7 +66,40 @@ export function createPlantingYearsDriver(client: HttpClient, registry: Resource
     return { response, years: expectListEntries(response, what), };
   }
 
+  /** Files a year for teardown if a create made one, before anything asserts on it. */
+  function registerIfCreated(response: ApiResponse, plantingYear: number): void {
+    if (response.status === status.CREATED) {
+      registry.register({ kind: 'planting year', path: `/planting-years/${plantingYear}`, label: String(plantingYear), });
+    }
+  }
+
   return {
+    async createOfInvalidYearIsRejectedAsBadRequest(
+      caller: Actor,
+      good: NewPlantingYear,
+      problem: NewYearProblem
+    ): Promise<void> {
+      const { body, reason, } = invalidYears[problem];
+      const response = await as(caller).put('/planting-years', body(good));
+
+      registerIfCreated(response, good.plantingYear);
+      expectRejection(response, status.BAD_REQUEST, reason, `creating a planting year with ${problem}`);
+    },
+
+    async createAsTheAppSendsItSucceeds(caller: Actor, good: NewPlantingYear): Promise<void> {
+      const what = `creating planting year ${good.plantingYear} as the app sends it`;
+      // The app's dates come from pickers, as JSON Dates, and its previous-year box sends '' when cleared.
+      const response = await as(caller).put('/planting-years', {
+        plantingYear: good.plantingYear,
+        previousPlantingYear: '',
+        lastFrostDate: `${good.plantingYear}-05-01T04:00:00.000Z`,
+        targetPlantingDate: `${good.plantingYear}-05-15T04:00:00.000Z`,
+      });
+
+      registerIfCreated(response, good.plantingYear);
+      expectStatus(response, status.CREATED, what);
+    },
+
     async listYears(caller: Actor): Promise<number[]> {
       const { years, } = await list(caller, 'listing the planting years');
 

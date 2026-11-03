@@ -1,8 +1,8 @@
-import { optional, parseDslArgs } from '@feral-auth/ts-simple-dsl';
+import { optional, parseDslArgs, required } from '@feral-auth/ts-simple-dsl';
 
 import { actor, alias } from './params';
 import { aPlot, fixtureName } from '../support/fixtures';
-import { PlotsDriver } from '../drivers/plots-driver';
+import { PLOT_PROBLEMS, PlotsDriver } from '../drivers/plots-driver';
 import { World } from './world';
 
 export interface PlotsDsl {
@@ -26,6 +26,10 @@ export interface PlotsDsl {
   checkDeleteIsRejectedWhileInUse(...args: string[]): Promise<void>,
   /** `as`, `plot`. Asserts it is gone. */
   deletePlot(...args: string[]): Promise<void>,
+  /** `as`, `problem`, one of the driver's PLOT_PROBLEMS. */
+  checkInvalidPlotIsRejected(...args: string[]): Promise<void>,
+  /** `as`. Saves a new plot the way vigilant-harvest-app's dialog does. */
+  checkPlotAsTheAppSendsItIsAccepted(...args: string[]): Promise<void>,
 }
 
 export function createPlotsDsl(world: World, plots: PlotsDriver): PlotsDsl {
@@ -91,6 +95,18 @@ export function createPlotsDsl(world: World, plots: PlotsDriver): PlotsDsl {
       const params = parseDslArgs(args, { as: actor(), plot: alias(), });
 
       await plots.deleteOfPlotInUseIsRejectedAsConflict(await world.actorFor(params.as), world.plotNamed(params.plot));
+    },
+
+    async checkInvalidPlotIsRejected(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), problem: required().allowedValues(...PLOT_PROBLEMS), });
+
+      await plots.saveOfInvalidPlotIsRejectedAsBadRequest(await world.actorFor(params.as), aPlot(), params.problem);
+    },
+
+    async checkPlotAsTheAppSendsItIsAccepted(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), });
+
+      await plots.saveAsTheAppSendsItSucceeds(await world.actorFor(params.as), aPlot());
     },
 
     async deletePlot(...args: string[]): Promise<void> {

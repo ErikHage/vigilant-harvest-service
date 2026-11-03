@@ -12,33 +12,33 @@ import {
 
 const scheduleItems = {
   insert: {
-    toParams: function(entryId: string, createRequest: ActivityScheduleItemCreateRequest): Array<string | number> {
+    toParams: function(entryId: string, createRequest: ActivityScheduleItemCreateRequest): Array<string | number | null> {
       return [
         createRequest.activityScheduleId,
         entryId,
         createRequest.activityType,
-        createRequest.subType,
-        createRequest.recurrenceRule,
-        createRequest.startDate,
+        createRequest.subType ?? null,
+        createRequest.recurrenceRule ?? null,
+        createRequest.startDate ?? null,
         createRequest.startDateYearOffset,
-        createRequest.endDate,
+        createRequest.endDate ?? null,
         createRequest.endDateYearOffset,
-        createRequest.notes,
+        createRequest.notes ?? null,
       ];
     },
   },
 
   update: {
-    toParams: function(updateRequest: ActivityScheduleItemUpdateRequest): Array<string | number> {
+    toParams: function(updateRequest: ActivityScheduleItemUpdateRequest): Array<string | number | null> {
       return [
         updateRequest.activityType,
-        updateRequest.subType,
-        updateRequest.recurrenceRule,
-        updateRequest.startDate,
+        updateRequest.subType ?? null,
+        updateRequest.recurrenceRule ?? null,
+        updateRequest.startDate ?? null,
         updateRequest.startDateYearOffset,
-        updateRequest.endDate,
+        updateRequest.endDate ?? null,
         updateRequest.endDateYearOffset,
-        updateRequest.notes,
+        updateRequest.notes ?? null,
         updateRequest.entryId,
       ];
     },
@@ -71,20 +71,20 @@ const scheduleItems = {
 
 const schedules = {
   insert: {
-    toParams: function(activityScheduleId: string, schedule: ActivityScheduleCreateRequest): Array<string> {
+    toParams: function(activityScheduleId: string, schedule: ActivityScheduleCreateRequest): Array<string | null> {
       return [
         activityScheduleId,
         schedule.name,
-        schedule.description,
+        schedule.description ?? null,
       ];
     },
   },
 
   update: {
-    toParams: function(scheduleUpdateRequest: ActivityScheduleUpdateRequest): Array<string> {
+    toParams: function(scheduleUpdateRequest: ActivityScheduleUpdateRequest): Array<string | null> {
       return [
         scheduleUpdateRequest.name,
-        scheduleUpdateRequest.description,
+        scheduleUpdateRequest.description ?? null,
         scheduleUpdateRequest.activityScheduleId,
       ];
     },

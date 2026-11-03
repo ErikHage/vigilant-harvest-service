@@ -7,8 +7,10 @@ import { ConflictError } from '../../errors/common';
 
 async function insertPlantingYear(plantingYearRequest: PlantingYearRequest): Promise<PlantingYear> {
   try {
-    const carryForwardPlantingIds: string[] = await plantingsDatasource
-      .getPlantingIdsToCarryForward(plantingYearRequest.previousPlantingYear);
+    const { previousPlantingYear, } = plantingYearRequest;
+    const carryForwardPlantingIds: string[] = previousPlantingYear === undefined
+      ? []
+      : await plantingsDatasource.getPlantingIdsToCarryForward(previousPlantingYear);
 
     const plantingYear: PlantingYear = {
       plantingYear: plantingYearRequest.plantingYear,

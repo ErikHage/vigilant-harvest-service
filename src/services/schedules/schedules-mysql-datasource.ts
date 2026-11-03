@@ -24,7 +24,9 @@ async function insertSchedule(activityScheduleId: string, schedule: ActivitySche
 
   return {
     activityScheduleId,
-    ...schedule,
+    name: schedule.name,
+    // as a read of it would report
+    description: schedule.description ?? null,
     items: [],
   };
 }
