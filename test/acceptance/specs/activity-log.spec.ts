@@ -31,9 +31,24 @@ describe('activity log', () => {
     await activityLog.checkEntryInUnknownYearIsRejected('as: gardener');
   });
 
-  // DocumentsCurrentBehavior: replies 500. Should be 400.
-  it('rejects an entry with no date', async () => {
-    await activityLog.checkEntryWithoutDateIsRejected('as: gardener');
+  it.each([
+    'no date',
+    'an unparseable date',
+    'a date out of range',
+    'no year',
+    'a year that is not a number',
+    'no activity type',
+    'an activity type that is too long',
+    'a subtype that is too long',
+    'comments that are not a string',
+    'comments that are too long',
+    'an id that is too long',
+  ])('rejects an entry with %s', async problem => {
+    await activityLog.checkInvalidEntryIsRejected('as: gardener', `problem: ${problem}`);
+  });
+
+  it('accepts an entry as the app sends it', async () => {
+    await activityLog.checkEntryAsTheAppSendsItIsAccepted('as: gardener');
   });
 
   it('rejects listing a year that is not a number', async () => {

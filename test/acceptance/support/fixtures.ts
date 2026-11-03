@@ -215,3 +215,13 @@ export function aScheduleItem(overrides: Partial<NewScheduleItem> = {}): NewSche
     ...overrides,
   };
 }
+
+/** A copy of a payload without one of its fields, to send a body that is missing it. */
+export function withoutField<T extends object>(payload: T, field: keyof T): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(payload).filter(([ key, ]) => key !== field));
+}
+
+/** A string one character longer than a column of `length` holds. */
+export function tooLong(length: number): string {
+  return 'x'.repeat(length + 1);
+}

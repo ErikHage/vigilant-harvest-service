@@ -144,8 +144,6 @@ rename the driver method, update the DSL line, delete the marker, and remove its
 | Plantings | An empty value is skipped, and the old one stays | Clears the field |
 | Harvests | Saving with no `harvests` list answers 500 | 400 |
 | Harvests | Plant stats report `statsType: "Planting"` | `"Plant"` |
-| Journal | An entry with no date answers 500 | 400 |
-| Activity log | An entry with no date answers 500 | 400 |
 | Activity schedules | `PATCH` blanks whatever it wasn't sent | Keeps it |
 | Activity schedules | Updating an item through a schedule that doesn't hold it succeeds | 404 |
 

@@ -4,7 +4,7 @@ import mysqlUtils from '../../database/mysql-utils';
 
 const journalEntries = {
   upsert: {
-    toParams: function(journalEntry: JournalEntryRequest): Array<string | number> {
+    toParams: function(journalEntry: JournalEntryRequest): Array<string | number | null> {
       return [
         journalEntry.entryId!,
         journalEntry.plantingYear,

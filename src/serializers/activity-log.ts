@@ -1,19 +1,22 @@
 import { Request } from 'express';
 
-import { requiredYear } from '../validation';
+import { bodyOf, optionalString, requiredString, requiredTimestamp, requiredYear, TEXT_BYTES } from '../validation';
 
 import { ActivityLogEntry, ActivityLogEntryRequest, ActivityLogEntryResponse } from '../services/activity-log/types';
 
 const activityLogEntries = {
   upsert: {
-    fromRequest: (req: Request): ActivityLogEntryRequest => ({
-      entryId: req.body.entryId,
-      plantingYear: req.body.plantingYear,
-      entryDate: new Date(req.body.entryDate),
-      activityType: req.body.activityType,
-      subType: req.body.subType,
-      comments: req.body.comments,
-    }),
+    fromRequest: (req: Request): ActivityLogEntryRequest => {
+      const body = bodyOf(req);
+      return {
+        entryId: optionalString(body.entryId, 'entryId', { maxLength: 36, }),
+        plantingYear: requiredYear(body.plantingYear, 'plantingYear'),
+        entryDate: requiredTimestamp(body.entryDate, 'entryDate'),
+        activityType: requiredString(body.activityType, 'activityType', { maxLength: 255, }),
+        subType: optionalString(body.subType, 'subType', { maxLength: 255, }) ?? null,
+        comments: optionalString(body.comments, 'comments', { maxBytes: TEXT_BYTES, }) ?? null,
+      };
+    },
   },
 
   getByYear: {

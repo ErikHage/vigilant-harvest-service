@@ -5,8 +5,8 @@ export interface ActivityLogEntryRequest {
   plantingYear: number, // int
   entryDate: Date,
   activityType: string,
-  subType: string,
-  comments: string,
+  subType: string | null,
+  comments: string | null,
 }
 
 export interface ActivityLogEntryResponse {

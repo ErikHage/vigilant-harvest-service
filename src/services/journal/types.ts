@@ -3,7 +3,7 @@ import { RowDataPacket } from 'mysql2';
 export interface JournalEntryRequest {
   entryId: string | undefined,
   plantingYear: number, // int
-  entry: string,
+  entry: string | null,
   entryDate: Date,
 }
 

@@ -28,7 +28,7 @@ keeps the history.
 | 3 | H3 · log every error in prod | done |
 | 4 | M1 · keep causes in planting actions; M10 · drop `multipleStatements` | done |
 | 5 | H4 · PLANT in one transaction | done |
-| 6 | H5 · input validation, route by route | 6a done; 6b next |
+| 6 | H5 · input validation, route by route | 6a, 6b done; 6c next |
 
 ## Phase 1 — H1: one flat error per body
 
@@ -185,8 +185,21 @@ Each throws `BadRequestError('<field> must be …')`. Column sizes come from `mi
     `/harvests/search` and `/harvests/stats` `?year`.
   - Drop the dead `try`/`catch` around `parseInt` in `planning-handlers.ts` (L3).
   - Retires 5 pins.
-- [ ] **6b · journal and activity-log bodies:** `plantingYear`, `entryDate`, text fields, `entryId`
-  when given. Retires 2 pins.
+- [x] **6b · journal and activity-log bodies.** Done. Notes:
+  - **The app survey:** both dialogs send `entryDate` as `dayjs().toISOString()`, and the page adds the
+    store's `plantingYear`, which may be a string. The journal's `entry` and the log's `comments` are
+    `''` when left empty. The log's `subType` is `null` when not picked. The app never sends `entryId`.
+    All of these are accepted.
+  - **App fix:** with no activity type picked, the log dialog throws on `this.activityType.name`
+    before it sends anything.
+  - **Seen to fail:** 17 table cases (15 answered 500; text or comments sent as `42` were stored as
+    `"42"`, 201). Then 2 more for a date out of `TIMESTAMP` range, found by a probe (500, `Incorrect
+    datetime value`). The 2 app-shaped cases passed before and after.
+  - **The module grew:** `requiredString` (blank is missing), `optionalString` (`''` is kept), with
+    `maxLength` in characters or `maxBytes`; `requiredTimestamp` (`YYYY-MM-DD` or ISO 8601, years
+    1971–2037); `bodyOf` (no body reads as `{}`); `TEXT_BYTES`.
+  - `entry`, `subType` and `comments` are nullable, as in the schema; a missing one is stored `NULL`.
+  - Retired 2 pins, folded into each route's table as its `no date` case. 12 are left. 136 passed.
 - [ ] **6c · harvests.** The list is required. Each item: `plantingId`, `quantity` (a number above 0),
   `harvestDate`, and `harvestTypeId`, whose existing check moves into the module. Retires 1 pin.
   - The date-shift bug (L7) is next door. Fix it here only if the survey shows nothing depends on
@@ -233,3 +246,5 @@ Each can be planned after Phase 6.
 - 2026-11-02: Phase 6 planned: a hand-written module, numeric strings accepted (user). Six sub-phases,
   retiring 10 pins. Waiting for approval before 6a.
 - 2026-11-02: 6a done and committed; starting 6b.
+- 2026-11-02: 6b done and committed. A probe found dates outside `TIMESTAMP`'s range answer
+  500; checked here too.

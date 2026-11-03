@@ -4,7 +4,7 @@ import mysqlUtils from '../../database/mysql-utils';
 
 const activityLogEntries = {
   upsert: {
-    toParams: function(activityLogEntry: ActivityLogEntryRequest): Array<string | number> {
+    toParams: function(activityLogEntry: ActivityLogEntryRequest): Array<string | number | null> {
       return [
         activityLogEntry.entryId!,
         activityLogEntry.plantingYear,

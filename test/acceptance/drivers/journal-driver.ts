@@ -1,16 +1,57 @@
 import { Actor } from '../support/actors';
 import { expectBodyToContain, expectListEntries, expectRejection, expectStatus, expectThat } from './assertions';
-import { NewJournalEntry } from '../support/fixtures';
-import { HttpClient } from '../support/http-client';
+import { NewJournalEntry, tooLong, withoutField } from '../support/fixtures';
+import { ApiResponse, HttpClient } from '../support/http-client';
 import { CreatedJournalEntry, ResourceRegistry } from '../support/resources';
 import { status } from '../support/status-codes';
+
+/** Ways a journal entry can be wrong. Each is a test of its own. */
+export const JOURNAL_ENTRY_PROBLEMS = [
+  'no date',
+  'an unparseable date',
+  'a date out of range',
+  'no year',
+  'a year that is not a number',
+  'text that is not a string',
+  'text that is too long',
+  'an id that is too long',
+] as const;
+
+export type JournalEntryProblem = (typeof JOURNAL_ENTRY_PROBLEMS)[number];
+
+/** For each problem: a good entry made bad, and the reason the service gives. */
+const invalidEntries: Record<JournalEntryProblem, { body: (good: NewJournalEntry) => object, reason: string }> = {
+  'no date': { body: good => withoutField(good, 'entryDate'), reason: 'entryDate is required', },
+  'an unparseable date': { body: good => ({ ...good, entryDate: 'not-a-date', }), reason: 'entryDate must be a date', },
+  // entryDate is a TIMESTAMP column, which holds 1970 to 2038
+  'a date out of range': {
+    body: good => ({ ...good, entryDate: '1960-06-01', }),
+    reason: 'entryDate must be between 1971 and 2037',
+  },
+  'no year': { body: good => withoutField(good, 'plantingYear'), reason: 'plantingYear is required', },
+  'a year that is not a number': {
+    body: good => ({ ...good, plantingYear: 'abc', }),
+    reason: 'plantingYear must be an integer',
+  },
+  'text that is not a string': { body: good => ({ ...good, entry: 42, }), reason: 'entry must be a string', },
+  // entry is a TEXT column, which holds 65,535 bytes
+  'text that is too long': {
+    body: good => ({ ...good, entry: tooLong(65535), }),
+    reason: 'entry must be at most 65535 bytes',
+  },
+  'an id that is too long': {
+    body: good => ({ ...good, entryId: tooLong(36), }),
+    reason: 'entryId must be at most 36 characters',
+  },
+};
 
 export interface JournalDriver {
   createEntry(caller: Actor, input: NewJournalEntry): Promise<CreatedJournalEntry>,
   updateChangesEntry(caller: Actor, entry: CreatedJournalEntry, text: string): Promise<CreatedJournalEntry>,
   listIncludes(caller: Actor, entry: CreatedJournalEntry): Promise<void>,
   listForNonNumericYearIsRejectedAsBadRequest(caller: Actor): Promise<void>,
-  createWithoutDateFailsWithServerError(caller: Actor, plantingYear: number): Promise<void>,
+  createOfInvalidEntryIsRejectedAsBadRequest(caller: Actor, good: NewJournalEntry, problem: JournalEntryProblem): Promise<void>,
+  createOfEntryAsTheAppSendsItSucceeds(caller: Actor, plantingYear: number): Promise<void>,
   createInUnknownYearIsRejectedAsBadRequest(caller: Actor, input: NewJournalEntry): Promise<void>,
   deleteRemovesEntry(caller: Actor, entry: CreatedJournalEntry): Promise<void>,
 }
@@ -24,6 +65,14 @@ export function createJournalDriver(client: HttpClient, registry: ResourceRegist
     expectStatus(response, status.OK, what);
 
     return { response, entries: expectListEntries(response, what), };
+  }
+
+  /** Files an entry for teardown if a write made one, before anything asserts on it. */
+  function registerIfCreated(response: ApiResponse, label: string): void {
+    if (response.status === status.CREATED) {
+      const { entryId, } = response.body as { entryId: string };
+      registry.register({ kind: 'journal entry', path: `/journal/entries/${entryId}`, label, });
+    }
   }
 
   return {
@@ -76,10 +125,30 @@ export function createJournalDriver(client: HttpClient, registry: ResourceRegist
       );
     },
 
-    async createWithoutDateFailsWithServerError(caller: Actor, plantingYear: number): Promise<void> {
-      const response = await as(caller).put('/journal', { plantingYear, entry: 'No date', });
+    async createOfInvalidEntryIsRejectedAsBadRequest(
+      caller: Actor,
+      good: NewJournalEntry,
+      problem: JournalEntryProblem
+    ): Promise<void> {
+      const { body, reason, } = invalidEntries[problem];
+      const response = await as(caller).put('/journal', body(good));
 
-      expectStatus(response, status.INTERNAL_SERVER_ERROR, 'writing a journal entry with no date');
+      registerIfCreated(response, `an entry with ${problem}`);
+      expectRejection(response, status.BAD_REQUEST, reason, `writing a journal entry with ${problem}`);
+    },
+
+    async createOfEntryAsTheAppSendsItSucceeds(caller: Actor, plantingYear: number): Promise<void> {
+      const what = 'writing a journal entry as the app sends it';
+      // The app's year can be a string, its date is toISOString(), and its text can be empty.
+      const response = await as(caller).put('/journal', {
+        plantingYear: String(plantingYear),
+        entryDate: '2026-06-01T17:00:00.000Z',
+        entry: '',
+      });
+
+      registerIfCreated(response, 'an entry as the app sends it');
+      expectStatus(response, status.CREATED, what);
+      expectBodyToContain(response, { plantingYear, entry: '', }, what);
     },
 
     async createInUnknownYearIsRejectedAsBadRequest(caller: Actor, input: NewJournalEntry): Promise<void> {

@@ -1,17 +1,20 @@
 import { Request } from 'express';
 
-import { requiredYear } from '../validation';
+import { bodyOf, optionalString, requiredTimestamp, requiredYear, TEXT_BYTES } from '../validation';
 
 import { JournalEntry, JournalEntryRequest, JournalEntryResponse } from '../services/journal/types';
 
 const journalEntries = {
   upsert: {
-    fromRequest: (req: Request): JournalEntryRequest => ({
-      entryId: req.body.entryId,
-      plantingYear: req.body.plantingYear,
-      entry: req.body.entry,
-      entryDate: new Date(req.body.entryDate),
-    }),
+    fromRequest: (req: Request): JournalEntryRequest => {
+      const body = bodyOf(req);
+      return {
+        entryId: optionalString(body.entryId, 'entryId', { maxLength: 36, }),
+        plantingYear: requiredYear(body.plantingYear, 'plantingYear'),
+        entry: optionalString(body.entry, 'entry', { maxBytes: TEXT_BYTES, }) ?? null,
+        entryDate: requiredTimestamp(body.entryDate, 'entryDate'),
+      };
+    },
   },
 
   getByYear: {

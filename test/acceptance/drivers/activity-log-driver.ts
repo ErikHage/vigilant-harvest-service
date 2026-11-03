@@ -1,16 +1,73 @@
 import { Actor } from '../support/actors';
 import { expectBodyToContain, expectListEntries, expectRejection, expectStatus, expectThat } from './assertions';
-import { NewActivityLogEntry } from '../support/fixtures';
-import { HttpClient } from '../support/http-client';
+import { NewActivityLogEntry, tooLong, withoutField } from '../support/fixtures';
+import { ApiResponse, HttpClient } from '../support/http-client';
 import { CreatedActivityLogEntry, ResourceRegistry } from '../support/resources';
 import { status } from '../support/status-codes';
+
+/** Ways an activity log entry can be wrong. Each is a test of its own. */
+export const ACTIVITY_LOG_ENTRY_PROBLEMS = [
+  'no date',
+  'an unparseable date',
+  'a date out of range',
+  'no year',
+  'a year that is not a number',
+  'no activity type',
+  'an activity type that is too long',
+  'a subtype that is too long',
+  'comments that are not a string',
+  'comments that are too long',
+  'an id that is too long',
+] as const;
+
+export type ActivityLogEntryProblem = (typeof ACTIVITY_LOG_ENTRY_PROBLEMS)[number];
+
+/** For each problem: a good entry made bad, and the reason the service gives. */
+const invalidEntries: Record<ActivityLogEntryProblem, { body: (good: NewActivityLogEntry) => object, reason: string }> = {
+  'no date': { body: good => withoutField(good, 'entryDate'), reason: 'entryDate is required', },
+  'an unparseable date': { body: good => ({ ...good, entryDate: 'not-a-date', }), reason: 'entryDate must be a date', },
+  // entryDate is a TIMESTAMP column, which holds 1970 to 2038
+  'a date out of range': {
+    body: good => ({ ...good, entryDate: '1960-06-01', }),
+    reason: 'entryDate must be between 1971 and 2037',
+  },
+  'no year': { body: good => withoutField(good, 'plantingYear'), reason: 'plantingYear is required', },
+  'a year that is not a number': {
+    body: good => ({ ...good, plantingYear: 'abc', }),
+    reason: 'plantingYear must be an integer',
+  },
+  'no activity type': { body: good => withoutField(good, 'activityType'), reason: 'activityType is required', },
+  'an activity type that is too long': {
+    body: good => ({ ...good, activityType: tooLong(255), }),
+    reason: 'activityType must be at most 255 characters',
+  },
+  'a subtype that is too long': {
+    body: good => ({ ...good, subType: tooLong(255), }),
+    reason: 'subType must be at most 255 characters',
+  },
+  'comments that are not a string': { body: good => ({ ...good, comments: 42, }), reason: 'comments must be a string', },
+  // comments is a TEXT column, which holds 65,535 bytes
+  'comments that are too long': {
+    body: good => ({ ...good, comments: tooLong(65535), }),
+    reason: 'comments must be at most 65535 bytes',
+  },
+  'an id that is too long': {
+    body: good => ({ ...good, entryId: tooLong(36), }),
+    reason: 'entryId must be at most 36 characters',
+  },
+};
 
 export interface ActivityLogDriver {
   createEntry(caller: Actor, input: NewActivityLogEntry): Promise<CreatedActivityLogEntry>,
   updateChangesComments(caller: Actor, entry: CreatedActivityLogEntry, comments: string): Promise<CreatedActivityLogEntry>,
   listIncludes(caller: Actor, entry: CreatedActivityLogEntry): Promise<void>,
   listForNonNumericYearIsRejectedAsBadRequest(caller: Actor): Promise<void>,
-  createWithoutDateFailsWithServerError(caller: Actor, plantingYear: number): Promise<void>,
+  createOfInvalidEntryIsRejectedAsBadRequest(
+    caller: Actor,
+    good: NewActivityLogEntry,
+    problem: ActivityLogEntryProblem
+  ): Promise<void>,
+  createOfEntryAsTheAppSendsItSucceeds(caller: Actor, plantingYear: number): Promise<void>,
   createInUnknownYearIsRejectedAsBadRequest(caller: Actor, input: NewActivityLogEntry): Promise<void>,
   deleteRemovesEntry(caller: Actor, entry: CreatedActivityLogEntry): Promise<void>,
 }
@@ -24,6 +81,14 @@ export function createActivityLogDriver(client: HttpClient, registry: ResourceRe
     expectStatus(response, status.OK, what);
 
     return { response, entries: expectListEntries(response, what), };
+  }
+
+  /** Files an entry for teardown if a write made one, before anything asserts on it. */
+  function registerIfCreated(response: ApiResponse, label: string): void {
+    if (response.status === status.CREATED) {
+      const { entryId, } = response.body as { entryId: string };
+      registry.register({ kind: 'activity log entry', path: `/activity-log/entries/${entryId}`, label, });
+    }
   }
 
   return {
@@ -81,10 +146,33 @@ export function createActivityLogDriver(client: HttpClient, registry: ResourceRe
       );
     },
 
-    async createWithoutDateFailsWithServerError(caller: Actor, plantingYear: number): Promise<void> {
-      const response = await as(caller).put('/activity-log', { plantingYear, activityType: 'WATER', comments: 'No date', });
+    async createOfInvalidEntryIsRejectedAsBadRequest(
+      caller: Actor,
+      good: NewActivityLogEntry,
+      problem: ActivityLogEntryProblem
+    ): Promise<void> {
+      const { body, reason, } = invalidEntries[problem];
+      const response = await as(caller).put('/activity-log', body(good));
 
-      expectStatus(response, status.INTERNAL_SERVER_ERROR, 'logging an activity with no date');
+      registerIfCreated(response, `an entry with ${problem}`);
+      expectRejection(response, status.BAD_REQUEST, reason, `logging an activity with ${problem}`);
+    },
+
+    async createOfEntryAsTheAppSendsItSucceeds(caller: Actor, plantingYear: number): Promise<void> {
+      const what = 'logging an activity as the app sends it';
+      // The app's year can be a string, its date is toISOString(), a subtype left unpicked is null,
+      // and its comments can be empty.
+      const response = await as(caller).put('/activity-log', {
+        plantingYear: String(plantingYear),
+        entryDate: '2026-06-01T17:00:00.000Z',
+        activityType: 'WATER',
+        subType: null,
+        comments: '',
+      });
+
+      registerIfCreated(response, 'an entry as the app sends it');
+      expectStatus(response, status.CREATED, what);
+      expectBodyToContain(response, { plantingYear, subType: null, comments: '', }, what);
     },
 
     async createInUnknownYearIsRejectedAsBadRequest(caller: Actor, input: NewActivityLogEntry): Promise<void> {

@@ -1,7 +1,7 @@
 import { optional, parseDslArgs, required } from '@feral-auth/ts-simple-dsl';
 
 import { actor, alias } from './params';
-import { ActivityLogDriver } from '../drivers/activity-log-driver';
+import { ACTIVITY_LOG_ENTRY_PROBLEMS, ActivityLogDriver } from '../drivers/activity-log-driver';
 import { anActivityLogEntry } from '../support/fixtures';
 import { World } from './world';
 
@@ -16,8 +16,10 @@ export interface ActivityLogDsl {
   checkListed(...args: string[]): Promise<void>,
   /** `as`, `entry`. Asserts it is gone from its year. */
   deleteEntry(...args: string[]): Promise<void>,
-  /** `as`, optional `year`. */
-  checkEntryWithoutDateIsRejected(...args: string[]): Promise<void>,
+  /** `as`, `problem`, one of the driver's ACTIVITY_LOG_ENTRY_PROBLEMS. Writes it in a year made for the spec. */
+  checkInvalidEntryIsRejected(...args: string[]): Promise<void>,
+  /** `as`. Writes an entry shaped the way vigilant-harvest-app sends one, in a year made for the spec. */
+  checkEntryAsTheAppSendsItIsAccepted(...args: string[]): Promise<void>,
   /** `as`. */
   checkEntryInUnknownYearIsRejected(...args: string[]): Promise<void>,
   /** `as`. */
@@ -56,12 +58,20 @@ export function createActivityLogDsl(world: World, activityLog: ActivityLogDrive
       await activityLog.deleteRemovesEntry(await world.actorFor(params.as), world.activityLogEntryNamed(params.entry));
     },
 
-    async checkEntryWithoutDateIsRejected(...args: string[]): Promise<void> {
-      const params = parseDslArgs(args, { as: actor(), year: optional(), });
+    async checkInvalidEntryIsRejected(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), problem: required().allowedValues(...ACTIVITY_LOG_ENTRY_PROBLEMS), });
       const caller = await world.actorFor(params.as);
-      const { plantingYear, } = await world.yearFor(caller, params.year);
+      const { plantingYear, } = await world.yearFor(caller, undefined);
 
-      await activityLog.createWithoutDateFailsWithServerError(caller, plantingYear);
+      await activityLog.createOfInvalidEntryIsRejectedAsBadRequest(caller, anActivityLogEntry(plantingYear), params.problem);
+    },
+
+    async checkEntryAsTheAppSendsItIsAccepted(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), });
+      const caller = await world.actorFor(params.as);
+      const { plantingYear, } = await world.yearFor(caller, undefined);
+
+      await activityLog.createOfEntryAsTheAppSendsItSucceeds(caller, plantingYear);
     },
 
     async checkEntryInUnknownYearIsRejected(...args: string[]): Promise<void> {
