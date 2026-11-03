@@ -140,7 +140,6 @@ rename the driver method, update the DSL line, delete the marker, and remove its
 | Plots | A taken name answers 201 with an id that doesn't exist, having overwritten the plot holding it | Rejected, changing nothing |
 | Plots | A write answers `isActive: true`, a read answers `1` | The same on both |
 | Plots | `isActive: false` is ignored | Deactivates the plot |
-| Plantings | Creating one with no name answers 500 | 400 |
 | Plantings | An empty value is skipped, and the old one stays | Clears the field |
 | Harvests | Plant stats report `statsType: "Planting"` | `"Plant"` |
 | Activity schedules | `PATCH` blanks whatever it wasn't sent | Keeps it |

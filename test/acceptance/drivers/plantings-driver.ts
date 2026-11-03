@@ -8,10 +8,139 @@ import {
   expectStatus,
   expectThat
 } from './assertions';
-import { NewPlanting } from '../support/fixtures';
+import { NewPlanting, tooLong, withoutField } from '../support/fixtures';
 import { ApiResponse, HttpClient } from '../support/http-client';
 import { CreatedPlanting, CreatedPlot, ResourceRegistry } from '../support/resources';
 import { status } from '../support/status-codes';
+
+/** Ways a new planting can be wrong. Each is a test of its own. */
+export const NEW_PLANTING_PROBLEMS = [
+  'no name',
+  'a blank name',
+  'a name that is too long',
+  'no plant',
+  'no year',
+  'a year that is not a number',
+  'a lead time that is not a whole number',
+  'a negative lead time',
+  'an unparseable target date',
+  'a seed source that is too long',
+] as const;
+
+export type NewPlantingProblem = (typeof NEW_PLANTING_PROBLEMS)[number];
+
+/** For each problem: a good planting made bad, and the reason the service gives. */
+const invalidPlantings: Record<NewPlantingProblem, { body: (good: NewPlanting) => object, reason: string }> = {
+  'no name': { body: good => withoutField(good, 'name'), reason: 'name is required', },
+  'a blank name': { body: good => ({ ...good, name: '   ', }), reason: 'name is required', },
+  'a name that is too long': {
+    body: good => ({ ...good, name: tooLong(255), }),
+    reason: 'name must be at most 255 characters',
+  },
+  'no plant': { body: good => withoutField(good, 'plantId'), reason: 'plantId is required', },
+  'no year': { body: good => withoutField(good, 'plantingYear'), reason: 'plantingYear is required', },
+  'a year that is not a number': {
+    body: good => ({ ...good, plantingYear: 'abc', }),
+    reason: 'plantingYear must be an integer',
+  },
+  'a lead time that is not a whole number': {
+    body: good => ({ ...good, leadTimeWeeks: 2.5, }),
+    reason: 'leadTimeWeeks must be an integer',
+  },
+  'a negative lead time': {
+    body: good => ({ ...good, leadTimeWeeks: -1, }),
+    reason: 'leadTimeWeeks must be at least 0',
+  },
+  'an unparseable target date': {
+    body: good => ({ ...good, targetPlantingDate: 'not-a-date', }),
+    reason: 'targetPlantingDate must be a date',
+  },
+  'a seed source that is too long': {
+    body: good => ({ ...good, seedSource: tooLong(255), }),
+    reason: 'seedSource must be at most 255 characters',
+  },
+};
+
+/** Ways an update can be wrong, sent to a CREATED planting. Each is a test of its own. */
+export const PLANTING_UPDATE_PROBLEMS = [
+  'a name that is not a string',
+  'a lead time that is not a number',
+  'an unparseable target date',
+  'a target date out of range',
+] as const;
+
+export type PlantingUpdateProblem = (typeof PLANTING_UPDATE_PROBLEMS)[number];
+
+const invalidUpdates: Record<PlantingUpdateProblem, { body: object, reason: string }> = {
+  'a name that is not a string': { body: { name: 42, }, reason: 'name must be a string', },
+  'a lead time that is not a number': { body: { leadTimeWeeks: 'abc', }, reason: 'leadTimeWeeks must be an integer', },
+  'an unparseable target date': {
+    body: { targetPlantingDate: 'not-a-date', },
+    reason: 'targetPlantingDate must be a date',
+  },
+  // the planting dates are DATE columns, which hold the years 1000 to 9999
+  'a target date out of range': {
+    body: { targetPlantingDate: '0999-05-01', },
+    reason: 'targetPlantingDate must be between 1000 and 9999',
+  },
+};
+
+/** Ways an action can be wrong, sent to a CREATED planting. Each is a test of its own. */
+export const PLANTING_ACTION_PROBLEMS = [
+  'no action type',
+  'an unknown action type',
+  'a start with no sow date',
+  'a start with an unparseable sow date',
+  'a start with a count that is not a number',
+  'a start with a negative count',
+  'a plant with no transplant date',
+  'a plant with a plot id that is too long',
+  'a split with no list',
+  'a split with a nameless entry',
+  'a split with a count that is not a number',
+  'a comment that is not a string',
+] as const;
+
+export type PlantingActionProblem = (typeof PLANTING_ACTION_PROBLEMS)[number];
+
+const invalidActions: Record<PlantingActionProblem, { body: object, reason: string }> = {
+  'no action type': { body: { comment: 'no type', }, reason: 'actionType is required', },
+  'an unknown action type': {
+    body: { actionType: 'WATER', },
+    reason: 'actionType must be one of COMMENT, START, PLANT, SPLIT, DELETE, RETIRE',
+  },
+  'a start with no sow date': { body: { actionType: 'START', numberSown: 4, }, reason: 'sowDate is required', },
+  'a start with an unparseable sow date': {
+    body: { actionType: 'START', sowDate: 'not-a-date', numberSown: 4, },
+    reason: 'sowDate must be a date',
+  },
+  'a start with a count that is not a number': {
+    body: { actionType: 'START', sowDate: '2026-03-01', numberSown: 'many', },
+    reason: 'numberSown must be an integer',
+  },
+  'a start with a negative count': {
+    body: { actionType: 'START', sowDate: '2026-03-01', numberSown: -1, },
+    reason: 'numberSown must be at least 0',
+  },
+  'a plant with no transplant date': {
+    body: { actionType: 'PLANT', numberTransplanted: 2, },
+    reason: 'transplantDate is required',
+  },
+  'a plant with a plot id that is too long': {
+    body: { actionType: 'PLANT', transplantDate: '2026-05-20', plotId: tooLong(36), },
+    reason: 'plotId must be at most 36 characters',
+  },
+  'a split with no list': { body: { actionType: 'SPLIT', }, reason: 'splits is required', },
+  'a split with a nameless entry': {
+    body: { actionType: 'SPLIT', splits: [ { count: 1, }, ], },
+    reason: 'splits[0].name is required',
+  },
+  'a split with a count that is not a number': {
+    body: { actionType: 'SPLIT', splits: [ { name: 'acc-split', count: 'some', }, ], },
+    reason: 'splits[0].count must be an integer',
+  },
+  'a comment that is not a string': { body: { actionType: 'COMMENT', comment: 42, }, reason: 'comment must be a string', },
+};
 
 export interface PlantingsDriver {
   createPlanting(caller: Actor, input: NewPlanting): Promise<CreatedPlanting>,
@@ -41,7 +170,20 @@ export interface PlantingsDriver {
   updateOfFieldNotAllowedIsRejectedAsBadRequest(caller: Actor, planting: CreatedPlanting): Promise<void>,
   createForUnknownPlantIsRejectedAsBadRequest(caller: Actor, input: NewPlanting): Promise<void>,
   createInUnknownYearIsRejectedAsBadRequest(caller: Actor, input: NewPlanting): Promise<void>,
-  createWithoutNameFailsWithServerError(caller: Actor, input: NewPlanting): Promise<void>,
+  createOfInvalidPlantingIsRejectedAsBadRequest(caller: Actor, good: NewPlanting, problem: NewPlantingProblem): Promise<void>,
+  createAsTheAppSendsItSucceeds(caller: Actor, input: NewPlanting): Promise<void>,
+  updateOfInvalidFieldIsRejectedAsBadRequest(
+    caller: Actor,
+    planting: CreatedPlanting,
+    problem: PlantingUpdateProblem
+  ): Promise<void>,
+  updateAsTheAppSendsItSucceeds(caller: Actor, planting: CreatedPlanting): Promise<void>,
+  actionOfInvalidBodyIsRejectedAsBadRequest(
+    caller: Actor,
+    planting: CreatedPlanting,
+    problem: PlantingActionProblem
+  ): Promise<void>,
+  startAsTheAppSendsItSucceeds(caller: Actor, planting: CreatedPlanting): Promise<void>,
   deleteActionRemovesPlanting(caller: Actor, planting: CreatedPlanting): Promise<void>,
   deleteActionOfPlantingWithHarvestsIsRejectedAsConflict(caller: Actor, planting: CreatedPlanting): Promise<void>,
   deleteOfPlantingWithHarvestsIsRejectedAsConflict(caller: Actor, planting: CreatedPlanting): Promise<void>,
@@ -58,6 +200,13 @@ export function createPlantingsDriver(client: HttpClient, registry: ResourceRegi
     if (!registered.has(plantingId)) {
       registered.add(plantingId);
       registry.register({ kind: 'planting', path: `/plantings/${plantingId}`, label: name, });
+    }
+  }
+
+  /** Files a planting for teardown if a create made one, before anything asserts on it. */
+  function registerIfCreated(response: ApiResponse, name: string): void {
+    if (response.status === status.CREATED) {
+      register((response.body as { plantingId: string }).plantingId, name);
     }
   }
 
@@ -323,14 +472,89 @@ export function createPlantingsDriver(client: HttpClient, registry: ResourceRegi
       expectCount(plantings.length, 0, response, what);
     },
 
-    async createWithoutNameFailsWithServerError(caller: Actor, input: NewPlanting): Promise<void> {
-      const { plantId, plantingYear, } = input;
+    async createOfInvalidPlantingIsRejectedAsBadRequest(
+      caller: Actor,
+      good: NewPlanting,
+      problem: NewPlantingProblem
+    ): Promise<void> {
+      const { body, reason, } = invalidPlantings[problem];
+      const response = await as(caller).post('/plantings', body(good));
 
-      expectStatus(
-        await as(caller).post('/plantings', { plantId, plantingYear, }),
-        status.INTERNAL_SERVER_ERROR,
-        'creating a planting with no name'
+      registerIfCreated(response, good.name);
+      expectRejection(response, status.BAD_REQUEST, reason, `creating a planting with ${problem}`);
+    },
+
+    async createAsTheAppSendsItSucceeds(caller: Actor, input: NewPlanting): Promise<void> {
+      const what = `creating planting "${input.name}" as the app sends it`;
+      // The app's year can be a string. Its lead time box, cleared, sends '' (v-model.number), and
+      // the fields never touched are null.
+      const response = await as(caller).post('/plantings', {
+        name: input.name,
+        plantId: input.plantId,
+        plantingYear: String(input.plantingYear),
+        leadTimeWeeks: '',
+        seedSource: null,
+        lotNumber: null,
+      });
+
+      registerIfCreated(response, input.name);
+      expectStatus(response, status.CREATED, what);
+      expectBodyToContain(response, { plantingYears: [ input.plantingYear, ], }, what);
+    },
+
+    async updateOfInvalidFieldIsRejectedAsBadRequest(
+      caller: Actor,
+      planting: CreatedPlanting,
+      problem: PlantingUpdateProblem
+    ): Promise<void> {
+      const { body, reason, } = invalidUpdates[problem];
+
+      expectRejection(
+        await as(caller).put(`/plantings/${planting.plantingId}`, body),
+        status.BAD_REQUEST,
+        reason,
+        `updating planting "${planting.name}" with ${problem}`
       );
+    },
+
+    async updateAsTheAppSendsItSucceeds(caller: Actor, planting: CreatedPlanting): Promise<void> {
+      const what = `updating planting "${planting.name}" as the app sends it`;
+      // A CREATED planting's edit form: a date from the picker, as JSON, and a cleared lead time box.
+      const response = await as(caller).put(`/plantings/${planting.plantingId}`, {
+        name: planting.name,
+        seedSource: 'Saved by the app',
+        targetPlantingDate: '2026-05-15T04:00:00.000Z',
+        leadTimeWeeks: '',
+      });
+
+      expectStatus(response, status.OK, what);
+      expectBodyToContain(response, { seedSource: 'Saved by the app', }, what);
+    },
+
+    async actionOfInvalidBodyIsRejectedAsBadRequest(
+      caller: Actor,
+      planting: CreatedPlanting,
+      problem: PlantingActionProblem
+    ): Promise<void> {
+      const { body, reason, } = invalidActions[problem];
+      const response = await as(caller).post(`/plantings/${planting.plantingId}`, body);
+
+      // a split that wrongly succeeded made plantings of its own
+      await registerWhatTheServiceMade(caller, planting.plantingYear);
+      expectRejection(response, status.BAD_REQUEST, reason, `acting on planting "${planting.name}" with ${problem}`);
+    },
+
+    async startAsTheAppSendsItSucceeds(caller: Actor, planting: CreatedPlanting): Promise<void> {
+      // The start dialog's date is toISOString(), its count box cleared sends '', and an untouched
+      // comment is null.
+      const response = await act(
+        caller,
+        planting,
+        { actionType: 'START', sowDate: '2026-03-01T17:00:00.000Z', numberSown: '', comment: null, },
+        `starting planting "${planting.name}" as the app sends it`
+      );
+
+      expectBodyToContain(response, { currentStatus: 'STARTED', }, `starting planting "${planting.name}"`);
     },
 
     async deleteActionRemovesPlanting(caller: Actor, planting: CreatedPlanting): Promise<void> {

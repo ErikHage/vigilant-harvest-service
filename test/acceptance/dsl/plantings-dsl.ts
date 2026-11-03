@@ -2,7 +2,12 @@ import { optional, parseDslArgs, required } from '@feral-auth/ts-simple-dsl';
 
 import { actor, alias } from './params';
 import { aPlanting, fixtureName } from '../support/fixtures';
-import { PlantingsDriver } from '../drivers/plantings-driver';
+import {
+  NEW_PLANTING_PROBLEMS,
+  PLANTING_ACTION_PROBLEMS,
+  PLANTING_UPDATE_PROBLEMS,
+  PlantingsDriver
+} from '../drivers/plantings-driver';
 import { World } from './world';
 
 export interface PlantingsDsl {
@@ -50,8 +55,18 @@ export interface PlantingsDsl {
   checkCreateForUnknownPlantIsRejected(...args: string[]): Promise<void>,
   /** `as`, `plant`. */
   checkCreateInUnknownYearIsRejected(...args: string[]): Promise<void>,
-  /** `as`, `plant`. */
-  checkCreateWithoutNameIsRejected(...args: string[]): Promise<void>,
+  /** `as`, `plant`, `problem`, one of the driver's NEW_PLANTING_PROBLEMS. */
+  checkInvalidPlantingIsRejected(...args: string[]): Promise<void>,
+  /** `as`, `plant`. Creates a planting shaped the way vigilant-harvest-app sends one. */
+  checkPlantingAsTheAppSendsItIsAccepted(...args: string[]): Promise<void>,
+  /** `as`, `planting`, a CREATED one, `problem`, one of the driver's PLANTING_UPDATE_PROBLEMS. */
+  checkInvalidUpdateIsRejected(...args: string[]): Promise<void>,
+  /** `as`, `planting`, a CREATED one. Updates it the way vigilant-harvest-app's edit form does. */
+  checkUpdateAsTheAppSendsItIsAccepted(...args: string[]): Promise<void>,
+  /** `as`, `planting`, a CREATED one, `problem`, one of the driver's PLANTING_ACTION_PROBLEMS. */
+  checkInvalidActionIsRejected(...args: string[]): Promise<void>,
+  /** `as`, `planting`, a CREATED one. Starts it the way vigilant-harvest-app's dialog does. */
+  checkStartAsTheAppSendsItIsAccepted(...args: string[]): Promise<void>,
   /** `as`, `planting`. Asserts it is gone. */
   deleteWithAction(...args: string[]): Promise<void>,
   /** `as`, `planting`. */
@@ -260,11 +275,58 @@ export function createPlantingsDsl(world: World, plantings: PlantingsDriver): Pl
       await plantings.createInUnknownYearIsRejectedAsBadRequest(caller, input);
     },
 
-    async checkCreateWithoutNameIsRejected(...args: string[]): Promise<void> {
+    async checkInvalidPlantingIsRejected(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), plant: alias(), problem: required().allowedValues(...NEW_PLANTING_PROBLEMS), });
+      const { caller, input, } = await newPlanting(params.as, params.plant);
+
+      await plantings.createOfInvalidPlantingIsRejectedAsBadRequest(caller, input, params.problem);
+    },
+
+    async checkPlantingAsTheAppSendsItIsAccepted(...args: string[]): Promise<void> {
       const params = parseDslArgs(args, { as: actor(), plant: alias(), });
       const { caller, input, } = await newPlanting(params.as, params.plant);
 
-      await plantings.createWithoutNameFailsWithServerError(caller, input);
+      await plantings.createAsTheAppSendsItSucceeds(caller, input);
+    },
+
+    async checkInvalidUpdateIsRejected(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, {
+        as: actor(),
+        planting: alias(),
+        problem: required().allowedValues(...PLANTING_UPDATE_PROBLEMS),
+      });
+
+      await plantings.updateOfInvalidFieldIsRejectedAsBadRequest(
+        await world.actorFor(params.as),
+        world.plantingNamed(params.planting),
+        params.problem
+      );
+    },
+
+    async checkUpdateAsTheAppSendsItIsAccepted(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), planting: alias(), });
+
+      await plantings.updateAsTheAppSendsItSucceeds(await world.actorFor(params.as), world.plantingNamed(params.planting));
+    },
+
+    async checkInvalidActionIsRejected(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, {
+        as: actor(),
+        planting: alias(),
+        problem: required().allowedValues(...PLANTING_ACTION_PROBLEMS),
+      });
+
+      await plantings.actionOfInvalidBodyIsRejectedAsBadRequest(
+        await world.actorFor(params.as),
+        world.plantingNamed(params.planting),
+        params.problem
+      );
+    },
+
+    async checkStartAsTheAppSendsItIsAccepted(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), planting: alias(), });
+
+      await plantings.startAsTheAppSendsItSucceeds(await world.actorFor(params.as), world.plantingNamed(params.planting));
     },
 
     async deleteWithAction(...args: string[]): Promise<void> {

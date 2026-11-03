@@ -22,19 +22,19 @@ export interface PerformActionRequest {
 
 export interface SowActionData {
   sowDate: Date,
-  numberSown: number, // int
+  numberSown?: number, // int
   comment: string
 }
 
 export interface TransplantActionData {
-  plotId: string,
+  plotId?: string,
   transplantDate: Date,
-  numberTransplanted: number, // int
+  numberTransplanted?: number, // int
   comment: string
 }
 
 export interface SplitActionData {
-  sourcePlantingId: string,
+  sourcePlantingId?: string, // the service uses the planting in the path
   comment: string,
   splits: SplitData[],
 }

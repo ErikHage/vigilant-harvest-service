@@ -114,9 +114,65 @@ describe('plantings', () => {
     await plantings.checkCreateInUnknownYearIsRejected('as: gardener', 'plant: tomato');
   });
 
-  // DocumentsCurrentBehavior: replies 500. Should be 400.
-  it('rejects a planting with no name', async () => {
-    await plantings.checkCreateWithoutNameIsRejected('as: gardener', 'plant: tomato');
+  it.each([
+    'no name',
+    'a blank name',
+    'a name that is too long',
+    'no plant',
+    'no year',
+    'a year that is not a number',
+    'a lead time that is not a whole number',
+    'a negative lead time',
+    'an unparseable target date',
+    'a seed source that is too long',
+  ])('rejects a planting with %s', async problem => {
+    await plantings.checkInvalidPlantingIsRejected('as: gardener', 'plant: tomato', `problem: ${problem}`);
+  });
+
+  it('accepts a planting as the app sends it', async () => {
+    await plantings.checkPlantingAsTheAppSendsItIsAccepted('as: gardener', 'plant: tomato');
+  });
+
+  it.each([
+    'a name that is not a string',
+    'a lead time that is not a number',
+    'an unparseable target date',
+    'a target date out of range',
+  ])('rejects an update with %s', async problem => {
+    await plantings.createPlanting('as: gardener', 'planting: row-one', 'plant: tomato');
+
+    await plantings.checkInvalidUpdateIsRejected('as: gardener', 'planting: row-one', `problem: ${problem}`);
+  });
+
+  it('accepts an update as the app sends it', async () => {
+    await plantings.createPlanting('as: gardener', 'planting: row-one', 'plant: tomato');
+
+    await plantings.checkUpdateAsTheAppSendsItIsAccepted('as: gardener', 'planting: row-one');
+  });
+
+  it.each([
+    'no action type',
+    'an unknown action type',
+    'a start with no sow date',
+    'a start with an unparseable sow date',
+    'a start with a count that is not a number',
+    'a start with a negative count',
+    'a plant with no transplant date',
+    'a plant with a plot id that is too long',
+    'a split with no list',
+    'a split with a nameless entry',
+    'a split with a count that is not a number',
+    'a comment that is not a string',
+  ])('rejects an action with %s', async problem => {
+    await plantings.createPlanting('as: gardener', 'planting: row-one', 'plant: tomato');
+
+    await plantings.checkInvalidActionIsRejected('as: gardener', 'planting: row-one', `problem: ${problem}`);
+  });
+
+  it('accepts a start as the app sends it', async () => {
+    await plantings.createPlanting('as: gardener', 'planting: row-one', 'plant: tomato');
+
+    await plantings.checkStartAsTheAppSendsItIsAccepted('as: gardener', 'planting: row-one');
   });
 
   it('finds no planting that was never created', async () => {

@@ -28,7 +28,7 @@ keeps the history.
 | 3 | H3 · log every error in prod | done |
 | 4 | M1 · keep causes in planting actions; M10 · drop `multipleStatements` | done |
 | 5 | H4 · PLANT in one transaction | done |
-| 6 | H5 · input validation, route by route | 6a–6c done; 6d next |
+| 6 | H5 · input validation, route by route | 6a–6d done; 6e next |
 
 ## Phase 1 — H1: one flat error per body
 
@@ -216,12 +216,21 @@ Each throws `BadRequestError('<field> must be …')`. Column sizes come from `mi
     `INT_MAX`; a bare date that doesn't exist (`2026-02-30`) is rejected. `parseHarvestTypeId` went.
   - **Seen to fail:** 15 (10 answered 500; zero and negative saved with 201; 3 answered 400 with other
     messages; the bare date was filed a day early). Then 151 passed. 11 pins are left.
-- [ ] **6d · plantings.**
-  - Create: name, `plantId`, `plantingYear`, dates, `leadTimeWeeks`.
-  - Update: the same field rules; the "allowed for this status" check stays where it is.
-  - Actions: `actionType` from the known set; the counts and dates each action needs; `splits` as a
-    list of name and count.
-  - Retires 1 pin.
+- [x] **6d · plantings.** Done. Notes:
+  - **The app survey:** every date is an ISO timestamp (pickers, or the date the service returned).
+    Counts and the lead time come from `v-model.number` boxes, so a cleared one sends `''`; the dialogs
+    start counts at 0. Untouched strings and comments are `null`. The add and split dialogs start names
+    as `''`. The store adds the year, possibly a string.
+  - **A live app bug, fixed:** creating a planting with the lead time box typed in and then cleared
+    sent `''`, which the INT column rejects (1366, checked): a 500. `''` is now "not given".
+  - **Decided:** `''` is "not given" for optional numbers and dates (`blankAsMissing`), and for every
+    update field, because an update skips empty values (a pin, unchanged). A blank name, on create or in
+    a split, is a 400. Counts may be 0, the dialogs' default. A COMMENT with no comment now stores `''`,
+    as the other actions already did.
+  - **The module grew:** `oneOf`, `blankAsMissing`, `requiredDate`/`optionalDate` for DATE columns
+    (years 1000–9999), and `max` on integers.
+  - **Seen to fail:** 27. 16 answered 500, including the app-shaped create; 6 succeeded (3 creates, 2
+    updates, and a COMMENT of `42`); 5 answered 400 for other reasons. Then 179 passed. 10 pins are left.
 - [ ] **6e · plants, categories, subcategories, schedule assignment.**
   - The plant body (`subcategoryId` required, `lifespanType` from its set, the nested sections' types).
   - Category and subcategory names; the `assign`/`unassign` lists.
@@ -261,3 +270,4 @@ Each can be planned after Phase 6.
 - 2026-11-02: 6b done and committed. A probe found dates outside `TIMESTAMP`'s range answer
   500; checked here too.
 - 2026-11-02: 6c done and committed. L7 fixed with it, since nothing depended on it.
+- 2026-11-02: 6d done and committed. Found and fixed a live 500 in the app's create form.

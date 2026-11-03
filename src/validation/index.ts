@@ -13,10 +13,31 @@ import { BadRequestError } from '../errors/common';
 
 export interface IntegerOptions {
   min?: number,
+  max?: number,
 }
 
 function isMissing(value: unknown): boolean {
   return value === undefined || value === null;
+}
+
+/**
+ * A form box the user cleared sends '' (Vue's v-model.number does too). For a
+ * field that may be left out, that means "not given", so pass the value through
+ * this before an optional check.
+ */
+export function blankAsMissing(value: unknown): unknown {
+  return value === '' ? undefined : value;
+}
+
+/** One of a fixed set of strings, such as an action type. */
+export function oneOf<T extends string>(value: unknown, field: string, allowed: readonly T[]): T {
+  if (isMissing(value) || value === '') {
+    throw new BadRequestError(`${field} is required`);
+  }
+  if (!allowed.includes(value as T)) {
+    throw new BadRequestError(`${field} must be one of ${allowed.join(', ')}`);
+  }
+  return value as T;
 }
 
 function toInteger(value: unknown, field: string, options: IntegerOptions): number {
@@ -32,6 +53,9 @@ function toInteger(value: unknown, field: string, options: IntegerOptions): numb
   }
   if (options.min !== undefined && parsed < options.min) {
     throw new BadRequestError(`${field} must be at least ${options.min}`);
+  }
+  if (options.max !== undefined && parsed > options.max) {
+    throw new BadRequestError(`${field} must be at most ${options.max}`);
   }
 
   return parsed;
@@ -176,11 +200,9 @@ function toDate(value: unknown, field: string): Date {
   return date;
 }
 
-function requiredDate(value: unknown, field: string): Date {
-  if (isMissing(value)) {
-    throw new BadRequestError(`${field} is required`);
-  }
-  return toDate(value, field);
+interface YearRange {
+  min: number,
+  max: number,
 }
 
 /**
@@ -188,18 +210,41 @@ function requiredDate(value: unknown, field: string): Date {
  * years at either end are left out, so that a date the server shifts into its
  * own time zone still fits.
  */
-const TIMESTAMP_YEARS = { min: 1971, max: 2037, };
+const TIMESTAMP_YEARS: YearRange = { min: 1971, max: 2037, };
 
-/** A date for a TIMESTAMP column. */
-export function requiredTimestamp(value: unknown, field: string): Date {
-  const date = requiredDate(value, field);
-  const year = date.getUTCFullYear();
+/** The years MySQL supports in a DATE column. Earlier ones may be stored, but aren't promised. */
+const DATE_YEARS: YearRange = { min: 1000, max: 9999, };
 
-  if (year < TIMESTAMP_YEARS.min || year > TIMESTAMP_YEARS.max) {
-    throw new BadRequestError(`${field} must be between ${TIMESTAMP_YEARS.min} and ${TIMESTAMP_YEARS.max}`);
+function toDateIn(value: unknown, field: string, years: YearRange): Date {
+  const date = toDate(value, field);
+  // the year it is written with: dates are formatted in the service's own zone
+  const year = date.getFullYear();
+
+  if (year < years.min || year > years.max) {
+    throw new BadRequestError(`${field} must be between ${years.min} and ${years.max}`);
   }
 
   return date;
+}
+
+/** A date for a TIMESTAMP column. */
+export function requiredTimestamp(value: unknown, field: string): Date {
+  if (isMissing(value)) {
+    throw new BadRequestError(`${field} is required`);
+  }
+  return toDateIn(value, field, TIMESTAMP_YEARS);
+}
+
+/** A date for a DATE column. */
+export function requiredDate(value: unknown, field: string): Date {
+  if (isMissing(value)) {
+    throw new BadRequestError(`${field} is required`);
+  }
+  return toDateIn(value, field, DATE_YEARS);
+}
+
+export function optionalDate(value: unknown, field: string): Date | undefined {
+  return isMissing(value) ? undefined : toDateIn(value, field, DATE_YEARS);
 }
 
 /**
