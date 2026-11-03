@@ -2,11 +2,14 @@ import { optional, parseDslArgs, required } from '@feral-auth/ts-simple-dsl';
 
 import { actor, alias } from './params';
 import { aHarvest } from '../support/fixtures';
-import { HarvestsDriver } from '../drivers/harvests-driver';
+import { HARVEST_SAVE_PROBLEMS, HarvestsDriver } from '../drivers/harvests-driver';
 import { World } from './world';
 
 export interface HarvestsDsl {
-  /** `as`, `harvest`, the alias, `planting`, `quantity`, optional `type`, by name, optional `date`. */
+  /**
+   * `as`, `harvest`, the alias, `planting`, `quantity`, optional `type`, by name, optional `date`, and
+   * optional `time: noon | none`: the date is sent at noon, or with no time at all.
+   */
   recordHarvest(...args: string[]): Promise<void>,
   /** `as`, `harvest`, `planting`, `quantity`. Saves it again under its own id. */
   saveAgain(...args: string[]): Promise<void>,
@@ -24,10 +27,17 @@ export interface HarvestsDsl {
   checkYearMustBeANumber(...args: string[]): Promise<void>,
   /** `as`. */
   checkUnknownPlantingIsRejected(...args: string[]): Promise<void>,
-  /** `as`. */
-  checkMissingListIsRejected(...args: string[]): Promise<void>,
+  /** `as`, `planting`, `problem`, one of the driver's HARVEST_SAVE_PROBLEMS. */
+  checkInvalidSaveIsRejected(...args: string[]): Promise<void>,
+  /** `as`, `planting`. Saves a harvest shaped the way vigilant-harvest-app sends one. */
+  checkSaveAsTheAppSendsItIsAccepted(...args: string[]): Promise<void>,
   /** `as`, `harvest`, `planting`. Asserts it is gone from the planting's year. */
   deleteHarvest(...args: string[]): Promise<void>,
+}
+
+/** A day at noon, which no time zone moves to another day, or the bare day. */
+function harvestDate(date: string, time: 'noon' | 'none' | undefined): string {
+  return time === 'none' ? date : `${date}T12:00:00`;
 }
 
 export function createHarvestsDsl(world: World, harvests: HarvestsDriver): HarvestsDsl {
@@ -42,11 +52,12 @@ export function createHarvestsDsl(world: World, harvests: HarvestsDriver): Harve
         quantity: required().asInteger(),
         type: optional(),
         date: optional(),
+        time: optional().allowedValues('noon', 'none'),
       });
       const caller = await world.actorFor(params.as);
       const input = aHarvest(world.plantingNamed(params.planting).plantingId, {
         quantity: params.quantity,
-        ...(params.date === undefined ? {} : { harvestDate: `${params.date}T12:00:00`, }),
+        ...(params.date === undefined ? {} : { harvestDate: harvestDate(params.date, params.time), }),
         ...(params.type === undefined ? {} : { harvestTypeId: await harvestTypes.idOfTypeNamed(caller, params.type), }),
       });
 
@@ -133,10 +144,27 @@ export function createHarvestsDsl(world: World, harvests: HarvestsDriver): Harve
       await harvests.recordForUnknownPlantingIsRejectedAsBadRequest(await world.actorFor(params.as), aHarvest('no-such-planting'));
     },
 
-    async checkMissingListIsRejected(...args: string[]): Promise<void> {
-      const params = parseDslArgs(args, { as: actor(), });
+    async checkInvalidSaveIsRejected(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, {
+        as: actor(),
+        planting: alias(),
+        problem: required().allowedValues(...HARVEST_SAVE_PROBLEMS),
+      });
 
-      await harvests.recordWithoutHarvestsFailsWithServerError(await world.actorFor(params.as));
+      await harvests.saveOfInvalidHarvestsIsRejectedAsBadRequest(
+        await world.actorFor(params.as),
+        aHarvest(world.plantingNamed(params.planting).plantingId),
+        params.problem
+      );
+    },
+
+    async checkSaveAsTheAppSendsItIsAccepted(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), planting: alias(), });
+
+      await harvests.saveAsTheAppSendsItSucceeds(
+        await world.actorFor(params.as),
+        world.plantingNamed(params.planting).plantingId
+      );
     },
 
     async deleteHarvest(...args: string[]): Promise<void> {

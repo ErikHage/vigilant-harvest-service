@@ -28,7 +28,7 @@ keeps the history.
 | 3 | H3 · log every error in prod | done |
 | 4 | M1 · keep causes in planting actions; M10 · drop `multipleStatements` | done |
 | 5 | H4 · PLANT in one transaction | done |
-| 6 | H5 · input validation, route by route | 6a, 6b done; 6c next |
+| 6 | H5 · input validation, route by route | 6a–6c done; 6d next |
 
 ## Phase 1 — H1: one flat error per body
 
@@ -200,10 +200,22 @@ Each throws `BadRequestError('<field> must be …')`. Column sizes come from `mi
     1971–2037); `bodyOf` (no body reads as `{}`); `TEXT_BYTES`.
   - `entry`, `subType` and `comments` are nullable, as in the schema; a missing one is stored `NULL`.
   - Retired 2 pins, folded into each route's table as its `no date` case. 12 are left. 136 passed.
-- [ ] **6c · harvests.** The list is required. Each item: `plantingId`, `quantity` (a number above 0),
-  `harvestDate`, and `harvestTypeId`, whose existing check moves into the module. Retires 1 pin.
-  - The date-shift bug (L7) is next door. Fix it here only if the survey shows nothing depends on
-    today's behaviour; otherwise note it.
+- [x] **6c · harvests.** Done. Notes:
+  - **The app survey:** both pages send `quantity` from `v-model.number` boxes, so a number, and fractions
+    are possible: the harvest types include pounds, ounces and kilograms. The garden page skips
+    quantities of 0 or less; the edit dialog doesn't, and a cleared box sends `''`. `harvestDate` is a JS
+    `Date` sent as JSON, or the date the service returned, so always an ISO timestamp. `harvestTypeId` is
+    a number from a select. The store adds `plantingYear`, which the service ignores.
+  - **Decided:** a fraction is accepted, as today, though the INT column rounds it (1.5 → 2, 0.4 → 0,
+    checked). Rejecting it would block real weights. The column type is a separate finding. A blank, zero
+    or negative quantity from the edit dialog is now a 400, which the dialog shows, staying open.
+  - **L7 fixed:** a bare `YYYY-MM-DD` is now that day in the service's zone, in the shared date check, so
+    journal and log dates sent that way are fixed too. Nothing sends one: the app sends timestamps, and
+    the suite noon. A test saves a bare date and a noon one on the same day, and they fold into one.
+  - **The module grew:** `requiredNumber` (`greaterThan`, `max`), `requiredList`, `requiredObject`,
+    `INT_MAX`; a bare date that doesn't exist (`2026-02-30`) is rejected. `parseHarvestTypeId` went.
+  - **Seen to fail:** 15 (10 answered 500; zero and negative saved with 201; 3 answered 400 with other
+    messages; the bare date was filed a day early). Then 151 passed. 11 pins are left.
 - [ ] **6d · plantings.**
   - Create: name, `plantId`, `plantingYear`, dates, `leadTimeWeeks`.
   - Update: the same field rules; the "allowed for this status" check stays where it is.
@@ -248,3 +260,4 @@ Each can be planned after Phase 6.
 - 2026-11-02: 6a done and committed; starting 6b.
 - 2026-11-02: 6b done and committed. A probe found dates outside `TIMESTAMP`'s range answer
   500; checked here too.
+- 2026-11-02: 6c done and committed. L7 fixed with it, since nothing depended on it.

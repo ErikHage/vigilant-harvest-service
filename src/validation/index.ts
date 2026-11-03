@@ -90,11 +90,84 @@ export function optionalString(value: unknown, field: string, options: StringOpt
   return isMissing(value) ? undefined : toCheckedString(value, field, options);
 }
 
+export interface NumberOptions {
+  /** Exclusive: a quantity must be more than nothing. */
+  greaterThan?: number,
+  max?: number,
+}
+
+/** The most an INT column holds. */
+export const INT_MAX = 2147483647;
+
+/** A number, which may have a fraction. Numeric strings are accepted, as for integers. */
+export function requiredNumber(value: unknown, field: string, options: NumberOptions = {}): number {
+  if (isMissing(value)) {
+    throw new BadRequestError(`${field} is required`);
+  }
+
+  let parsed = Number.NaN;
+  if (typeof value === 'number') {
+    parsed = value;
+  } else if (typeof value === 'string' && /^-?\d+(\.\d+)?$/.test(value)) {
+    parsed = Number(value);
+  }
+
+  if (!Number.isFinite(parsed)) {
+    throw new BadRequestError(`${field} must be a number`);
+  }
+  if (options.greaterThan !== undefined && parsed <= options.greaterThan) {
+    throw new BadRequestError(`${field} must be greater than ${options.greaterThan}`);
+  }
+  if (options.max !== undefined && parsed > options.max) {
+    throw new BadRequestError(`${field} must be at most ${options.max}`);
+  }
+
+  return parsed;
+}
+
+/** A JSON array. Its entries are checked by the caller, which knows what they should be. */
+export function requiredList(value: unknown, field: string): unknown[] {
+  if (isMissing(value)) {
+    throw new BadRequestError(`${field} is required`);
+  }
+  if (!Array.isArray(value)) {
+    throw new BadRequestError(`${field} must be a list`);
+  }
+  return value;
+}
+
+/** A JSON object, such as an entry of a list, whose fields are then checked one by one. */
+export function requiredObject(value: unknown, field: string): Record<string, unknown> {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new BadRequestError(`${field} must be an object`);
+  }
+  return value as Record<string, unknown>;
+}
+
 /** A date (2026-06-01), or an ISO 8601 timestamp with or without its offset (2026-06-01T17:00:00.000Z). */
 const DATE_FORMAT = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})?)?$/;
+const BARE_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+/**
+ * A bare date is that day in the service's own time zone, where its dates are
+ * written. `new Date('2026-07-01')` would be UTC midnight instead, which is the
+ * evening before in America/New_York, and is filed under that day (L7).
+ */
+function parseDate(value: string): Date {
+  const bare = BARE_DATE.exec(value);
+  if (!bare) {
+    return new Date(value);
+  }
+
+  const [ year, month, day, ] = bare.slice(1).map(Number) as [number, number, number];
+  const date = new Date(year, month - 1, day);
+
+  // Date rolls 2026-02-30 over into March; a day that doesn't exist isn't a date
+  return date.getMonth() === month - 1 ? date : new Date(Number.NaN);
+}
 
 function toDate(value: unknown, field: string): Date {
-  const date = typeof value === 'string' && DATE_FORMAT.test(value) ? new Date(value) : undefined;
+  const date = typeof value === 'string' && DATE_FORMAT.test(value) ? parseDate(value) : undefined;
 
   if (date === undefined || Number.isNaN(date.getTime())) {
     throw new BadRequestError(`${field} must be a date, as YYYY-MM-DD or an ISO 8601 timestamp`);

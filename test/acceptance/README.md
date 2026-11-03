@@ -142,7 +142,6 @@ rename the driver method, update the DSL line, delete the marker, and remove its
 | Plots | `isActive: false` is ignored | Deactivates the plot |
 | Plantings | Creating one with no name answers 500 | 400 |
 | Plantings | An empty value is skipped, and the old one stays | Clears the field |
-| Harvests | Saving with no `harvests` list answers 500 | 400 |
 | Harvests | Plant stats report `statsType: "Planting"` | `"Plant"` |
 | Activity schedules | `PATCH` blanks whatever it wasn't sent | Keeps it |
 | Activity schedules | Updating an item through a schedule that doesn't hold it succeeds | 404 |

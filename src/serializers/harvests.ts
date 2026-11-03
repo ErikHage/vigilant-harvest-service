@@ -10,27 +10,38 @@ import {
 } from '../services/harvests/types';
 import { BadRequestError } from '../errors/common';
 import { StatsType, StatsTypeUtils } from '../types/stats-type';
-import { requiredYear } from '../validation';
+import {
+  bodyOf,
+  INT_MAX,
+  optionalInteger,
+  optionalString,
+  requiredList,
+  requiredNumber,
+  requiredObject,
+  requiredString,
+  requiredTimestamp,
+  requiredYear
+} from '../validation';
 
 const insert = {
-  fromRequest: (req: Request): HarvestRequest[] => {
-    const { harvests, } = req.body;
+  fromRequest: (req: Request): HarvestRequest[] =>
+    requiredList(bodyOf(req).harvests, 'harvests').map((entry, index): HarvestRequest => {
+      const field = `harvests[${index}]`;
+      const harvest = requiredObject(entry, field);
 
-    // this is the mapper, it won't know what type is coming in from the request object
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return harvests.map((harvest: any): HarvestRequest => {
-      const harvestDate: Date = new Date(harvest.harvestDate);
-      harvestDate.setHours(0, 0, 0, 0); // Sets time to 00:00:00
+      const harvestDate = requiredTimestamp(harvest.harvestDate, `${field}.harvestDate`);
+      harvestDate.setHours(0, 0, 0, 0); // a harvest is filed by day
 
       return {
-        harvestId: harvest.harvestId,
-        plantingId: harvest.plantingId,
-        quantity: Number(harvest.quantity),
+        harvestId: optionalString(harvest.harvestId, `${field}.harvestId`, { maxLength: 36, }),
+        // only checked for shape here; the service confirms the planting and the type exist
+        plantingId: requiredString(harvest.plantingId, `${field}.plantingId`, { maxLength: 36, }),
+        // the column is an INT, so a fraction is rounded when it's stored; harvests by weight have them
+        quantity: requiredNumber(harvest.quantity, `${field}.quantity`, { greaterThan: 0, max: INT_MAX, }),
         harvestDate,
-        harvestTypeId: parseHarvestTypeId(harvest.harvestTypeId),
-      }
-    });
-  },
+        harvestTypeId: optionalInteger(harvest.harvestTypeId, `${field}.harvestTypeId`, { min: 1, }),
+      };
+    }),
 
   toResponse: (harvest: Harvest): HarvestResponse => ({
     harvestId: harvest.harvestId,
@@ -98,21 +109,6 @@ const stats = {
     };
   },
 };
-
-// the id is only checked for shape here; the service confirms it is one that exists
-function parseHarvestTypeId(rawHarvestTypeId: unknown): number | undefined {
-  if (rawHarvestTypeId == null) {
-    return undefined;
-  }
-
-  const harvestTypeId = Number(rawHarvestTypeId);
-
-  if (!Number.isInteger(harvestTypeId) || harvestTypeId < 1) {
-    throw new BadRequestError(`Invalid harvest type id: ${rawHarvestTypeId}`);
-  }
-
-  return harvestTypeId;
-}
 
 function parseStatsRequestType(rawType: string): StatsType {
   const parsedType = StatsTypeUtils.parse(rawType);

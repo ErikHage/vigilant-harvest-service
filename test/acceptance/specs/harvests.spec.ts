@@ -41,6 +41,16 @@ describe('harvests', () => {
     await harvests.checkStats('as: gardener', 'statsType: Planting', 'planting: row-one', 'harvests: 1');
   });
 
+  it('files a harvest sent as a bare date on that day', async () => {
+    await harvests.recordHarvest('as: gardener', 'harvest: noon', 'planting: row-one', 'quantity: 2', 'date: 2026-07-01');
+    await harvests.recordHarvest(
+      'as: gardener', 'harvest: bare', 'planting: row-one', 'quantity: 3', 'date: 2026-07-01', 'time: none'
+    );
+
+    await harvests.checkHarvest('as: gardener', 'harvest: noon', 'planting: row-one', 'quantity: 5', 'type: pounds');
+    await harvests.checkStats('as: gardener', 'statsType: Planting', 'planting: row-one', 'harvests: 1');
+  });
+
   it('keeps a harvest in its year when it is saved again', async () => {
     await harvests.recordHarvest('as: gardener', 'harvest: first', 'planting: row-one', 'quantity: 2');
 
@@ -77,9 +87,27 @@ describe('harvests', () => {
     await harvests.checkUnknownPlantingIsRejected('as: gardener');
   });
 
-  // DocumentsCurrentBehavior: replies 500. Should be 400.
-  it('rejects a save with no harvest list', async () => {
-    await harvests.checkMissingListIsRejected('as: gardener');
+  it.each([
+    'no harvest list',
+    'a list that is not a list',
+    'an entry that is not an object',
+    'an id that is too long',
+    'no planting',
+    'no quantity',
+    'a quantity that is not a number',
+    'a quantity of zero',
+    'a negative quantity',
+    'a quantity too large to store',
+    'no date',
+    'an unparseable date',
+    'a date out of range',
+    'a harvest type that is not a number',
+  ])('rejects a save with %s', async problem => {
+    await harvests.checkInvalidSaveIsRejected('as: gardener', 'planting: row-one', `problem: ${problem}`);
+  });
+
+  it('accepts a save as the app sends it', async () => {
+    await harvests.checkSaveAsTheAppSendsItIsAccepted('as: gardener', 'planting: row-one');
   });
 
   it('rejects a search with no year', async () => {
