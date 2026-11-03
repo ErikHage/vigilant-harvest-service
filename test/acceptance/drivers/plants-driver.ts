@@ -7,10 +7,97 @@ import {
   expectStatus,
   expectThat
 } from './assertions';
-import { NewPlant } from '../support/fixtures';
+import { NewPlant, tooLong, withoutField } from '../support/fixtures';
 import { ApiResponse, HttpClient } from '../support/http-client';
 import { CreatedPlant, CreatedSchedule, ResourceRegistry } from '../support/resources';
 import { status } from '../support/status-codes';
+
+/** Ways a plant can be wrong. Each is a test of its own. */
+export const PLANT_PROBLEMS = [
+  'no subcategory',
+  'a subcategory that is not a number',
+  'no name',
+  'a name that is too long',
+  'an unknown lifespan',
+  'tags that are not a list',
+  'a tag that is not a string',
+  'a section that is not an object',
+  'a depth that is not a number',
+  'a depth too large to store',
+  'days to maturity that are not a whole number',
+  'climbing that is not true or false',
+  'instructions that are too long',
+  'a harvest type that is not a number',
+] as const;
+
+export type PlantProblem = (typeof PLANT_PROBLEMS)[number];
+
+/** For each problem: a good plant made bad, and the reason the service gives. */
+const invalidPlants: Record<PlantProblem, { body: (good: NewPlant) => object, reason: string }> = {
+  'no subcategory': { body: good => withoutField(good, 'subcategoryId'), reason: 'subcategoryId is required', },
+  'a subcategory that is not a number': {
+    body: good => ({ ...good, subcategoryId: 'herbs', }),
+    reason: 'subcategoryId must be an integer',
+  },
+  'no name': { body: good => withoutField(good, 'friendlyName'), reason: 'friendlyName is required', },
+  'a name that is too long': {
+    body: good => ({ ...good, friendlyName: tooLong(255), }),
+    reason: 'friendlyName must be at most 255 characters',
+  },
+  'an unknown lifespan': {
+    body: good => ({ ...good, lifespanType: 'Forever', }),
+    reason: 'lifespanType must be one of annual, perennial, biennial, unknown',
+  },
+  'tags that are not a list': { body: good => ({ ...good, tags: 'heirloom', }), reason: 'tags must be a list', },
+  'a tag that is not a string': { body: good => ({ ...good, tags: [ 3, ], }), reason: 'tags[0] must be a string', },
+  'a section that is not an object': {
+    body: good => ({ ...good, taxonomy: 'Solanaceae', }),
+    reason: 'taxonomy must be an object',
+  },
+  'a depth that is not a number': {
+    body: good => ({ ...good, planting: { depthInInches: 'deep', }, }),
+    reason: 'planting.depthInInches must be a number',
+  },
+  // the depth is a DECIMAL(5,2)
+  'a depth too large to store': {
+    body: good => ({ ...good, planting: { depthInInches: 1000, }, }),
+    reason: 'planting.depthInInches must be at most 999.99',
+  },
+  'days to maturity that are not a whole number': {
+    body: good => ({ ...good, growing: { daysToMaturity: 60.5, }, }),
+    reason: 'growing.daysToMaturity must be an integer',
+  },
+  'climbing that is not true or false': {
+    body: good => ({ ...good, growing: { isClimbing: 'yes', }, }),
+    reason: 'growing.isClimbing must be true or false',
+  },
+  // the instructions are a VARCHAR(2000)
+  'instructions that are too long': {
+    body: good => ({ ...good, planting: { instructions: tooLong(2000), }, }),
+    reason: 'planting.instructions must be at most 2000 characters',
+  },
+  'a harvest type that is not a number': {
+    body: good => ({ ...good, harvesting: { defaultHarvestTypeId: 'pounds', }, }),
+    reason: 'harvesting.defaultHarvestTypeId must be an integer',
+  },
+};
+
+/** Ways a schedule assignment can be wrong. Each is a test of its own. */
+export const ASSIGNMENT_PROBLEMS = [
+  'no lists',
+  'no unassign list',
+  'an assign that is not a list',
+  'an id that is not a string',
+] as const;
+
+export type AssignmentProblem = (typeof ASSIGNMENT_PROBLEMS)[number];
+
+const invalidAssignments: Record<AssignmentProblem, { body: object, reason: string }> = {
+  'no lists': { body: {}, reason: 'assign is required', },
+  'no unassign list': { body: { assign: [], }, reason: 'unassign is required', },
+  'an assign that is not a list': { body: { assign: 'watering', unassign: [], }, reason: 'assign must be a list', },
+  'an id that is not a string': { body: { assign: [ 42, ], unassign: [], }, reason: 'assign[0] must be a string', },
+};
 
 export interface PlantsDriver {
   createPlant(caller: Actor, input: NewPlant): Promise<CreatedPlant>,
@@ -25,7 +112,10 @@ export interface PlantsDriver {
   assignSchedule(caller: Actor, plant: CreatedPlant, schedule: CreatedSchedule): Promise<void>,
   unassignSchedule(caller: Actor, plant: CreatedPlant, schedule: CreatedSchedule): Promise<void>,
   secondAssignmentIsRejectedAsConflict(caller: Actor, plant: CreatedPlant, schedule: CreatedSchedule): Promise<void>,
-  assignmentWithoutListsFailsWithServerError(caller: Actor, plant: CreatedPlant): Promise<void>,
+  createOfInvalidPlantIsRejectedAsBadRequest(caller: Actor, good: NewPlant, problem: PlantProblem): Promise<void>,
+  createAsTheAddDialogSendsItSucceeds(caller: Actor, good: NewPlant): Promise<void>,
+  saveAsTheEditPageSendsItSucceeds(caller: Actor, plant: CreatedPlant): Promise<void>,
+  assignmentOfInvalidListsIsRejectedAsBadRequest(caller: Actor, plant: CreatedPlant, problem: AssignmentProblem): Promise<void>,
   createOfTakenNameIsRejectedAsBadRequest(caller: Actor, plant: CreatedPlant): Promise<void>,
   renameToTakenNameIsRejectedAsConflict(caller: Actor, plant: CreatedPlant, taken: CreatedPlant): Promise<void>,
   createWithUnknownIdAndTakenNameFailsWithNotFoundAndOverwrites(caller: Actor, plant: CreatedPlant): Promise<void>,
@@ -43,6 +133,13 @@ export function createPlantsDriver(client: HttpClient, registry: ResourceRegistr
     expectStatus(response, status.OK, what);
 
     return response;
+  }
+
+  /** Files a plant for teardown if a write made one, before anything asserts on it. */
+  function registerIfCreated(response: ApiResponse, label: string): void {
+    if (response.status === status.CREATED) {
+      registry.register({ kind: 'plant', path: `/plants/${(response.body as { plantId: string }).plantId}`, label, });
+    }
   }
 
   const scheduleIdsIn = (response: ApiResponse): unknown[] =>
@@ -191,10 +288,79 @@ export function createPlantsDriver(client: HttpClient, registry: ResourceRegistr
       expectRejection(response, status.CONFLICT, 'duplicate entry', what);
     },
 
-    async assignmentWithoutListsFailsWithServerError(caller: Actor, plant: CreatedPlant): Promise<void> {
-      const response = await as(caller).put(`/plants/${plant.plantId}/activity-schedules`, {});
+    async createOfInvalidPlantIsRejectedAsBadRequest(caller: Actor, good: NewPlant, problem: PlantProblem): Promise<void> {
+      const { body, reason, } = invalidPlants[problem];
+      const response = await as(caller).put('/plants', body(good));
 
-      expectStatus(response, status.INTERNAL_SERVER_ERROR, 'assigning schedules with no lists');
+      registerIfCreated(response, good.friendlyName);
+      expectRejection(response, status.BAD_REQUEST, reason, `creating a plant with ${problem}`);
+    },
+
+    async createAsTheAddDialogSendsItSucceeds(caller: Actor, good: NewPlant): Promise<void> {
+      const what = `creating plant "${good.friendlyName}" as the app's add dialog sends it`;
+      // The add dialog sends no lifespan until one is picked, and an empty description.
+      const response = await as(caller).put('/plants', {
+        subcategoryId: good.subcategoryId,
+        friendlyName: good.friendlyName,
+        lifespanType: null,
+        description: '',
+        harvesting: { defaultHarvestTypeId: 1, },
+      });
+
+      registerIfCreated(response, good.friendlyName);
+      expectStatus(response, status.CREATED, what);
+      expectBodyToContain(response, { lifespanType: 'Annual', }, what);
+    },
+
+    async saveAsTheEditPageSendsItSucceeds(caller: Actor, plant: CreatedPlant): Promise<void> {
+      const what = `saving plant "${plant.friendlyName}" as the app's edit page sends it`;
+      // The edit page sends every section. Its sowing boxes are free text, a cleared number box sends ''
+      // (v-model.number), untouched fields are null, and it sends a seedSource plants don't have.
+      const response = await as(caller).put('/plants', {
+        plantId: plant.plantId,
+        subcategoryId: plant.input.subcategoryId,
+        friendlyName: plant.friendlyName,
+        lifespanType: 'Perennial',
+        seedSource: null,
+        tags: [ 'heirloom', ],
+        description: 'Saved by the app',
+        taxonomy: { family: null, genus: null, species: null, },
+        sowing: {
+          indoor: '6 weeks before last frost',
+          direct: 'after last frost',
+          germinationDaysRange: '5-10',
+          germinationTempRange: null,
+          sowingNotes: null,
+        },
+        planting: { depthInInches: '', plantSpacingInches: 18, rowSpacingInches: '', instructions: null, },
+        growing: {
+          requiredSun: 'Full Sun (>= 6 hours)',
+          daysToMaturity: 70,
+          isClimbing: false,
+          climbingHeightFeet: undefined,
+          plantSize: null,
+          growingNotes: null,
+        },
+        harvesting: { defaultHarvestTypeId: 1, fruitSize: null, shelfStability: null, harvestInstructions: null, },
+      });
+
+      expectStatus(response, status.OK, what);
+      expectBodyToContain(response, { description: 'Saved by the app', }, what);
+    },
+
+    async assignmentOfInvalidListsIsRejectedAsBadRequest(
+      caller: Actor,
+      plant: CreatedPlant,
+      problem: AssignmentProblem
+    ): Promise<void> {
+      const { body, reason, } = invalidAssignments[problem];
+
+      expectRejection(
+        await as(caller).put(`/plants/${plant.plantId}/activity-schedules`, body),
+        status.BAD_REQUEST,
+        reason,
+        `assigning schedules to plant "${plant.friendlyName}" with ${problem}`
+      );
     },
 
     async createOfTakenNameIsRejectedAsBadRequest(caller: Actor, plant: CreatedPlant): Promise<void> {

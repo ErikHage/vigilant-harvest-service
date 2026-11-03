@@ -28,7 +28,7 @@ keeps the history.
 | 3 | H3 · log every error in prod | done |
 | 4 | M1 · keep causes in planting actions; M10 · drop `multipleStatements` | done |
 | 5 | H4 · PLANT in one transaction | done |
-| 6 | H5 · input validation, route by route | 6a–6d done; 6e next |
+| 6 | H5 · input validation, route by route | 6a–6e done; 6f next |
 
 ## Phase 1 — H1: one flat error per body
 
@@ -231,12 +231,25 @@ Each throws `BadRequestError('<field> must be …')`. Column sizes come from `mi
     (years 1000–9999), and `max` on integers.
   - **Seen to fail:** 27. 16 answered 500, including the app-shaped create; 6 succeeded (3 creates, 2
     updates, and a COMMENT of `42`); 5 answered 400 for other reasons. Then 179 passed. 10 pins are left.
-- [ ] **6e · plants, categories, subcategories, schedule assignment.**
-  - The plant body (`subcategoryId` required, `lifespanType` from its set, the nested sections' types).
-  - Category and subcategory names; the `assign`/`unassign` lists.
-  - Retires 1 pin.
-  - Moves `upsertPlant`'s inline subcategory check, and its `{ message }` body (M3), into the
-    serializer.
+- [x] **6e · plants, categories, subcategories, schedule assignment.** Done.
+  Notes:
+  - **The app survey:** the add dialog sends a subcategory id, name, `lifespanType` (`null` until
+    picked), `description` (`''`) and a harvest type. The edit page sends every section, trimmed:
+    sowing `indoor`/`direct` are free-text boxes, numbers are `v-model.number` (`''` when cleared),
+    `isClimbing` a checkbox boolean, and an extra `seedSource`. Schedule assignment sends both lists.
+    Categories send a trimmed name.
+  - **A live app bug, fixed:** a cleared number box on the plant edit page sent `''`, which the INT and
+    DECIMAL columns reject (1366, checked): every such save was a 500.
+  - **Decided (user):** `PUT /plants` errors use the standard body. The app's plant store reads
+    `err.data?.message`, so it shows its generic alert for these until it reads `errors[0].message`
+    (an app fix).
+  - **Decided:** `lifespanType` is one of the app's four, any case (the local data holds two of them).
+    The sowing boxes take a string or a boolean, the boolean stored as "1"/"0", as MySQL did (the pin
+    stays). Both assignment lists are required.
+  - **The module grew:** `optionalNumber` (with `min`), `optionalBoolean`, `optionalList`,
+    `optionalObject`. The category-id `parseInt`s went.
+  - **Seen to fail:** 26 (16 answered 500, 7 saved with 201, 3 answered 400 another way). Then 205
+    passed. 9 pins are left.
 - [ ] **6f · plots, planting years, schedules and schedule items.** No pins. Covers the remaining write
   routes.
 
@@ -271,3 +284,4 @@ Each can be planned after Phase 6.
   500; checked here too.
 - 2026-11-02: 6c done and committed. L7 fixed with it, since nothing depended on it.
 - 2026-11-02: 6d done and committed. Found and fixed a live 500 in the app's create form.
+- 2026-11-02: 6e done and committed. User chose the standard error body for PUT /plants.

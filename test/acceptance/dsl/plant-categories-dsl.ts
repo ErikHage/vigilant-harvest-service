@@ -1,8 +1,8 @@
-import { optional, parseDslArgs } from '@feral-auth/ts-simple-dsl';
+import { optional, parseDslArgs, required } from '@feral-auth/ts-simple-dsl';
 
 import { actor, alias } from './params';
 import { aCategory, aSubcategory, fixtureName } from '../support/fixtures';
-import { PlantCategoriesDriver } from '../drivers/plant-categories-driver';
+import { CATEGORY_PROBLEMS, PlantCategoriesDriver, SUBCATEGORY_PROBLEMS } from '../drivers/plant-categories-driver';
 import { World } from './world';
 
 /** Plant categories, and the subcategories inside them. */
@@ -22,6 +22,12 @@ export interface PlantCategoriesDsl {
   checkDuplicateCategoryIsRejected(...args: string[]): Promise<void>,
   /** `as`, `subcategory`. Asserts a second one with its name, in its category, is rejected. */
   checkDuplicateSubcategoryIsRejected(...args: string[]): Promise<void>,
+  /** `as`, `problem`, one of the driver's CATEGORY_PROBLEMS. */
+  checkInvalidCategoryIsRejected(...args: string[]): Promise<void>,
+  /** `as`, `category`, `problem`, one of the driver's SUBCATEGORY_PROBLEMS. */
+  checkInvalidSubcategoryIsRejected(...args: string[]): Promise<void>,
+  /** `as`, `category`. Deletes by ids that aren't numbers, under it for a subcategory. */
+  checkDeleteIdsMustBeNumbers(...args: string[]): Promise<void>,
   /** `as`, `category`. Asserts it is gone from the list. */
   deleteCategory(...args: string[]): Promise<void>,
   /** `as`, `subcategory`. Asserts it is gone from the list. */
@@ -96,6 +102,35 @@ export function createPlantCategoriesDsl(world: World, plantCategories: PlantCat
       await plantCategories.createOfTakenSubcategoryNameIsRejectedAsConflict(
         await world.actorFor(params.as),
         world.subcategoryNamed(params.subcategory)
+      );
+    },
+
+    async checkInvalidCategoryIsRejected(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), problem: required().allowedValues(...CATEGORY_PROBLEMS), });
+
+      await plantCategories.createOfInvalidCategoryIsRejectedAsBadRequest(await world.actorFor(params.as), params.problem);
+    },
+
+    async checkInvalidSubcategoryIsRejected(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, {
+        as: actor(),
+        category: alias(),
+        problem: required().allowedValues(...SUBCATEGORY_PROBLEMS),
+      });
+
+      await plantCategories.createOfInvalidSubcategoryIsRejectedAsBadRequest(
+        await world.actorFor(params.as),
+        world.categoryNamed(params.category),
+        params.problem
+      );
+    },
+
+    async checkDeleteIdsMustBeNumbers(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), category: alias(), });
+
+      await plantCategories.deletesOfNonNumericIdsAreRejectedAsBadRequest(
+        await world.actorFor(params.as),
+        world.categoryNamed(params.category)
       );
     },
 

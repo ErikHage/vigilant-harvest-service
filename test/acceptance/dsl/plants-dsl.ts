@@ -1,8 +1,8 @@
-import { optional, parseDslArgs } from '@feral-auth/ts-simple-dsl';
+import { optional, parseDslArgs, required } from '@feral-auth/ts-simple-dsl';
 
 import { actor, alias } from './params';
 import { aPlant, everyPlantDetail, fixtureName } from '../support/fixtures';
-import { PlantsDriver } from '../drivers/plants-driver';
+import { ASSIGNMENT_PROBLEMS, PLANT_PROBLEMS, PlantsDriver } from '../drivers/plants-driver';
 import { World } from './world';
 
 const NO_SUCH_SUBCATEGORY = 999999;
@@ -31,8 +31,14 @@ export interface PlantsDsl {
   checkHasNoSchedules(...args: string[]): Promise<void>,
   /** `as`, `plant`, `schedule`. */
   checkSecondAssignmentIsRejected(...args: string[]): Promise<void>,
-  /** `as`, `plant`. */
-  checkAssignmentWithoutListsIsRejected(...args: string[]): Promise<void>,
+  /** `as`, `plant`, `problem`, one of the driver's ASSIGNMENT_PROBLEMS. */
+  checkInvalidAssignmentIsRejected(...args: string[]): Promise<void>,
+  /** `as`, `problem`, one of the driver's PLANT_PROBLEMS. In a subcategory made for the spec. */
+  checkInvalidPlantIsRejected(...args: string[]): Promise<void>,
+  /** `as`. Creates a plant the way vigilant-harvest-app's add dialog does. */
+  checkPlantAsTheAddDialogSendsItIsAccepted(...args: string[]): Promise<void>,
+  /** `as`, `plant`. Saves it the way vigilant-harvest-app's edit page does. */
+  checkSaveAsTheEditPageSendsItIsAccepted(...args: string[]): Promise<void>,
   /** `as`, `plant`. */
   checkSowingValuesKeepTheirTypes(...args: string[]): Promise<void>,
   /** `as`. */
@@ -174,10 +180,36 @@ export function createPlantsDsl(world: World, plants: PlantsDriver): PlantsDsl {
       );
     },
 
-    async checkAssignmentWithoutListsIsRejected(...args: string[]): Promise<void> {
+    async checkInvalidAssignmentIsRejected(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), plant: alias(), problem: required().allowedValues(...ASSIGNMENT_PROBLEMS), });
+
+      await plants.assignmentOfInvalidListsIsRejectedAsBadRequest(
+        await world.actorFor(params.as),
+        world.plantNamed(params.plant),
+        params.problem
+      );
+    },
+
+    async checkInvalidPlantIsRejected(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), problem: required().allowedValues(...PLANT_PROBLEMS), });
+      const caller = await world.actorFor(params.as);
+      const subcategory = await world.subcategoryFor(caller, undefined);
+
+      await plants.createOfInvalidPlantIsRejectedAsBadRequest(caller, aPlant(subcategory.subcategoryId), params.problem);
+    },
+
+    async checkPlantAsTheAddDialogSendsItIsAccepted(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), });
+      const caller = await world.actorFor(params.as);
+      const subcategory = await world.subcategoryFor(caller, undefined);
+
+      await plants.createAsTheAddDialogSendsItSucceeds(caller, aPlant(subcategory.subcategoryId));
+    },
+
+    async checkSaveAsTheEditPageSendsItIsAccepted(...args: string[]): Promise<void> {
       const params = parseDslArgs(args, { as: actor(), plant: alias(), });
 
-      await plants.assignmentWithoutListsFailsWithServerError(await world.actorFor(params.as), world.plantNamed(params.plant));
+      await plants.saveAsTheEditPageSendsItSucceeds(await world.actorFor(params.as), world.plantNamed(params.plant));
     },
 
     async checkSowingValuesKeepTheirTypes(...args: string[]): Promise<void> {

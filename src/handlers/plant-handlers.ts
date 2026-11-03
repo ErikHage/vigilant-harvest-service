@@ -4,34 +4,16 @@ import plantSerializers from '../serializers/plants';
 import plantsService from '../services/plants/plants-service';
 import tryDecorator from '../middleware/try-decorator';
 import httpStatus from '../util/http-status';
-import { ValidationError } from '../errors/common';
 
 async function upsertPlant(request: Request, response: Response) {
-  // TODO move to a separate validator step
-  if (request.body.subcategoryId == null) {
-    response
-      .status(httpStatus.BAD_REQUEST)
-      .send({
-        message: 'Subcategory is required',
-      });
-  } else {
-    const plantRequest = plantSerializers.fromRequest(request);
+  const plantRequest = plantSerializers.fromRequest(request);
 
-    try {
-      const plant = await plantsService.upsertPlant(plantRequest);
-      const plantResponse = plantSerializers.toResponse(plant);
-      response
-        .status(plantRequest.plantId === undefined ? httpStatus.CREATED : httpStatus.OK)
-        .send(plantResponse);
-    } catch (err) {
-      if (err instanceof ValidationError) {
-        response.status(httpStatus.BAD_REQUEST)
-          .send({ message: err.message, });
-      } else {
-        throw err;
-      }
-    }
-  }
+  const plant = await plantsService.upsertPlant(plantRequest);
+  const plantResponse = plantSerializers.toResponse(plant);
+
+  response
+    .status(plantRequest.plantId === undefined ? httpStatus.CREATED : httpStatus.OK)
+    .send(plantResponse);
 }
 
 async function updateScheduleAssignment(request: Request, response: Response) {
@@ -106,12 +88,7 @@ async function insertSubcategory(request: Request, response: Response) {
 }
 
 async function deleteCategoryById(request: Request, response: Response) {
-  const categoryId = parseInt(request.params.categoryId!);
-
-  if (Number.isNaN(categoryId)) {
-    response.sendStatus(httpStatus.BAD_REQUEST);
-    return;
-  }
+  const categoryId = plantSerializers.categories.categoryIdFromRequest(request);
 
   await plantsService.deleteCategoryById(categoryId);
 
@@ -119,13 +96,8 @@ async function deleteCategoryById(request: Request, response: Response) {
 }
 
 async function deleteSubcategoryById(request: Request, response: Response) {
-  const categoryId = parseInt(request.params.categoryId!);
-  const subcategoryId = parseInt(request.params.subcategoryId!);
-
-  if (Number.isNaN(categoryId) || Number.isNaN(subcategoryId)) {
-    response.sendStatus(httpStatus.BAD_REQUEST);
-    return;
-  }
+  const categoryId = plantSerializers.categories.categoryIdFromRequest(request);
+  const subcategoryId = plantSerializers.categories.subcategoryIdFromRequest(request);
 
   await plantsService.deleteSubcategoryById(categoryId, subcategoryId);
 

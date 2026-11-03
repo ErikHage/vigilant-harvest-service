@@ -20,6 +20,26 @@ describe('plant categories', () => {
     await plantCategories.checkSubcategoryListed('as: gardener', 'subcategory: basil');
   });
 
+  it.each([ 'no name', 'a blank name', 'a name that is too long', ])('rejects a category with %s', async problem => {
+    await plantCategories.checkInvalidCategoryIsRejected('as: gardener', `problem: ${problem}`);
+  });
+
+  it.each([
+    'no name',
+    'a name that is too long',
+    'a category id that is not a number',
+  ])('rejects a subcategory with %s', async problem => {
+    await plantCategories.createCategory('as: gardener', 'category: herbs');
+
+    await plantCategories.checkInvalidSubcategoryIsRejected('as: gardener', 'category: herbs', `problem: ${problem}`);
+  });
+
+  it('rejects deleting by an id that is not a number', async () => {
+    await plantCategories.createCategory('as: gardener', 'category: herbs');
+
+    await plantCategories.checkDeleteIdsMustBeNumbers('as: gardener', 'category: herbs');
+  });
+
   it('rejects a second category with the same name', async () => {
     await plantCategories.createCategory('as: gardener', 'category: herbs');
 

@@ -2,9 +2,9 @@ import { RowDataPacket } from 'mysql2';
 import { ActivitySchedule, ActivityScheduleResponse } from '../schedules/types';
 
 interface Taxonomy {
-  family: string,
-  genus: string,
-  species: string,
+  family?: string,
+  genus?: string,
+  species?: string,
 }
 
 interface SowingInfo {
@@ -45,7 +45,7 @@ export interface PlantRequest {
   friendlyName: string,
   lifespanType: string,
   tags: Array<string>,
-  description: string,
+  description?: string,
   taxonomy: Taxonomy,
   sowing: SowingInfo,
   planting: PlantingInfo,
@@ -140,7 +140,7 @@ export interface PlantUpsertInstruction {
   friendlyName: string,
   lifespanType: string,
   tags: Array<string>,
-  description: string,
+  description?: string,
   taxonomy: Taxonomy,
   sowing: SowingInfo,
   planting: PlantingInfo,

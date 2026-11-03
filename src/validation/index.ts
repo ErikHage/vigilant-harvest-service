@@ -115,6 +115,7 @@ export function optionalString(value: unknown, field: string, options: StringOpt
 }
 
 export interface NumberOptions {
+  min?: number,
   /** Exclusive: a quantity must be more than nothing. */
   greaterThan?: number,
   max?: number,
@@ -128,7 +129,14 @@ export function requiredNumber(value: unknown, field: string, options: NumberOpt
   if (isMissing(value)) {
     throw new BadRequestError(`${field} is required`);
   }
+  return toNumber(value, field, options);
+}
 
+export function optionalNumber(value: unknown, field: string, options: NumberOptions = {}): number | undefined {
+  return isMissing(value) ? undefined : toNumber(value, field, options);
+}
+
+function toNumber(value: unknown, field: string, options: NumberOptions): number {
   let parsed = Number.NaN;
   if (typeof value === 'number') {
     parsed = value;
@@ -139,6 +147,9 @@ export function requiredNumber(value: unknown, field: string, options: NumberOpt
   if (!Number.isFinite(parsed)) {
     throw new BadRequestError(`${field} must be a number`);
   }
+  if (options.min !== undefined && parsed < options.min) {
+    throw new BadRequestError(`${field} must be at least ${options.min}`);
+  }
   if (options.greaterThan !== undefined && parsed <= options.greaterThan) {
     throw new BadRequestError(`${field} must be greater than ${options.greaterThan}`);
   }
@@ -147,6 +158,17 @@ export function requiredNumber(value: unknown, field: string, options: NumberOpt
   }
 
   return parsed;
+}
+
+/** true or false, as JSON booleans; anything else, "yes" or 1 included, is rejected. */
+export function optionalBoolean(value: unknown, field: string): boolean | undefined {
+  if (isMissing(value)) {
+    return undefined;
+  }
+  if (typeof value !== 'boolean') {
+    throw new BadRequestError(`${field} must be true or false`);
+  }
+  return value;
 }
 
 /** A JSON array. Its entries are checked by the caller, which knows what they should be. */
@@ -160,12 +182,22 @@ export function requiredList(value: unknown, field: string): unknown[] {
   return value;
 }
 
+/** A list that may be left out, which is then empty. */
+export function optionalList(value: unknown, field: string): unknown[] {
+  return isMissing(value) ? [] : requiredList(value, field);
+}
+
 /** A JSON object, such as an entry of a list, whose fields are then checked one by one. */
 export function requiredObject(value: unknown, field: string): Record<string, unknown> {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     throw new BadRequestError(`${field} must be an object`);
   }
   return value as Record<string, unknown>;
+}
+
+/** A nested object that may be left out, which then reads as one with no fields. */
+export function optionalObject(value: unknown, field: string): Record<string, unknown> {
+  return isMissing(value) ? {} : requiredObject(value, field);
 }
 
 /** A date (2026-06-01), or an ISO 8601 timestamp with or without its offset (2026-06-01T17:00:00.000Z). */

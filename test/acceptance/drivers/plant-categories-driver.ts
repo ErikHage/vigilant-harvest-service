@@ -9,11 +9,41 @@ import {
   expectThat
 } from './assertions';
 import { ApiResponse, HttpClient } from '../support/http-client';
-import { NewCategory, NewSubcategory } from '../support/fixtures';
+import { NewCategory, NewSubcategory, tooLong } from '../support/fixtures';
 import { CreatedCategory, CreatedSubcategory, ResourceRegistry } from '../support/resources';
 import { status } from '../support/status-codes';
 
 type Entry = Record<string, unknown>;
+
+/** Ways a new category can be wrong. Each is a test of its own. */
+export const CATEGORY_PROBLEMS = [ 'no name', 'a blank name', 'a name that is too long', ] as const;
+
+export type CategoryProblem = (typeof CATEGORY_PROBLEMS)[number];
+
+const invalidCategories: Record<CategoryProblem, { body: object, reason: string }> = {
+  'no name': { body: {}, reason: 'categoryName is required', },
+  'a blank name': { body: { categoryName: '  ', }, reason: 'categoryName is required', },
+  'a name that is too long': { body: { categoryName: tooLong(255), }, reason: 'categoryName must be at most 255 characters', },
+};
+
+/** Ways a new subcategory can be wrong, in a real category unless the path is the problem. */
+export const SUBCATEGORY_PROBLEMS = [ 'no name', 'a name that is too long', 'a category id that is not a number', ] as const;
+
+export type SubcategoryProblem = (typeof SUBCATEGORY_PROBLEMS)[number];
+
+const invalidSubcategories: Record<SubcategoryProblem, { categoryId: (real: number) => unknown, body: object, reason: string }> = {
+  'no name': { categoryId: real => real, body: {}, reason: 'subcategoryName is required', },
+  'a name that is too long': {
+    categoryId: real => real,
+    body: { subcategoryName: tooLong(255), },
+    reason: 'subcategoryName must be at most 255 characters',
+  },
+  'a category id that is not a number': {
+    categoryId: () => 'herbs',
+    body: { subcategoryName: 'acc-subcategory', },
+    reason: 'categoryId must be an integer',
+  },
+};
 
 export interface PlantCategoriesDriver {
   createCategory(caller: Actor, input: NewCategory): Promise<CreatedCategory>,
@@ -23,6 +53,14 @@ export interface PlantCategoriesDriver {
   /** Asserts the second create is rejected, and that one category still holds the name. */
   createOfTakenCategoryNameIsRejectedAsConflict(caller: Actor, category: CreatedCategory): Promise<void>,
   createOfTakenSubcategoryNameIsRejectedAsConflict(caller: Actor, subcategory: CreatedSubcategory): Promise<void>,
+  createOfInvalidCategoryIsRejectedAsBadRequest(caller: Actor, problem: CategoryProblem): Promise<void>,
+  createOfInvalidSubcategoryIsRejectedAsBadRequest(
+    caller: Actor,
+    category: CreatedCategory,
+    problem: SubcategoryProblem
+  ): Promise<void>,
+  /** A category id, and a subcategory id under a real category, that aren't numbers. */
+  deletesOfNonNumericIdsAreRejectedAsBadRequest(caller: Actor, category: CreatedCategory): Promise<void>,
   deleteRemovesCategory(caller: Actor, category: CreatedCategory): Promise<void>,
   deleteRemovesSubcategory(caller: Actor, subcategory: CreatedSubcategory): Promise<void>,
   /** Asserts the delete is rejected, and that the category is still there. */
@@ -138,6 +176,48 @@ export function createPlantCategoriesDriver(client: HttpClient, registry: Resour
       const holders = subcategoriesOf(entry).filter(each => each.subcategoryName === subcategory.subcategoryName);
 
       expectCount(holders.length, 1, after.response, `${what}: subcategories holding the name`);
+    },
+
+    async createOfInvalidCategoryIsRejectedAsBadRequest(caller: Actor, problem: CategoryProblem): Promise<void> {
+      const { body, reason, } = invalidCategories[problem];
+      const response = await as(caller).post('/plant-categories', body);
+
+      if (response.status === status.CREATED) {
+        const { categoryId, } = response.body as { categoryId: number };
+        registry.register({ kind: 'category', path: `/plant-categories/${categoryId}`, label: `a category with ${problem}`, });
+      }
+      expectRejection(response, status.BAD_REQUEST, reason, `creating a category with ${problem}`);
+    },
+
+    async createOfInvalidSubcategoryIsRejectedAsBadRequest(
+      caller: Actor,
+      category: CreatedCategory,
+      problem: SubcategoryProblem
+    ): Promise<void> {
+      const { categoryId, body, reason, } = invalidSubcategories[problem];
+      const path = `/plant-categories/${String(categoryId(category.categoryId))}/plant-subcategories`;
+      const response = await as(caller).post(path, body);
+
+      if (response.status === status.CREATED) {
+        const { subcategoryId, } = response.body as { subcategoryId: number };
+        registry.register({ kind: 'subcategory', path: `${path}/${subcategoryId}`, label: `a subcategory with ${problem}`, });
+      }
+      expectRejection(response, status.BAD_REQUEST, reason, `creating a subcategory with ${problem}`);
+    },
+
+    async deletesOfNonNumericIdsAreRejectedAsBadRequest(caller: Actor, category: CreatedCategory): Promise<void> {
+      expectRejection(
+        await as(caller).del('/plant-categories/herbs'),
+        status.BAD_REQUEST,
+        'categoryId must be an integer',
+        'deleting a category id that is not a number'
+      );
+      expectRejection(
+        await as(caller).del(`/plant-categories/${category.categoryId}/plant-subcategories/basil`),
+        status.BAD_REQUEST,
+        'subcategoryId must be an integer',
+        'deleting a subcategory id that is not a number'
+      );
     },
 
     async deleteRemovesCategory(caller: Actor, category: CreatedCategory): Promise<void> {

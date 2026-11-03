@@ -58,11 +58,44 @@ describe('plants', () => {
     await plants.checkSecondAssignmentIsRejected('as: gardener', 'plant: tomato', 'schedule: watering');
   });
 
-  // DocumentsCurrentBehavior: replies 500. Should be 400.
-  it('rejects a schedule assignment with no lists', async () => {
+  it.each([
+    'no lists',
+    'no unassign list',
+    'an assign that is not a list',
+    'an id that is not a string',
+  ])('rejects a schedule assignment with %s', async problem => {
     await plants.createPlant('as: gardener', 'plant: tomato');
 
-    await plants.checkAssignmentWithoutListsIsRejected('as: gardener', 'plant: tomato');
+    await plants.checkInvalidAssignmentIsRejected('as: gardener', 'plant: tomato', `problem: ${problem}`);
+  });
+
+  it.each([
+    'no subcategory',
+    'a subcategory that is not a number',
+    'no name',
+    'a name that is too long',
+    'an unknown lifespan',
+    'tags that are not a list',
+    'a tag that is not a string',
+    'a section that is not an object',
+    'a depth that is not a number',
+    'a depth too large to store',
+    'days to maturity that are not a whole number',
+    'climbing that is not true or false',
+    'instructions that are too long',
+    'a harvest type that is not a number',
+  ])('rejects a plant with %s', async problem => {
+    await plants.checkInvalidPlantIsRejected('as: gardener', `problem: ${problem}`);
+  });
+
+  it('accepts a plant as the add dialog sends it', async () => {
+    await plants.checkPlantAsTheAddDialogSendsItIsAccepted('as: gardener');
+  });
+
+  it('accepts a save as the edit page sends it', async () => {
+    await plants.createPlant('as: gardener', 'plant: tomato');
+
+    await plants.checkSaveAsTheEditPageSendsItIsAccepted('as: gardener', 'plant: tomato');
   });
 
   it('finds no plant that was never created', async () => {
