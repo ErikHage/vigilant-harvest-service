@@ -39,11 +39,6 @@ async function getPlantingYear(request: Request, response: Response) {
 async function deletePlantingYear(request: Request, response: Response) {
   const year = plantingYearSerializers.get.fromRequest(request);
 
-  if (Number.isNaN(year)) {
-    response.sendStatus(httpStatus.BAD_REQUEST);
-    return;
-  }
-
   await plantingYearsService.deletePlantingYear(year);
 
   response.sendStatus(httpStatus.OK);

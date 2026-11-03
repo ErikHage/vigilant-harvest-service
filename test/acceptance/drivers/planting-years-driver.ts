@@ -17,6 +17,7 @@ export interface PlantingYearsDriver {
   createYear(caller: Actor, input: NewPlantingYear): Promise<CreatedPlantingYear>,
   getReturnsYear(caller: Actor, year: CreatedPlantingYear): Promise<void>,
   getIsNotFoundFor(caller: Actor): Promise<void>,
+  getForNonNumericYearIsRejectedAsBadRequest(caller: Actor): Promise<void>,
   listIncludes(caller: Actor, year: CreatedPlantingYear): Promise<void>,
   listReportsDetails(caller: Actor, year: CreatedPlantingYear, details: PlantingYearDetails): Promise<void>,
   createOfTakenYearIsRejectedAsConflict(caller: Actor, year: CreatedPlantingYear): Promise<void>,
@@ -62,6 +63,15 @@ export function createPlantingYearsDriver(client: HttpClient, registry: Resource
 
     async getIsNotFoundFor(caller: Actor): Promise<void> {
       expectStatus(await as(caller).get('/planting-years/8999'), status.NOT_FOUND, 'reading a planting year that does not exist');
+    },
+
+    async getForNonNumericYearIsRejectedAsBadRequest(caller: Actor): Promise<void> {
+      expectRejection(
+        await as(caller).get('/planting-years/not-a-year'),
+        status.BAD_REQUEST,
+        'plantingYear must be an integer',
+        'reading a planting year that is not a number'
+      );
     },
 
     async listIncludes(caller: Actor, year: CreatedPlantingYear): Promise<void> {

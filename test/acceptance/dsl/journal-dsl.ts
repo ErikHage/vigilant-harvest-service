@@ -73,7 +73,7 @@ export function createJournalDsl(world: World, journal: JournalDriver): JournalD
     async checkYearMustBeANumber(...args: string[]): Promise<void> {
       const params = parseDslArgs(args, { as: actor(), });
 
-      await journal.listForNonNumericYearFailsWithServerError(await world.actorFor(params.as));
+      await journal.listForNonNumericYearIsRejectedAsBadRequest(await world.actorFor(params.as));
     },
   };
 }

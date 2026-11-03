@@ -1,5 +1,7 @@
 import { Request } from 'express';
 
+import { requiredYear } from '../validation';
+
 import { ActivityLogEntry, ActivityLogEntryRequest, ActivityLogEntryResponse } from '../services/activity-log/types';
 
 const activityLogEntries = {
@@ -15,7 +17,7 @@ const activityLogEntries = {
   },
 
   getByYear: {
-    fromRequest: (req: Request): number => parseInt(req.params.plantingYear!),
+    fromRequest: (req: Request): number => requiredYear(req.params.plantingYear, 'plantingYear'),
   },
 
   toResponse: (entry: ActivityLogEntry): ActivityLogEntryResponse => ({

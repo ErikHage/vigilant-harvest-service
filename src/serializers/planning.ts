@@ -1,3 +1,6 @@
+import { Request } from 'express';
+
+import { requiredYear } from '../validation';
 import {
   PlanningDetails,
   PlanningDetailsResponse,
@@ -18,6 +21,8 @@ function toPlanningInstanceResponse(instance: PlanningInstance): PlanningInstanc
 
 export default {
   planningDetails: {
+    fromRequest: (req: Request): number => requiredYear(req.params.plantingYear, 'plantingYear'),
+
     toResponse: (planningDetails: PlanningDetails): PlanningDetailsResponse => ({
       plantingYear: planningDetails.plantingYear,
       targetPlantingDay: planningDetails.targetPlantingDay,

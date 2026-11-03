@@ -28,7 +28,7 @@ keeps the history.
 | 3 | H3 · log every error in prod | done |
 | 4 | M1 · keep causes in planting actions; M10 · drop `multipleStatements` | done |
 | 5 | H4 · PLANT in one transaction | done |
-| 6 | H5 · input validation, route by route | planning |
+| 6 | H5 · input validation, route by route | 6a done; 6b next |
 
 ## Phase 1 — H1: one flat error per body
 
@@ -109,7 +109,111 @@ keeps the history.
 
 ## Phase 6 — H5: validation
 
-Planned when Phase 5 is done. Expect a sub-phase per route group, each retiring its pinned rows.
+**Decided (user, 2026-11-02):**
+- **A small hand-written module, not zod.** `src/validation/`, with a few helpers that throw
+  `BadRequestError` naming the field. It matches the existing `parseHarvestTypeId`
+  (`serializers/harvests.ts`) style, and adds no dependency.
+- **Numeric strings are accepted.** A number field takes `2026` or `"2026"` and stores the number.
+  Anything else is a 400: `"abc"`, `""`, a fraction where an integer is needed, a missing required
+  field.
+  - The app restores `plantingYear` from `localStorage`, so it may send a string.
+  - Most of its forms use `v-model.number`, in 36 places, but not all of them.
+
+**Pins this retires (10 of the 19 left).** The other 9 aren't validation, and stay for later:
+name-collision overwrites, response shapes, PATCH semantics, schedule-item ownership.
+
+| Sub-phase | Pins |
+|---|---|
+| 6a | plantings `?plantingYear=abc`; harvests search with no year; planning `/abc`; journal `/abc`; activity log `/abc` |
+| 6b | journal entry with no date; activity-log entry with no date |
+| 6c | harvests saved with no list |
+| 6d | planting created with no name |
+| 6e | plant schedule assignment with no lists |
+
+### Every sub-phase
+
+1. **Survey the app first.** For each route in the group, find exactly what vigilant-harvest-app sends:
+   - field types;
+   - strings from `localStorage` or from forms without `.number`;
+   - `''` or `null` for blanks;
+   - date formats;
+   - extra fields.
+
+   Record it in the sub-phase's notes. **Nothing the app sends may become a 400.** Where it sends
+   something odd, accept it, and note it as an app fix.
+2. **Tests first.** For each route, table-driven, through the existing DSL modules: a missing required
+   field, a wrong type, an unparseable date, and an over-long string → 400 naming the field. Add one
+   "accepted as the app sends it" case for each oddity the survey found. Seen to fail.
+3. **Validate in the serializer** (`serializers/*.ts`), so handlers and services get typed, checked
+   values. The pins go red; retire them as before.
+4. **Suite green,** against a server started after the build. Lint and both type-checks clean.
+5. Changelog entry, then stop for commit review. One commit per sub-phase.
+
+### The module (built in 6a, grown as needed)
+
+`src/validation/index.ts`, with helpers that each take `(body or params, field)` and return the
+checked value:
+- `requiredString`, `optionalString` (both with `maxLength`; 255 for `VARCHAR(255)` columns, none for
+  `TEXT`);
+- `requiredInteger`, `optionalInteger` (numeric strings accepted; with `min`);
+- `requiredNumber` (for quantities);
+- `requiredDate`, `optionalDate` (a `YYYY-MM-DD` or an ISO timestamp; anything `Date` can't parse is a
+  400);
+- `requiredList`;
+- `oneOf`.
+
+Each throws `BadRequestError('<field> must be …')`. Column sizes come from `migrations/sqls/*-up.sql`.
+
+### Sub-phases
+
+- [x] **6a · years in paths and queries.** Done. Notes:
+  - **The app survey:**
+    - The store's `plantingYear` is a string (`localStorage`, or `Object.keys` in the year picker),
+      or a number only when it defaults to the current year.
+    - The year-details page passes its route param, a string.
+    - After the dashboard clears the year, a page can call with `null` (`/journal/null`): a 400 now,
+      a 500 before, and the app's alert either way.
+    - A cleared year is left out of `?plantingYear` by axios, so `GET /plantings` lists every year,
+      as before. `""` is never sent, because the storage helper turns it into `null`.
+  - **Seen to fail:** 7 tests, the 5 renamed pins and 2 new ones (`GET /planting-years/abc`; search,
+    summary and stats with `abc`). Then 117 passed, and 14 pins are left.
+  - **The module so far:** `requiredInteger`, `optionalInteger`, `requiredYear` (min 1). `DELETE
+    /planting-years/:year`'s own NaN check went, because the serializer now rejects it first.
+  - The module, with `requiredInteger` first.
+  - `/journal/:plantingYear`, `/activity-log/:plantingYear`, `/planning/:plantingYear`,
+    `/planting-years/:plantingYear`, `/plantings?plantingYear`, `/harvests/summary?plantingYear`, and
+    `/harvests/search` and `/harvests/stats` `?year`.
+  - Drop the dead `try`/`catch` around `parseInt` in `planning-handlers.ts` (L3).
+  - Retires 5 pins.
+- [ ] **6b · journal and activity-log bodies:** `plantingYear`, `entryDate`, text fields, `entryId`
+  when given. Retires 2 pins.
+- [ ] **6c · harvests.** The list is required. Each item: `plantingId`, `quantity` (a number above 0),
+  `harvestDate`, and `harvestTypeId`, whose existing check moves into the module. Retires 1 pin.
+  - The date-shift bug (L7) is next door. Fix it here only if the survey shows nothing depends on
+    today's behaviour; otherwise note it.
+- [ ] **6d · plantings.**
+  - Create: name, `plantId`, `plantingYear`, dates, `leadTimeWeeks`.
+  - Update: the same field rules; the "allowed for this status" check stays where it is.
+  - Actions: `actionType` from the known set; the counts and dates each action needs; `splits` as a
+    list of name and count.
+  - Retires 1 pin.
+- [ ] **6e · plants, categories, subcategories, schedule assignment.**
+  - The plant body (`subcategoryId` required, `lifespanType` from its set, the nested sections' types).
+  - Category and subcategory names; the `assign`/`unassign` lists.
+  - Retires 1 pin.
+  - Moves `upsertPlant`'s inline subcategory check, and its `{ message }` body (M3), into the
+    serializer.
+- [ ] **6f · plots, planting years, schedules and schedule items.** No pins. Covers the remaining write
+  routes.
+
+### Not in Phase 6
+
+- The 9 other pins.
+- M3's other error shapes, and the JSON 404 catch-all.
+- M2 (harvest folding).
+- START and RETIRE atomicity.
+
+Each can be planned after Phase 6.
 
 ## Progress log
 
@@ -126,3 +230,6 @@ Planned when Phase 5 is done. Expect a sub-phase per route group, each retiring 
   build. After a fresh start, exactly the split pin failed. It is retired, and 114 passed. Phase 4 is
   done and committed.
 - 2026-11-02: Phase 5 done and committed. Phase 6 (H5) needs its own plan first.
+- 2026-11-02: Phase 6 planned: a hand-written module, numeric strings accepted (user). Six sub-phases,
+  retiring 10 pins. Waiting for approval before 6a.
+- 2026-11-02: 6a done and committed; starting 6b.

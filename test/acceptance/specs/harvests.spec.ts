@@ -82,9 +82,12 @@ describe('harvests', () => {
     await harvests.checkMissingListIsRejected('as: gardener');
   });
 
-  // DocumentsCurrentBehavior: replies 500. Should be 400, as the summary does.
   it('rejects a search with no year', async () => {
     await harvests.checkSearchNeedsAYear('as: gardener');
+  });
+
+  it('rejects a search, summary or stats for a year that is not a number', async () => {
+    await harvests.checkYearMustBeANumber('as: gardener');
   });
 
   it('deletes a harvest', async () => {

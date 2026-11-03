@@ -10,6 +10,7 @@ import {
 } from '../services/harvests/types';
 import { BadRequestError } from '../errors/common';
 import { StatsType, StatsTypeUtils } from '../types/stats-type';
+import { requiredYear } from '../validation';
 
 const insert = {
   fromRequest: (req: Request): HarvestRequest[] => {
@@ -43,12 +44,8 @@ const insert = {
 
 const summary = {
   fromRequest: (req: Request): HarvestSummaryRequest => {
-    if (!req.query.plantingYear) {
-      throw new BadRequestError('Planting Year required');
-    }
-
     return {
-      plantingYear: parseInt(req.query.plantingYear as string),
+      plantingYear: requiredYear(req.query.plantingYear, 'plantingYear'),
     };
   },
 
@@ -64,7 +61,7 @@ const summary = {
 const search = {
   fromRequest: (req: Request): HarvestSearchRequest => {
     return {
-      year: parseInt(req.query.year as string),
+      year: requiredYear(req.query.year, 'year'),
     };
   },
 
@@ -84,7 +81,7 @@ const stats = {
   fromRequest: (req: Request): HarvestStatsRequest => {
     return {
       type: parseStatsRequestType(req.query.type as string),
-      year: parseInt(req.query.year as string),
+      year: requiredYear(req.query.year, 'year'),
     };
   },
 

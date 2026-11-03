@@ -125,7 +125,7 @@ export function createPlantingsDsl(world: World, plantings: PlantingsDriver): Pl
     async checkYearMustBeANumber(...args: string[]): Promise<void> {
       const params = parseDslArgs(args, { as: actor(), });
 
-      await plantings.listForNonNumericYearFailsWithServerError(await world.actorFor(params.as));
+      await plantings.listForNonNumericYearIsRejectedAsBadRequest(await world.actorFor(params.as));
     },
 
     async checkUnknownPlantingIsNotFound(...args: string[]): Promise<void> {

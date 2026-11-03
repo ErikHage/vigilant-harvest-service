@@ -21,7 +21,7 @@ export interface PlantingsDriver {
   getReportsYear(caller: Actor, planting: CreatedPlanting, plantingYear: number): Promise<void>,
   getIsNotFoundFor(caller: Actor): Promise<void>,
   listForYearIncludes(caller: Actor, planting: CreatedPlanting): Promise<void>,
-  listForNonNumericYearFailsWithServerError(caller: Actor): Promise<void>,
+  listForNonNumericYearIsRejectedAsBadRequest(caller: Actor): Promise<void>,
   /** Finds a planting the service made itself, by name, among the ones in that year. */
   plantingNamedInYear(caller: Actor, name: string, plantingYear: number): Promise<CreatedPlanting>,
   start(caller: Actor, planting: CreatedPlanting, numberSown: number): Promise<void>,
@@ -167,10 +167,11 @@ export function createPlantingsDriver(client: HttpClient, registry: ResourceRegi
       );
     },
 
-    async listForNonNumericYearFailsWithServerError(caller: Actor): Promise<void> {
-      expectStatus(
+    async listForNonNumericYearIsRejectedAsBadRequest(caller: Actor): Promise<void> {
+      expectRejection(
         await as(caller).get('/plantings?plantingYear=not-a-year'),
-        status.INTERNAL_SERVER_ERROR,
+        status.BAD_REQUEST,
+        'plantingYear must be an integer',
         'listing the plantings of a year that is not a number'
       );
     },

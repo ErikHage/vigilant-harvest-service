@@ -15,6 +15,7 @@ import {
 } from '../services/plantings/types';
 import { ValidationError } from '../errors/common';
 import constants from '../util/constants';
+import { optionalInteger } from '../validation';
 
 const insert = {
   fromRequest: (req: Request): CreatePlantingRequest => ({
@@ -26,6 +27,12 @@ const insert = {
     targetPlantingDate: req.body.targetPlantingDate ? new Date(req.body.targetPlantingDate) : undefined,
     leadTimeWeeks: req.body.leadTimeWeeks,
   }),
+};
+
+const list = {
+  /** The year to list, or undefined to list every year. */
+  fromRequest: (req: Request): number | undefined =>
+    optionalInteger(req.query.plantingYear, 'plantingYear', { min: 1, }),
 };
 
 const action = {
@@ -130,6 +137,7 @@ function _parseCommentActionData(actionType: string, req: Request): CommentActio
 
 export default {
   insert,
+  list,
   action,
   update,
 

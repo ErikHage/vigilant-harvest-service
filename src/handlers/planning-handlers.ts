@@ -5,22 +5,9 @@ import tryDecorator from '../middleware/try-decorator';
 import httpStatus from '../util/http-status';
 
 async function getPlanningDetailsByYear(request: Request, response: Response) {
-  const { plantingYear, } = request.params;
+  const plantingYear = planningSerializers.planningDetails.fromRequest(request);
 
-  if (plantingYear === undefined) {
-    response.status(httpStatus.BAD_REQUEST).send('plantingYear required');
-    return;
-  }
-
-  let plantingYearNumber: number;
-  try {
-    plantingYearNumber = parseInt(plantingYear!, 10);
-  } catch (err) {
-    response.status(httpStatus.BAD_REQUEST).send('plantingYear must be a number');
-    return;
-  }
-
-  const planningDetails = await planningService.getPlanningDetailsForYear(plantingYearNumber);
+  const planningDetails = await planningService.getPlanningDetailsForYear(plantingYear);
   const planningDetailsResponse = planningSerializers.planningDetails.toResponse(planningDetails);
 
   response

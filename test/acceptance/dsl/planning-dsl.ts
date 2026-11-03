@@ -38,7 +38,7 @@ export function createPlanningDsl(world: World, planning: PlanningDriver): Plann
     async checkYearMustBeANumber(...args: string[]): Promise<void> {
       const params = parseDslArgs(args, { as: actor(), });
 
-      await planning.getForNonNumericYearFailsWithServerError(await world.actorFor(params.as));
+      await planning.getForNonNumericYearIsRejectedAsBadRequest(await world.actorFor(params.as));
     },
   };
 }

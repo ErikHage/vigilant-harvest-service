@@ -14,6 +14,8 @@ export interface PlantingYearsDsl {
   checkListed(...args: string[]): Promise<void>,
   /** `as`. */
   checkUnknownYearIsNotFound(...args: string[]): Promise<void>,
+  /** `as`. */
+  checkYearMustBeANumber(...args: string[]): Promise<void>,
   /** `as`, `year`, and `created`, `started`, `planted`, `retired`, each 0 when omitted. */
   checkDetails(...args: string[]): Promise<void>,
   /** `as`, `year`. */
@@ -53,6 +55,12 @@ export function createPlantingYearsDsl(world: World, plantingYears: PlantingYear
       const params = parseDslArgs(args, { as: actor(), });
 
       await plantingYears.getIsNotFoundFor(await world.actorFor(params.as));
+    },
+
+    async checkYearMustBeANumber(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), });
+
+      await plantingYears.getForNonNumericYearIsRejectedAsBadRequest(await world.actorFor(params.as));
     },
 
     async checkDetails(...args: string[]): Promise<void> {

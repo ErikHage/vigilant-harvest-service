@@ -59,12 +59,11 @@ async function getPlantingById(request: Request, response: Response) {
 }
 
 async function getPlantings(request: Request, response: Response) {
-  const { plantingYear, } = request.query;
+  const plantingYear = plantingSerializers.list.fromRequest(request);
 
   let plantings: Planting[];
   if (plantingYear !== undefined) {
-    const plantingYearParsed = +plantingYear;
-    plantings = await plantingsService.getPlantingsByYear(plantingYearParsed);
+    plantings = await plantingsService.getPlantingsByYear(plantingYear);
   } else {
     plantings = await plantingsService.getPlantings();
   }

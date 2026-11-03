@@ -20,6 +20,8 @@ export interface HarvestsDsl {
   checkPlantStatsSayTheyAreForPlants(...args: string[]): Promise<void>,
   /** `as`. */
   checkSearchNeedsAYear(...args: string[]): Promise<void>,
+  /** `as`. Search, summary and stats each reject a year that isn't a number. */
+  checkYearMustBeANumber(...args: string[]): Promise<void>,
   /** `as`. */
   checkUnknownPlantingIsRejected(...args: string[]): Promise<void>,
   /** `as`. */
@@ -116,7 +118,13 @@ export function createHarvestsDsl(world: World, harvests: HarvestsDriver): Harve
     async checkSearchNeedsAYear(...args: string[]): Promise<void> {
       const params = parseDslArgs(args, { as: actor(), });
 
-      await harvests.searchWithoutYearFailsWithServerError(await world.actorFor(params.as));
+      await harvests.searchWithoutYearIsRejectedAsBadRequest(await world.actorFor(params.as));
+    },
+
+    async checkYearMustBeANumber(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), });
+
+      await harvests.queriesOfNonNumericYearAreRejectedAsBadRequest(await world.actorFor(params.as));
     },
 
     async checkUnknownPlantingIsRejected(...args: string[]): Promise<void> {

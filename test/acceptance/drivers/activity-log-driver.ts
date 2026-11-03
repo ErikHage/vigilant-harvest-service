@@ -9,7 +9,7 @@ export interface ActivityLogDriver {
   createEntry(caller: Actor, input: NewActivityLogEntry): Promise<CreatedActivityLogEntry>,
   updateChangesComments(caller: Actor, entry: CreatedActivityLogEntry, comments: string): Promise<CreatedActivityLogEntry>,
   listIncludes(caller: Actor, entry: CreatedActivityLogEntry): Promise<void>,
-  listForNonNumericYearFailsWithServerError(caller: Actor): Promise<void>,
+  listForNonNumericYearIsRejectedAsBadRequest(caller: Actor): Promise<void>,
   createWithoutDateFailsWithServerError(caller: Actor, plantingYear: number): Promise<void>,
   createInUnknownYearIsRejectedAsBadRequest(caller: Actor, input: NewActivityLogEntry): Promise<void>,
   deleteRemovesEntry(caller: Actor, entry: CreatedActivityLogEntry): Promise<void>,
@@ -72,8 +72,13 @@ export function createActivityLogDriver(client: HttpClient, registry: ResourceRe
       );
     },
 
-    async listForNonNumericYearFailsWithServerError(caller: Actor): Promise<void> {
-      expectStatus(await as(caller).get('/activity-log/not-a-year'), status.INTERNAL_SERVER_ERROR, 'listing a year that is not a number');
+    async listForNonNumericYearIsRejectedAsBadRequest(caller: Actor): Promise<void> {
+      expectRejection(
+        await as(caller).get('/activity-log/not-a-year'),
+        status.BAD_REQUEST,
+        'plantingYear must be an integer',
+        'listing a year that is not a number'
+      );
     },
 
     async createWithoutDateFailsWithServerError(caller: Actor, plantingYear: number): Promise<void> {

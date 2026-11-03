@@ -1,5 +1,5 @@
 import { Actor } from '../support/actors';
-import { expectStatus, expectThat } from './assertions';
+import { expectRejection, expectStatus, expectThat } from './assertions';
 import { ApiResponse, HttpClient } from '../support/http-client';
 import { CreatedPlanting } from '../support/resources';
 import { status } from '../support/status-codes';
@@ -13,7 +13,7 @@ export interface PlanningDriver {
   toStartIncludes(caller: Actor, planting: CreatedPlanting): Promise<void>,
   toPlantIncludes(caller: Actor, planting: CreatedPlanting): Promise<void>,
   getIsNotFoundFor(caller: Actor): Promise<void>,
-  getForNonNumericYearFailsWithServerError(caller: Actor): Promise<void>,
+  getForNonNumericYearIsRejectedAsBadRequest(caller: Actor): Promise<void>,
 }
 
 export function createPlanningDriver(client: HttpClient): PlanningDriver {
@@ -48,10 +48,11 @@ export function createPlanningDriver(client: HttpClient): PlanningDriver {
       expectStatus(await as(caller).get('/planning/8999'), status.NOT_FOUND, 'planning a year that does not exist');
     },
 
-    async getForNonNumericYearFailsWithServerError(caller: Actor): Promise<void> {
-      expectStatus(
+    async getForNonNumericYearIsRejectedAsBadRequest(caller: Actor): Promise<void> {
+      expectRejection(
         await as(caller).get('/planning/not-a-year'),
-        status.INTERNAL_SERVER_ERROR,
+        status.BAD_REQUEST,
+        'plantingYear must be an integer',
         'planning a year that is not a number'
       );
     },

@@ -9,7 +9,7 @@ export interface JournalDriver {
   createEntry(caller: Actor, input: NewJournalEntry): Promise<CreatedJournalEntry>,
   updateChangesEntry(caller: Actor, entry: CreatedJournalEntry, text: string): Promise<CreatedJournalEntry>,
   listIncludes(caller: Actor, entry: CreatedJournalEntry): Promise<void>,
-  listForNonNumericYearFailsWithServerError(caller: Actor): Promise<void>,
+  listForNonNumericYearIsRejectedAsBadRequest(caller: Actor): Promise<void>,
   createWithoutDateFailsWithServerError(caller: Actor, plantingYear: number): Promise<void>,
   createInUnknownYearIsRejectedAsBadRequest(caller: Actor, input: NewJournalEntry): Promise<void>,
   deleteRemovesEntry(caller: Actor, entry: CreatedJournalEntry): Promise<void>,
@@ -67,8 +67,13 @@ export function createJournalDriver(client: HttpClient, registry: ResourceRegist
       );
     },
 
-    async listForNonNumericYearFailsWithServerError(caller: Actor): Promise<void> {
-      expectStatus(await as(caller).get('/journal/not-a-year'), status.INTERNAL_SERVER_ERROR, 'listing a year that is not a number');
+    async listForNonNumericYearIsRejectedAsBadRequest(caller: Actor): Promise<void> {
+      expectRejection(
+        await as(caller).get('/journal/not-a-year'),
+        status.BAD_REQUEST,
+        'plantingYear must be an integer',
+        'listing a year that is not a number'
+      );
     },
 
     async createWithoutDateFailsWithServerError(caller: Actor, plantingYear: number): Promise<void> {

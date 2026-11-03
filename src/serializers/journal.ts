@@ -1,5 +1,7 @@
 import { Request } from 'express';
 
+import { requiredYear } from '../validation';
+
 import { JournalEntry, JournalEntryRequest, JournalEntryResponse } from '../services/journal/types';
 
 const journalEntries = {
@@ -13,7 +15,7 @@ const journalEntries = {
   },
 
   getByYear: {
-    fromRequest: (req: Request): number => parseInt(req.params.plantingYear!),
+    fromRequest: (req: Request): number => requiredYear(req.params.plantingYear, 'plantingYear'),
   },
 
   toResponse: (entry: JournalEntry): JournalEntryResponse => ({

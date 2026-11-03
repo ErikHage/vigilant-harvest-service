@@ -142,15 +142,10 @@ rename the driver method, update the DSL line, delete the marker, and remove its
 | Plots | `isActive: false` is ignored | Deactivates the plot |
 | Plantings | Creating one with no name answers 500 | 400 |
 | Plantings | An empty value is skipped, and the old one stays | Clears the field |
-| Plantings | A non-numeric `plantingYear` answers 500 | 400 |
 | Harvests | Saving with no `harvests` list answers 500 | 400 |
-| Harvests | Searching with no year answers 500 | 400, as the summary does |
 | Harvests | Plant stats report `statsType: "Planting"` | `"Plant"` |
-| Planning | A non-numeric year answers 500 | 400 |
 | Journal | An entry with no date answers 500 | 400 |
-| Journal | A non-numeric year answers 500 | 400 |
 | Activity log | An entry with no date answers 500 | 400 |
-| Activity log | A non-numeric year answers 500 | 400 |
 | Activity schedules | `PATCH` blanks whatever it wasn't sent | Keeps it |
 | Activity schedules | Updating an item through a schedule that doesn't hold it succeeds | 404 |
 

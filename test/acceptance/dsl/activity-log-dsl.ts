@@ -73,7 +73,7 @@ export function createActivityLogDsl(world: World, activityLog: ActivityLogDrive
     async checkYearMustBeANumber(...args: string[]): Promise<void> {
       const params = parseDslArgs(args, { as: actor(), });
 
-      await activityLog.listForNonNumericYearFailsWithServerError(await world.actorFor(params.as));
+      await activityLog.listForNonNumericYearIsRejectedAsBadRequest(await world.actorFor(params.as));
     },
   };
 }

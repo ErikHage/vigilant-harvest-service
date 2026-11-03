@@ -33,7 +33,6 @@ describe('planning', () => {
     await planning.checkUnknownYearIsNotFound('as: gardener');
   });
 
-  // DocumentsCurrentBehavior: replies 500. Should be 400.
   it('rejects a year that is not a number', async () => {
     await planning.checkYearMustBeANumber('as: gardener');
   });

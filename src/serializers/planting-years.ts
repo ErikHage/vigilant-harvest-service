@@ -2,11 +2,12 @@ import { Request } from 'express';
 
 import { PlantingYearRequest, PlantingYear, PlantingYearResponse } from '../services/planting-years/types';
 import { UTCDate } from '@date-fns/utc';
+import { requiredYear } from '../validation';
 
 export default {
   get: {
     fromRequest(req: Request): number {
-      return parseInt(req.params.plantingYear!);
+      return requiredYear(req.params.plantingYear, 'plantingYear');
     },
   },
 

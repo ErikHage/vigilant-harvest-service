@@ -36,7 +36,6 @@ describe('journal', () => {
     await journal.checkEntryWithoutDateIsRejected('as: gardener');
   });
 
-  // DocumentsCurrentBehavior: replies 500. Should be 400.
   it('rejects listing a year that is not a number', async () => {
     await journal.checkYearMustBeANumber('as: gardener');
   });

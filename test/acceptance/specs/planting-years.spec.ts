@@ -18,6 +18,10 @@ describe('planting years', () => {
     await plantingYears.checkUnknownYearIsNotFound('as: gardener');
   });
 
+  it('rejects reading a year that is not a number', async () => {
+    await plantingYears.checkYearMustBeANumber('as: gardener');
+  });
+
   it('carries the planted plantings of the previous year into a new one', async () => {
     await plantingYears.createYear('as: gardener', 'year: last-season');
     await plants.createPlant('as: gardener', 'plant: tomato');

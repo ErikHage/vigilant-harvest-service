@@ -23,7 +23,9 @@ export interface HarvestsDriver {
   resaveChangesQuantity(caller: Actor, harvest: CreatedHarvest, input: NewHarvest): Promise<void>,
   searchIncludes(caller: Actor, harvest: CreatedHarvest, year: number, details: HarvestDetails): Promise<void>,
   searchExcludes(caller: Actor, harvest: CreatedHarvest, year: number): Promise<void>,
-  searchWithoutYearFailsWithServerError(caller: Actor): Promise<void>,
+  searchWithoutYearIsRejectedAsBadRequest(caller: Actor): Promise<void>,
+  /** Search, summary and stats each reject a year that isn't a number, naming the parameter. */
+  queriesOfNonNumericYearAreRejectedAsBadRequest(caller: Actor): Promise<void>,
   summaryIncludes(caller: Actor, plantingId: string, year: number, details: HarvestDetails): Promise<void>,
   statsCountHarvests(caller: Actor, statsType: StatsType, year: number, harvests: number): Promise<void>,
   plantStatsCallThemselvesPlantingStats(caller: Actor, year: number): Promise<void>,
@@ -87,8 +89,20 @@ export function createHarvestsDriver(client: HttpClient, registry: ResourceRegis
       expectThat(!harvests.some(each => each.harvestId === harvest.harvestId), 'no such harvest', response, what);
     },
 
-    async searchWithoutYearFailsWithServerError(caller: Actor): Promise<void> {
-      expectStatus(await as(caller).get('/harvests/search'), status.INTERNAL_SERVER_ERROR, 'searching harvests with no year');
+    async searchWithoutYearIsRejectedAsBadRequest(caller: Actor): Promise<void> {
+      expectRejection(await as(caller).get('/harvests/search'), status.BAD_REQUEST, 'year is required', 'searching harvests with no year');
+    },
+
+    async queriesOfNonNumericYearAreRejectedAsBadRequest(caller: Actor): Promise<void> {
+      const calls = [
+        { path: '/harvests/search?year=not-a-year', field: 'year', what: 'searching harvests of a year that is not a number', },
+        { path: '/harvests/summary?plantingYear=not-a-year', field: 'plantingYear', what: 'summing up a year that is not a number', },
+        { path: '/harvests/stats?year=not-a-year&type=Plant', field: 'year', what: 'counting stats of a year that is not a number', },
+      ];
+
+      for (const call of calls) {
+        expectRejection(await as(caller).get(call.path), status.BAD_REQUEST, `${call.field} must be an integer`, call.what);
+      }
     },
 
     async summaryIncludes(caller: Actor, plantingId: string, year: number, details: HarvestDetails): Promise<void> {
