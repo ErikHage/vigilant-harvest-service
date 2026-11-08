@@ -15,6 +15,14 @@ export class UnauthorizedError extends FeralError {
   }
 }
 
+export class ServiceUnavailableError extends FeralError {
+  /** Something the request needs could not be reached. `cause` says what, for the log. */
+  constructor(cause?: FeralError) {
+    super('Service Unavailable', cause);
+    this.status = 503;
+  }
+}
+
 export class ConflictError extends FeralError {
   constructor(message: string) {
     super(message);

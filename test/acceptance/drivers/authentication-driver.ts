@@ -11,6 +11,7 @@ export interface Credentials {
 
 export interface AuthenticationDriver {
   loginReturnsToken(caller: Actor, credentials: Credentials): Promise<string>,
+  logoutSucceeds(caller: Actor): Promise<void>,
   tokenIsAccepted(caller: Actor): Promise<void>,
   tokenIsRejectedAsUnauthorized(caller: Actor): Promise<void>,
 }
@@ -36,6 +37,13 @@ export function createAuthenticationDriver(client: HttpClient, authClient: HttpC
       const body = response.body as { token?: unknown };
 
       return expectNonEmptyString(body.token, response, `${what} and receiving a token`);
+    },
+
+    /** Ends the caller's session at feral, which then refuses the token itself. */
+    async logoutSucceeds(caller: Actor): Promise<void> {
+      const what = `logging ${String(caller.username)} out of feral`;
+
+      expectStatus(await authClient.withToken(caller.token).post('/logout'), status.NO_CONTENT, what);
     },
 
     async tokenIsAccepted(caller: Actor): Promise<void> {

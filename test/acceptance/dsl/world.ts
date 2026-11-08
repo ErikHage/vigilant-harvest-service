@@ -36,8 +36,9 @@ export const GARDENER = 'gardener';
 export const ANONYMOUS = 'anonymous';
 export const FORGED = 'forged';
 export const MALFORMED = 'malformed';
+export const LOGGED_OUT = 'logged-out';
 
-export const RESERVED_ACTORS: readonly string[] = [ GARDENER, ANONYMOUS, FORGED, MALFORMED, ];
+export const RESERVED_ACTORS: readonly string[] = [ GARDENER, ANONYMOUS, FORGED, MALFORMED, LOGGED_OUT, ];
 
 export interface World {
   /**
@@ -151,6 +152,8 @@ export function createWorld(testContext: TestContext = createTestContext()): Wor
           return testContext.forged();
         case MALFORMED:
           return testContext.malformed();
+        case LOGGED_OUT:
+          return testContext.loggedOut();
         default:
           throw new Error(`no caller called "${as}" -- use one of: ${RESERVED_ACTORS.join(', ')}`);
       }

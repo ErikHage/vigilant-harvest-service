@@ -29,6 +29,11 @@ export interface TestContext {
   forged(): Actor,
   /** A token that is not a JWT at all. */
   malformed(): Actor,
+  /**
+   * The test user, in a session of its own that has been logged out of feral:
+   * its token is signed and unexpired, but feral no longer accepts it.
+   */
+  loggedOut(): Promise<Actor>,
   cleanup(): Promise<void>,
 }
 
@@ -111,6 +116,20 @@ export function createTestContext(): TestContext {
 
     malformed(): Actor {
       return MALFORMED_ACTOR;
+    },
+
+    // A session of its own: logging the shared gardener out would end it for every later test
+    async loggedOut(): Promise<Actor> {
+      const token = await drivers.authentication.loginReturnsToken(ANONYMOUS_ACTOR, {
+        username: config.username,
+        password: config.password,
+        applicationId: config.applicationId,
+      });
+      const actor = { token, username: config.username, };
+
+      await drivers.authentication.logoutSucceeds(actor);
+
+      return actor;
     },
 
     /**

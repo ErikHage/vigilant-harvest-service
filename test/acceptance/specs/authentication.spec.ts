@@ -20,4 +20,10 @@ describe('authentication', () => {
   it('rejects a token that is not a jwt', async () => {
     await auth.checkToken('as: malformed', 'expect: is rejected');
   });
+
+  // The service checks tokens against feral's public keys without asking feral,
+  // so it can't know a session has ended: a token is good until it expires
+  it('accepts a token whose session has ended, until it expires', async () => {
+    await auth.checkToken('as: logged-out', 'expect: accepted');
+  });
 });

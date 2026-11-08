@@ -43,10 +43,23 @@ async function runPreflight(): Promise<() => Promise<void>> {
       [
         'The service rejected a token feral-authentication-service just issued.',
         '',
-        'The service\'s SESSION_PUBLIC_KEY (in .env) is missing, or does not match the',
-        `key pair of application ${config.applicationId}.`,
+        'The service\'s FERAL_APPLICATION_ID (in .env) is not',
+        `${config.applicationId}, the application the suite logs in to.`,
         '',
         `The token is sent as the "${AUTH_HEADER}" header.`,
+      ].join('\n')
+    );
+  }
+
+  if (probe.status === status.SERVICE_UNAVAILABLE) {
+    throw new Error(
+      [
+        'The service could not get its public keys from feral-authentication-service.',
+        '',
+        'Check the service\'s FERAL_AUTH_URL and FERAL_APPLICATION_ID (in .env): feral',
+        'must be reachable there, be new enough to serve',
+        '/applications/:applicationId/public-keys, and know the application by that id.',
+        'The service\'s log says which.',
       ].join('\n')
     );
   }

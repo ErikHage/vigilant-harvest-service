@@ -1,3 +1,13 @@
+# syntax=docker/dockerfile:1
+
+# @feral-auth/token-verifier is a private npm package, so npm ci needs a token.
+# It comes in as a build secret, mounted only while npm ci runs, so it is in no
+# layer of the image:
+#
+#   docker build --secret id=npmrc,src=$HOME/.npmrc -t ehage/vigilant-harvest-service .
+#
+# where that .npmrc holds `//registry.npmjs.org/:_authToken=<a read-only token>`.
+
 FROM node:24-alpine AS build-stage
 
 ENV HOME=/srv/package
@@ -7,7 +17,7 @@ WORKDIR ${HOME}
 COPY package.json ./package.json
 COPY package-lock.json ./package-lock.json
 
-RUN npm ci
+RUN --mount=type=secret,id=npmrc,target=/srv/package/.npmrc,required=true npm ci
 
 COPY tsconfig.json ./tsconfig.json
 COPY src ./src
@@ -27,7 +37,7 @@ WORKDIR ${HOME}
 COPY package.json ./package.json
 COPY package-lock.json ./package-lock.json
 
-RUN npm ci --omit=dev
+RUN --mount=type=secret,id=npmrc,target=/srv/package/.npmrc,required=true npm ci --omit=dev
 
 FROM node:24-alpine
 

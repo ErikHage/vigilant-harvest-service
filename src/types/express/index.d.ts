@@ -1,9 +1,9 @@
-import { Actor } from './service/sessions/types';
+import { FeralToken } from '@feral-auth/token-verifier';
 
 declare global {
   declare namespace Express {
     export interface Request {
-      actor?: Actor
+      actor?: FeralToken
     }
   }
 }
