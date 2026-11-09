@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@date-fns/utc": "^1.2.0",
-    "@feral-auth/token-verifier": "0.1.0",
+    "@feral-auth/token-verifier": "0.2.0",
     "@types/db-migrate-base": "^0.0.14",
     "body-parser": "^1.20.2",
     "cors": "^2.8.5",
