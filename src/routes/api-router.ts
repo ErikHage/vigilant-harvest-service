@@ -30,7 +30,7 @@ const buildRouter = (): Express => {
 
   apiRouter.get('/service-info', getServiceInfo);
 
-  apiRouter.use(attachActor);
+  apiRouter.use(attachActor());
 
   apiRouter.put('/planting-years', plantingYearHandlers.insertPlantingYear);
   apiRouter.get('/planting-years', plantingYearHandlers.getPlantingYears);
