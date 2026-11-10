@@ -15,8 +15,8 @@ function fromRow(row: PlantRow, activityScheduleRows: ActivityScheduleRow[]): Pl
     friendlyName: row.friendly_name,
     lifespanType: row.lifespan_type,
     activitySchedules: activityScheduleRows.map(scheduleMappers.schedules.list.fromRow),
-    dateCreated: row.date_created,
-    dateModified: row.date_modified,
+    dateCreated: mysqlUtils.toApiAuditTimestamp(row.date_created),
+    dateModified: mysqlUtils.toApiAuditTimestamp(row.date_modified),
     taxonomy: {
       family: row.family,
       genus: row.genus,

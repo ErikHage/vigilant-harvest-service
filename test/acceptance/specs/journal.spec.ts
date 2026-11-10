@@ -16,13 +16,19 @@ describe('journal', () => {
   it('accepts an entry time with no seconds', async () => {
     await journal.createEntry('as: gardener', 'entry: dawn', 'date: 2026-06-01T06:15');
 
-    await journal.checkListed('as: gardener', 'entry: dawn');
+    await journal.checkDates('as: gardener', 'entry: dawn', 'entryDate: 2026-06-01T06:15:00');
   });
 
   it('accepts a date after 2038', async () => {
     await journal.createEntry('as: gardener', 'entry: far-off', 'date: 2040-06-01T09:30:00');
 
-    await journal.checkListed('as: gardener', 'entry: far-off');
+    await journal.checkDates('as: gardener', 'entry: far-off', 'entryDate: 2040-06-01T09:30:00');
+  });
+
+  it('returns its date as written, with its audit times in UTC', async () => {
+    await journal.createEntry('as: gardener', 'entry: morning', 'date: 2026-06-01T09:30:00');
+
+    await journal.checkDates('as: gardener', 'entry: morning', 'entryDate: 2026-06-01T09:30:00');
   });
 
   it('updates an entry', async () => {

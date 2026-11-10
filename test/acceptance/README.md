@@ -60,9 +60,9 @@ support/http-client.ts the only place fetch() is called; never throws on non-2xx
 - `as:` is required and comes first. There is no default, because the caller is part of what a step
   depends on. The reserved callers are `gardener`, `anonymous`, `forged` and `malformed`.
 - **Planting years are integers**, and real years must never be touched, so test years come from
-  **9000–9999**. Harvest, journal and activity-log *dates* can't be in those years: those columns
-  are MySQL `TIMESTAMP`s, which end in 2038. Use real dates; the service never ties them to the
-  planting year.
+  **9000–9999**. Harvest, journal and activity-log *dates* are unrelated: the service never ties
+  them to the planting year, so use real dates. They are the user's own wall-clock values, sent
+  and returned with no time zone: `YYYY-MM-DD` for a harvest, `YYYY-MM-DDTHH:mm:ss` for an entry.
 - Every 409 driver asserts the reason as well as the status. The foreign keys answer 409 by
   themselves, so the status alone can't show that the service's own check ran.
 

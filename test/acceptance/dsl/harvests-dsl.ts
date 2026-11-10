@@ -10,12 +10,17 @@ export interface HarvestsDsl {
   recordHarvest(...args: string[]): Promise<void>,
   /** `as`, `harvest`, `planting`, `quantity`. Saves it again under its own id. */
   saveAgain(...args: string[]): Promise<void>,
-  /** `as`, `harvest`, `planting`, `quantity`, `type`. Asserts it is filed under the planting's year. */
+  /**
+   * `as`, `harvest`, `planting`, `quantity`, `type`, and optional `date`, the day it was sent with.
+   * Asserts it is filed under the planting's year.
+   */
   checkHarvest(...args: string[]): Promise<void>,
   /** `as`, `planting`, `quantity`, `type`. */
   checkInSummary(...args: string[]): Promise<void>,
   /** `as`, `statsType: Plant | Planting`, `planting`, for its year, `harvests`. */
   checkStats(...args: string[]): Promise<void>,
+  /** `as`, `statsType: Plant | Planting`, `planting`, for its year, `first`, `last`, and `days`, counted inclusively. */
+  checkStatsDays(...args: string[]): Promise<void>,
   /** `as`, `planting`, for its year. */
   checkPlantStatsSayTheyAreForPlants(...args: string[]): Promise<void>,
   /** `as`. */
@@ -72,13 +77,18 @@ export function createHarvestsDsl(world: World, harvests: HarvestsDriver): Harve
         planting: alias(),
         quantity: required().asInteger(),
         type: required(),
+        date: optional(),
       });
 
       await harvests.searchIncludes(
         await world.actorFor(params.as),
         world.harvestNamed(params.harvest),
         world.plantingNamed(params.planting).plantingYear,
-        { quantity: params.quantity, harvestType: params.type, }
+        {
+          quantity: params.quantity,
+          harvestType: params.type,
+          ...(params.date === undefined ? {} : { harvestDate: params.date, }),
+        }
       );
     },
 
@@ -105,6 +115,24 @@ export function createHarvestsDsl(world: World, harvests: HarvestsDriver): Harve
         params.statsType,
         world.plantingNamed(params.planting).plantingYear,
         params.harvests
+      );
+    },
+
+    async checkStatsDays(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, {
+        as: actor(),
+        statsType: required().allowedValues('Plant', 'Planting'),
+        planting: alias(),
+        first: required(),
+        last: required(),
+        days: required().asInteger(),
+      });
+
+      await harvests.statsReportDays(
+        await world.actorFor(params.as),
+        params.statsType,
+        world.plantingNamed(params.planting).plantingYear,
+        { firstHarvestDate: params.first, lastHarvestDate: params.last, numberOfDays: params.days, }
       );
     },
 

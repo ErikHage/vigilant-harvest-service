@@ -19,9 +19,9 @@ const journalEntries = {
       entryId: row.entry_id,
       plantingYear: row.planting_year,
       entry: row.entry,
-      entryDate: mysqlUtils.dbDateStringToJsDate(row.entry_date),
-      dateCreated: mysqlUtils.dbDateStringToJsDate(row.date_created),
-      dateModified: mysqlUtils.dbDateStringToJsDate(row.date_modified),
+      entryDate: mysqlUtils.toApiDateTime(row.entry_date),
+      dateCreated: mysqlUtils.toApiAuditTimestamp(row.date_created),
+      dateModified: mysqlUtils.toApiAuditTimestamp(row.date_modified),
     }
   },
 };

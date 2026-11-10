@@ -140,7 +140,7 @@ export function createPlantingYearsDriver(client: HttpClient, registry: Resource
       expectStatus(await as(caller).put('/planting-years', input), status.CREATED, what);
       registry.register({ kind: 'planting year', path: `/planting-years/${plantingYear}`, label: String(plantingYear), });
 
-      return { plantingYear, };
+      return { plantingYear, lastFrostDate: input.lastFrostDate, targetPlantingDate: input.targetPlantingDate, };
     },
 
     async getReturnsYear(caller: Actor, year: CreatedPlantingYear): Promise<void> {
@@ -148,7 +148,12 @@ export function createPlantingYearsDriver(client: HttpClient, registry: Resource
       const response = await as(caller).get(`/planting-years/${year.plantingYear}`);
 
       expectStatus(response, status.OK, what);
-      expectBodyToContain(response, { plantingYear: year.plantingYear, }, what);
+      // its dates come back as they were sent, with no time zone
+      expectBodyToContain(response, {
+        plantingYear: year.plantingYear,
+        lastFrostDate: year.lastFrostDate,
+        targetPlantingDate: year.targetPlantingDate,
+      }, what);
     },
 
     async getIsNotFoundFor(caller: Actor): Promise<void> {

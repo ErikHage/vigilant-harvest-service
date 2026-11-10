@@ -1,5 +1,13 @@
 import { Actor } from '../support/actors';
-import { expectBodyToContain, expectListEntries, expectRejection, expectStatus, expectThat } from './assertions';
+import {
+  expectAuditTimestamp,
+  expectBodyToContain,
+  expectListEntries,
+  expectRecentTimestamp,
+  expectRejection,
+  expectStatus,
+  expectThat
+} from './assertions';
 import { NewActivityLogEntry, tooLong, withoutField } from '../support/fixtures';
 import { ApiResponse, HttpClient } from '../support/http-client';
 import { CreatedActivityLogEntry, ResourceRegistry } from '../support/resources';
@@ -79,6 +87,7 @@ export interface ActivityLogDriver {
   createEntry(caller: Actor, input: NewActivityLogEntry): Promise<CreatedActivityLogEntry>,
   updateChangesComments(caller: Actor, entry: CreatedActivityLogEntry, comments: string): Promise<CreatedActivityLogEntry>,
   listIncludes(caller: Actor, entry: CreatedActivityLogEntry): Promise<void>,
+  listReturnsDates(caller: Actor, entry: CreatedActivityLogEntry, entryDate: string): Promise<void>,
   listForNonNumericYearIsRejectedAsBadRequest(caller: Actor): Promise<void>,
   createOfInvalidEntryIsRejectedAsBadRequest(
     caller: Actor,
@@ -153,6 +162,17 @@ export function createActivityLogDriver(client: HttpClient, registry: ResourceRe
         response,
         what
       );
+    },
+
+    async listReturnsDates(caller: Actor, entry: CreatedActivityLogEntry, entryDate: string): Promise<void> {
+      const what = `reading the dates of activity log entry ${entry.entryId}`;
+      const { response, entries, } = await list(caller, entry.plantingYear, what);
+      const found = entries.find(each => each.entryId === entry.entryId);
+
+      expectThat(found?.entryDate === entryDate, `entryDate ${entryDate}, with no time zone`, response, what);
+      expectAuditTimestamp(found?.dateCreated, 'dateCreated', response, what);
+      expectAuditTimestamp(found?.dateModified, 'dateModified', response, what);
+      expectRecentTimestamp(found?.dateCreated, 'dateCreated', response, what);
     },
 
     async listForNonNumericYearIsRejectedAsBadRequest(caller: Actor): Promise<void> {

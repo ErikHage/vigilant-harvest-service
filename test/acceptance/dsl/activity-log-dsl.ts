@@ -14,6 +14,8 @@ export interface ActivityLogDsl {
   updateEntry(...args: string[]): Promise<void>,
   /** `as`, `entry`. */
   checkListed(...args: string[]): Promise<void>,
+  /** `as`, `entry`, `entryDate`: it comes back as `entryDate`, with its audit times in UTC. */
+  checkDates(...args: string[]): Promise<void>,
   /** `as`, `entry`. Asserts it is gone from its year. */
   deleteEntry(...args: string[]): Promise<void>,
   /** `as`, `problem`, one of the driver's ACTIVITY_LOG_ENTRY_PROBLEMS. Writes it in a year made for the spec. */
@@ -57,6 +59,12 @@ export function createActivityLogDsl(world: World, activityLog: ActivityLogDrive
       const params = parseDslArgs(args, { as: actor(), entry: alias(), });
 
       await activityLog.deleteRemovesEntry(await world.actorFor(params.as), world.activityLogEntryNamed(params.entry));
+    },
+
+    async checkDates(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), entry: alias(), entryDate: required(), });
+
+      await activityLog.listReturnsDates(await world.actorFor(params.as), world.activityLogEntryNamed(params.entry), params.entryDate);
     },
 
     async checkInvalidEntryIsRejected(...args: string[]): Promise<void> {

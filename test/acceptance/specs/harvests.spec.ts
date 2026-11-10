@@ -44,7 +44,29 @@ describe('harvests', () => {
   it('accepts a date after 2038', async () => {
     await harvests.recordHarvest('as: gardener', 'harvest: far-off', 'planting: row-one', 'quantity: 2', 'date: 2040-07-01');
 
-    await harvests.checkHarvest('as: gardener', 'harvest: far-off', 'planting: row-one', 'quantity: 2', 'type: pounds');
+    await harvests.checkHarvest(
+      'as: gardener', 'harvest: far-off', 'planting: row-one', 'quantity: 2', 'type: pounds', 'date: 2040-07-01'
+    );
+  });
+
+  it('returns a harvest on the day it was sent with', async () => {
+    await harvests.recordHarvest('as: gardener', 'harvest: first', 'planting: row-one', 'quantity: 2', 'date: 2026-07-01');
+
+    await harvests.checkHarvest(
+      'as: gardener', 'harvest: first', 'planting: row-one', 'quantity: 2', 'type: pounds', 'date: 2026-07-01'
+    );
+  });
+
+  it('counts the days across the autumn clock change as calendar days', async () => {
+    await harvests.recordHarvest('as: gardener', 'harvest: before', 'planting: row-one', 'quantity: 1', 'date: 2026-10-31');
+    await harvests.recordHarvest('as: gardener', 'harvest: after', 'planting: row-one', 'quantity: 1', 'date: 2026-11-02');
+
+    await harvests.checkStatsDays(
+      'as: gardener', 'statsType: Planting', 'planting: row-one', 'first: 2026-10-31', 'last: 2026-11-02', 'days: 3'
+    );
+    await harvests.checkStatsDays(
+      'as: gardener', 'statsType: Plant', 'planting: row-one', 'first: 2026-10-31', 'last: 2026-11-02', 'days: 3'
+    );
   });
 
   it('keeps a harvest in its year when it is saved again', async () => {

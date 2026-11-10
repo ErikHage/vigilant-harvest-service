@@ -16,8 +16,8 @@ export interface NewPlantingYear {
 
 export interface PlantingYear {
   plantingYear: number, // int
-  lastFrostDate: Date,
-  targetPlantingDate: Date,
+  lastFrostDate: string,
+  targetPlantingDate: string,
   details?: PlantingYearDetails, // TODO DEPRECATED - remove
 }
 
@@ -29,8 +29,8 @@ export interface PlantingYearRow extends RowDataPacket  {
 
 export interface PlantingYearResponse {
   plantingYear: number, // int
-  lastFrostDate: Date,
-  targetPlantingDate: Date,
+  lastFrostDate: string,
+  targetPlantingDate: string,
   details: PlantingYearDetails,
 }
 

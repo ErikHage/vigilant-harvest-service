@@ -1,5 +1,6 @@
 import { Actor } from '../support/actors';
 import {
+  expectAuditTimestamp,
   expectBodyToContain,
   expectBodyToHaveKeys,
   expectListEntries,
@@ -102,6 +103,7 @@ const invalidAssignments: Record<AssignmentProblem, { body: object, reason: stri
 export interface PlantsDriver {
   createPlant(caller: Actor, input: NewPlant): Promise<CreatedPlant>,
   getReturnsPlant(caller: Actor, plant: CreatedPlant): Promise<void>,
+  getReturnsAuditTimesInUtc(caller: Actor, plant: CreatedPlant): Promise<void>,
   getReturnsSowingValuesAsStrings(caller: Actor, plant: CreatedPlant): Promise<void>,
   getReportsDefaultHarvestType(caller: Actor, plant: CreatedPlant, harvestType: string): Promise<void>,
   getShowsSchedule(caller: Actor, plant: CreatedPlant, schedule: CreatedSchedule): Promise<void>,
@@ -160,6 +162,15 @@ export function createPlantsDriver(client: HttpClient, registry: ResourceRegistr
       expectBodyToContain(response, { friendlyName: input.friendlyName, subcategoryId: input.subcategoryId, }, what);
 
       return { plantId, friendlyName: input.friendlyName, input, };
+    },
+
+    async getReturnsAuditTimesInUtc(caller: Actor, plant: CreatedPlant): Promise<void> {
+      const what = `reading the audit times of plant "${plant.friendlyName}"`;
+      const response = await get(caller, plant, what);
+      const body = response.body as Record<string, unknown>;
+
+      expectAuditTimestamp(body.dateCreated, 'dateCreated', response, what);
+      expectAuditTimestamp(body.dateModified, 'dateModified', response, what);
     },
 
     async getReturnsPlant(caller: Actor, plant: CreatedPlant): Promise<void> {

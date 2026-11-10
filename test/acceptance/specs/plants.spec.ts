@@ -15,6 +15,12 @@ describe('plants', () => {
   });
 
   // DocumentsCurrentBehavior: indoor and direct come back as "1" and "0", and depth as "0.25". Should keep the booleans and the number sent.
+  it('returns its audit times in UTC', async () => {
+    await plants.createPlant('as: gardener', 'plant: tomato');
+
+    await plants.checkAuditTimesInUtc('as: gardener', 'plant: tomato');
+  });
+
   it('keeps the types of sowing values', async () => {
     await plants.createPlant('as: gardener', 'plant: tomato', 'details: every field');
 

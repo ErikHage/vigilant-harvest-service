@@ -70,8 +70,8 @@ export interface PlantingResponse {
   transplantDate?: string, // YYYY-MM-DD
   currentStatus?: string,
   notes?: string,
-  dateCreated: Date,
-  dateModified: Date,
+  dateCreated: string,
+  dateModified: string,
   statusHistory?: PlantingStatusHistoryRecord[],
 }
 
@@ -93,8 +93,8 @@ export interface Planting {
   transplantDate?: string, // YYYY-MM-DD
   currentStatus: string,
   notes?: string,
-  dateCreated?: Date,
-  dateModified?: Date,
+  dateCreated?: string,
+  dateModified?: string,
   statusHistory?: PlantingStatusHistoryRecord[],
 }
 
@@ -152,8 +152,8 @@ export interface PlantingRow extends RowDataPacket  {
   transplant_date: string,
   current_status: string,
   notes: string,
-  date_created: Date,
-  date_modified: Date,
+  date_created: string,
+  date_modified: string,
 }
 
 export interface PlantingStatusHistoryRecord {
@@ -161,8 +161,8 @@ export interface PlantingStatusHistoryRecord {
   plantingId: string,
   plantingStatus: string,
   comment: string,
-  dateCreated: Date,
-  dateModified: Date,
+  dateCreated: string,
+  dateModified: string,
 }
 
 export interface PlantingStatusHistoryRow extends RowDataPacket {
@@ -170,8 +170,8 @@ export interface PlantingStatusHistoryRow extends RowDataPacket {
   planting_id: string,
   planting_status: string,
   comment: string,
-  date_created: Date,
-  date_modified: Date,
+  date_created: string,
+  date_modified: string,
 }
 
 export interface PlantingPlantingYearRow extends RowDataPacket {

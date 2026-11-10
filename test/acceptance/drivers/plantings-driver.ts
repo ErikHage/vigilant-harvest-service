@@ -1,5 +1,6 @@
 import { Actor } from '../support/actors';
 import {
+  expectAuditTimestamp,
   expectBodyToContain,
   expectBodyToHaveKeys,
   expectCount,
@@ -12,6 +13,17 @@ import { NewPlanting, tooLong, withoutField } from '../support/fixtures';
 import { ApiResponse, HttpClient } from '../support/http-client';
 import { CreatedPlanting, CreatedPlot, ResourceRegistry } from '../support/resources';
 import { status } from '../support/status-codes';
+
+/** A planting's own dates, each checked when given: exactly as they were sent. */
+export interface PlantingDates {
+  targetPlantingDate?: string,
+  sowDate?: string,
+  transplantDate?: string,
+}
+
+/** The day the lifecycle steps sow and transplant on, unless a spec names one. */
+const SOW_DATE = '2026-03-01';
+const TRANSPLANT_DATE = '2026-05-20';
 
 /** Ways a new planting can be wrong. Each is a test of its own. */
 export const NEW_PLANTING_PROBLEMS = [
@@ -208,8 +220,15 @@ export interface PlantingsDriver {
   listForNonNumericYearIsRejectedAsBadRequest(caller: Actor): Promise<void>,
   /** Finds a planting the service made itself, by name, among the ones in that year. */
   plantingNamedInYear(caller: Actor, name: string, plantingYear: number): Promise<CreatedPlanting>,
-  start(caller: Actor, planting: CreatedPlanting, numberSown: number): Promise<void>,
-  plantInPlot(caller: Actor, planting: CreatedPlanting, plot: CreatedPlot, numberTransplanted: number): Promise<void>,
+  start(caller: Actor, planting: CreatedPlanting, numberSown: number, sowDate?: string): Promise<void>,
+  plantInPlot(
+    caller: Actor,
+    planting: CreatedPlanting,
+    plot: CreatedPlot,
+    numberTransplanted: number,
+    transplantDate?: string
+  ): Promise<void>,
+  getReturnsDates(caller: Actor, planting: CreatedPlanting, dates: PlantingDates): Promise<void>,
   retire(caller: Actor, planting: CreatedPlanting): Promise<void>,
   comment(caller: Actor, planting: CreatedPlanting, comment: string): Promise<void>,
   split(caller: Actor, planting: CreatedPlanting, name: string, count: number): Promise<CreatedPlanting>,
@@ -316,6 +335,21 @@ export function createPlantingsDriver(client: HttpClient, registry: ResourceRegi
       return { plantingId, name: input.name, plantingYear: input.plantingYear, };
     },
 
+    async getReturnsDates(caller: Actor, planting: CreatedPlanting, dates: PlantingDates): Promise<void> {
+      const what = `reading the dates of planting "${planting.name}"`;
+      const response = await get(caller, planting, what);
+      const body = response.body as Record<string, unknown> & { statusHistory: Record<string, unknown>[] };
+
+      // its own dates come back as they were sent, with no time zone
+      expectBodyToContain(response, { ...dates, }, what);
+      expectAuditTimestamp(body.dateCreated, 'dateCreated', response, what);
+      expectAuditTimestamp(body.dateModified, 'dateModified', response, what);
+      body.statusHistory.forEach((entry, index) => {
+        expectAuditTimestamp(entry.dateCreated, `statusHistory[${index}].dateCreated`, response, what);
+        expectAuditTimestamp(entry.dateModified, `statusHistory[${index}].dateModified`, response, what);
+      });
+    },
+
     async getReportsStatus(caller: Actor, planting: CreatedPlanting, plantingStatus: string): Promise<void> {
       const what = `reading the status of planting "${planting.name}"`;
 
@@ -393,20 +427,26 @@ export function createPlantingsDriver(client: HttpClient, registry: ResourceRegi
       return { plantingId: entry!.plantingId as string, name, plantingYear, };
     },
 
-    async start(caller: Actor, planting: CreatedPlanting, numberSown: number): Promise<void> {
+    async start(caller: Actor, planting: CreatedPlanting, numberSown: number, sowDate = SOW_DATE): Promise<void> {
       await act(
         caller,
         planting,
-        { actionType: 'START', sowDate: '2026-03-01', numberSown, },
+        { actionType: 'START', sowDate, numberSown, },
         `starting planting "${planting.name}"`
       );
     },
 
-    async plantInPlot(caller: Actor, planting: CreatedPlanting, plot: CreatedPlot, numberTransplanted: number): Promise<void> {
+    async plantInPlot(
+      caller: Actor,
+      planting: CreatedPlanting,
+      plot: CreatedPlot,
+      numberTransplanted: number,
+      transplantDate = TRANSPLANT_DATE
+    ): Promise<void> {
       await act(
         caller,
         planting,
-        { actionType: 'PLANT', plotId: plot.plotId, transplantDate: '2026-05-20', numberTransplanted, },
+        { actionType: 'PLANT', plotId: plot.plotId, transplantDate, numberTransplanted, },
         `planting "${planting.name}" in plot "${plot.friendlyName}"`
       );
       await registerWhatTheServiceMade(caller, planting.plantingYear);

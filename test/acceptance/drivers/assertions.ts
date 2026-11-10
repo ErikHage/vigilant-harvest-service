@@ -157,6 +157,33 @@ export function expectCount(actual: number, expected: number, response: ApiRespo
   ).toBe(expected);
 }
 
+/** An audit time, as the service writes it: UTC, to the second. */
+const AUDIT_TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
+
+/** How far an audit time just written may be from this machine's clock. */
+const RECENT_MS = 5 * 60 * 1000;
+
+export function expectAuditTimestamp(value: unknown, field: string, response: ApiResponse, what: string): void {
+  expect(
+    typeof value === 'string' && AUDIT_TIMESTAMP.test(value),
+    failureMessage(what, `${field} in UTC, as YYYY-MM-DDTHH:mm:ssZ, not ${JSON.stringify(value)}`, response)
+  ).toBe(true);
+}
+
+/**
+ * An audit time the service has only just written is within a few minutes of now. Against a
+ * database whose time zone matches the service's this holds either way; it catches an audit time
+ * read in the wrong zone, which is hours out.
+ */
+export function expectRecentTimestamp(value: unknown, field: string, response: ApiResponse, what: string): void {
+  const written = typeof value === 'string' ? Date.parse(value) : Number.NaN;
+
+  expect(
+    Math.abs(Date.now() - written) <= RECENT_MS,
+    failureMessage(what, `${field} within 5 minutes of now (${new Date().toISOString()}), not ${JSON.stringify(value)}`, response)
+  ).toBe(true);
+}
+
 /** For the one check with no response to report on: a step rejected by the DSL. */
 export function expectTrue(condition: boolean, message: string): void {
   expect(condition, message).toBe(true);

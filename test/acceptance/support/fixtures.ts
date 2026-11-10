@@ -73,6 +73,7 @@ export interface NewPlanting {
   name: string,
   seedSource?: string,
   leadTimeWeeks?: number,
+  targetPlantingDate?: string,
 }
 
 export interface NewHarvest {

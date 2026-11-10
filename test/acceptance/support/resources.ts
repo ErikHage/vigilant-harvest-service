@@ -36,6 +36,9 @@ export interface CreatedPlot {
 
 export interface CreatedPlantingYear {
   plantingYear: number,
+  /** As it was sent, so a read can be compared with it. */
+  lastFrostDate: string,
+  targetPlantingDate: string,
 }
 
 export interface CreatedPlanting {

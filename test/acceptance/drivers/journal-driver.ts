@@ -1,5 +1,13 @@
 import { Actor } from '../support/actors';
-import { expectBodyToContain, expectListEntries, expectRejection, expectStatus, expectThat } from './assertions';
+import {
+  expectAuditTimestamp,
+  expectBodyToContain,
+  expectListEntries,
+  expectRecentTimestamp,
+  expectRejection,
+  expectStatus,
+  expectThat
+} from './assertions';
 import { NewJournalEntry, tooLong, withoutField } from '../support/fixtures';
 import { ApiResponse, HttpClient } from '../support/http-client';
 import { CreatedJournalEntry, ResourceRegistry } from '../support/resources';
@@ -67,6 +75,7 @@ export interface JournalDriver {
   createEntry(caller: Actor, input: NewJournalEntry): Promise<CreatedJournalEntry>,
   updateChangesEntry(caller: Actor, entry: CreatedJournalEntry, text: string): Promise<CreatedJournalEntry>,
   listIncludes(caller: Actor, entry: CreatedJournalEntry): Promise<void>,
+  listReturnsDates(caller: Actor, entry: CreatedJournalEntry, entryDate: string): Promise<void>,
   listForNonNumericYearIsRejectedAsBadRequest(caller: Actor): Promise<void>,
   createOfInvalidEntryIsRejectedAsBadRequest(caller: Actor, good: NewJournalEntry, problem: JournalEntryProblem): Promise<void>,
   createOfEntryAsTheAppSendsItSucceeds(caller: Actor, plantingYear: number): Promise<void>,
@@ -132,6 +141,17 @@ export function createJournalDriver(client: HttpClient, registry: ResourceRegist
         response,
         what
       );
+    },
+
+    async listReturnsDates(caller: Actor, entry: CreatedJournalEntry, entryDate: string): Promise<void> {
+      const what = `reading the dates of journal entry ${entry.entryId}`;
+      const { response, entries, } = await list(caller, entry.plantingYear, what);
+      const found = entries.find(each => each.entryId === entry.entryId);
+
+      expectThat(found?.entryDate === entryDate, `entryDate ${entryDate}, with no time zone`, response, what);
+      expectAuditTimestamp(found?.dateCreated, 'dateCreated', response, what);
+      expectAuditTimestamp(found?.dateModified, 'dateModified', response, what);
+      expectRecentTimestamp(found?.dateCreated, 'dateCreated', response, what);
     },
 
     async listForNonNumericYearIsRejectedAsBadRequest(caller: Actor): Promise<void> {

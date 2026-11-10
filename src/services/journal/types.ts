@@ -11,18 +11,18 @@ export interface JournalEntryResponse {
   entryId: string,
   plantingYear: number, // int
   entry: string,
-  entryDate: Date,
-  dateCreated: Date,
-  dateModified: Date,
+  entryDate: string,
+  dateCreated: string,
+  dateModified: string,
 }
 
 export interface JournalEntry {
   entryId: string,
   plantingYear: number, // int
   entry: string,
-  entryDate: Date,
-  dateCreated: Date,
-  dateModified: Date,
+  entryDate: string,
+  dateCreated: string,
+  dateModified: string,
 }
 
 export interface JournalEntryRow extends RowDataPacket {

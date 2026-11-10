@@ -16,6 +16,8 @@ export interface PlantsDsl {
   /** `as`, `plant`. Asserts every detail it was created with came back. */
   checkPlant(...args: string[]): Promise<void>,
   /** `as`, `plant`. */
+  checkAuditTimesInUtc(...args: string[]): Promise<void>,
+  /** `as`, `plant`. */
   checkListed(...args: string[]): Promise<void>,
   /** `as`, `plant`, `harvestType`, by name. */
   checkDefaultHarvestType(...args: string[]): Promise<void>,
@@ -87,6 +89,12 @@ export function createPlantsDsl(world: World, plants: PlantsDriver): PlantsDsl {
       });
 
       world.namePlant(params.plant, await plants.createPlant(caller, input));
+    },
+
+    async checkAuditTimesInUtc(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), plant: alias(), });
+
+      await plants.getReturnsAuditTimesInUtc(await world.actorFor(params.as), world.plantNamed(params.plant));
     },
 
     async checkPlant(...args: string[]): Promise<void> {

@@ -1,5 +1,3 @@
-import { getDayOfYear } from 'date-fns'
-
 import { ensureError, FeralError } from '../../errors';
 import { PlanningDetails, PlanningInstance, PlanningPlanting, PlanningRequest } from './types';
 import plantingYearsMysqlDatasource from '../planting-years/planting-years-mysql-datasource';
@@ -12,7 +10,7 @@ async function getPlanningDetailsForYear({ plantingYear: year, today, }: Plannin
   try {
     const currentDay = dayOfYear(today);
     const plantingYear = await plantingYearsMysqlDatasource.getPlantingYear(year);
-    const targetPlantingDay = getDayOfYearFromDate(plantingYear.targetPlantingDate);
+    const targetPlantingDay = dayOfYear(plantingYear.targetPlantingDate);
 
     const createdStatusPlantings: PlanningPlanting[] = await plantingsMysqlDatasource.getPlanningPlantings(
       plantingYear.plantingYear,
@@ -42,11 +40,11 @@ async function getPlanningDetailsForYear({ plantingYear: year, today, }: Plannin
   }
 }
 
-function getDirectSowPlanningItems(plantings: PlanningPlanting[], defaultTargetPlantingDay: number, currentDay: number): PlanningInstance[] {
+export function getDirectSowPlanningItems(plantings: PlanningPlanting[], defaultTargetPlantingDay: number, currentDay: number): PlanningInstance[] {
   return plantings
     .filter(hasNoLeadTime)
     .map(planting => {
-      const targetPlantingDay = planting.targetPlantingDate ? getDayOfYearFromDate(planting.targetPlantingDate) : defaultTargetPlantingDay;
+      const targetPlantingDay = targetDayOf(planting, defaultTargetPlantingDay);
       const daysUntilAction = targetPlantingDay - currentDay;
 
       return {
@@ -60,11 +58,11 @@ function getDirectSowPlanningItems(plantings: PlanningPlanting[], defaultTargetP
     });
 }
 
-function getIndoorSowPlanningItems(plantings: PlanningPlanting[], defaultTargetPlantingDay: number, currentDay: number): PlanningInstance[] {
+export function getIndoorSowPlanningItems(plantings: PlanningPlanting[], defaultTargetPlantingDay: number, currentDay: number): PlanningInstance[] {
    return plantings
     .filter(hasDefinedLeadTime)
     .map(planting => {
-      const targetPlantingDay = planting.targetPlantingDate ? getDayOfYearFromDate(planting.targetPlantingDate) : defaultTargetPlantingDay;
+      const targetPlantingDay = targetDayOf(planting, defaultTargetPlantingDay);
       const plannedActionDay = planting.leadTimeDays ? targetPlantingDay - planting.leadTimeDays : undefined
       const daysUntilAction = plannedActionDay ? plannedActionDay - currentDay : undefined
 
@@ -86,7 +84,7 @@ async function getPropagationStageItems(plantingYear: PlantingYear, defaultTarge
 
   return plantings
     .map(planting => {
-      const targetPlantingDay = planting.targetPlantingDate ? getDayOfYearFromDate(planting.targetPlantingDate) : defaultTargetPlantingDay;
+      const targetPlantingDay = targetDayOf(planting, defaultTargetPlantingDay);
 
       return {
         plantingId: planting.plantingId,
@@ -111,8 +109,9 @@ function sortByDaysUntilAction(a: PlanningInstance, b: PlanningInstance) {
   return aVal - bVal;
 }
 
-function getDayOfYearFromDate(date: Date): number {
-  return getDayOfYear(date);
+/** The day of the year a planting is due in the ground: its own target, or the year's. */
+export function targetDayOf(planting: PlanningPlanting, defaultTargetPlantingDay: number): number {
+  return planting.targetPlantingDate ? dayOfYear(planting.targetPlantingDate) : defaultTargetPlantingDay;
 }
 
 function hasNoLeadTime(planting: PlanningPlanting) {

@@ -11,7 +11,10 @@ import {
 import { World } from './world';
 
 export interface PlantingsDsl {
-  /** `as`, `planting`, the alias, `plant`, optional `year`, made for the spec when omitted, optional `leadTimeWeeks`. */
+  /**
+   * `as`, `planting`, the alias, `plant`, optional `year`, made for the spec when omitted, optional
+   * `leadTimeWeeks`, and optional `targetPlantingDate`.
+   */
   createPlanting(...args: string[]): Promise<void>,
   /** `as`, `planting`, `status`. */
   checkStatus(...args: string[]): Promise<void>,
@@ -27,10 +30,15 @@ export interface PlantingsDsl {
   checkYearMustBeANumber(...args: string[]): Promise<void>,
   /** `as`. Reads, acts on and updates a planting that does not exist. */
   checkUnknownPlantingIsNotFound(...args: string[]): Promise<void>,
-  /** `as`, `planting`, `numberSown`. */
+  /** `as`, `planting`, `numberSown`, and optional `sowDate`, 2026-03-01 when omitted. */
   start(...args: string[]): Promise<void>,
-  /** `as`, `planting`, `plot`, `numberTransplanted`. */
+  /** `as`, `planting`, `plot`, `numberTransplanted`, and optional `transplantDate`, 2026-05-20 when omitted. */
   plant(...args: string[]): Promise<void>,
+  /**
+   * `as`, `planting`, and optional `targetPlantingDate`, `sowDate` and `transplantDate`: each comes back
+   * as given, and its audit times and its history's are in UTC.
+   */
+  checkDates(...args: string[]): Promise<void>,
   /** `as`, `planting`. */
   retire(...args: string[]): Promise<void>,
   /** `as`, `planting`, `comment`. */
@@ -93,6 +101,7 @@ export function createPlantingsDsl(world: World, plantings: PlantingsDriver): Pl
         plant: alias(),
         year: optional(),
         leadTimeWeeks: optional().asInteger(),
+        targetPlantingDate: optional(),
       });
       const { caller, input, } = await newPlanting(params.as, params.plant, params.year);
 
@@ -100,6 +109,7 @@ export function createPlantingsDsl(world: World, plantings: PlantingsDriver): Pl
         ...input,
         name: fixtureName(params.planting),
         ...(params.leadTimeWeeks === undefined ? {} : { leadTimeWeeks: params.leadTimeWeeks, }),
+        ...(params.targetPlantingDate === undefined ? {} : { targetPlantingDate: params.targetPlantingDate, }),
       }));
     },
 
@@ -150,9 +160,19 @@ export function createPlantingsDsl(world: World, plantings: PlantingsDriver): Pl
     },
 
     async start(...args: string[]): Promise<void> {
-      const params = parseDslArgs(args, { as: actor(), planting: alias(), numberSown: required().asInteger(), });
+      const params = parseDslArgs(args, {
+        as: actor(),
+        planting: alias(),
+        numberSown: required().asInteger(),
+        sowDate: optional(),
+      });
 
-      await plantings.start(await world.actorFor(params.as), world.plantingNamed(params.planting), params.numberSown);
+      await plantings.start(
+        await world.actorFor(params.as),
+        world.plantingNamed(params.planting),
+        params.numberSown,
+        params.sowDate
+      );
     },
 
     async plant(...args: string[]): Promise<void> {
@@ -161,14 +181,33 @@ export function createPlantingsDsl(world: World, plantings: PlantingsDriver): Pl
         planting: alias(),
         plot: alias(),
         numberTransplanted: required().asInteger(),
+        transplantDate: optional(),
       });
 
       await plantings.plantInPlot(
         await world.actorFor(params.as),
         world.plantingNamed(params.planting),
         world.plotNamed(params.plot),
-        params.numberTransplanted
+        params.numberTransplanted,
+        params.transplantDate
       );
+    },
+
+    async checkDates(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, {
+        as: actor(),
+        planting: alias(),
+        targetPlantingDate: optional(),
+        sowDate: optional(),
+        transplantDate: optional(),
+      });
+      const { targetPlantingDate, sowDate, transplantDate, } = params;
+
+      await plantings.getReturnsDates(await world.actorFor(params.as), world.plantingNamed(params.planting), {
+        ...(targetPlantingDate === undefined ? {} : { targetPlantingDate, }),
+        ...(sowDate === undefined ? {} : { sowDate, }),
+        ...(transplantDate === undefined ? {} : { transplantDate, }),
+      });
     },
 
     async checkPlantInUnknownPlotIsRejected(...args: string[]): Promise<void> {

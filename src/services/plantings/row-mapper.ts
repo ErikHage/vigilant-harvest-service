@@ -96,7 +96,7 @@ const plantings = {
         plantId: row.plant_id,
         plantName: row.plant_name,
         currentStatus: row.current_status,
-        targetPlantingDate: mysqlUtils.nullableDbDateStringToJsDate(row.target_planting_date, true) ?? undefined,
+        targetPlantingDate: row.target_planting_date ?? undefined,
         leadTimeDays: row.lead_time_weeks ? row.lead_time_weeks * 7 : undefined,
       };
     },
@@ -125,8 +125,8 @@ const plantings = {
       numberTransplanted: row.number_transplanted,
       currentStatus: row.current_status,
       notes: row.notes,
-      dateCreated: row.date_created,
-      dateModified: row.date_modified,
+      dateCreated: mysqlUtils.toApiAuditTimestamp(row.date_created),
+      dateModified: mysqlUtils.toApiAuditTimestamp(row.date_modified),
       statusHistory: historyRows?.map(plantingStatusHistory.fromRow),
     };
   },
@@ -160,8 +160,8 @@ const plantingStatusHistory = {
       plantingId: row.planting_id,
       plantingStatus: row.planting_status,
       comment: row.comment,
-      dateCreated: row.date_created,
-      dateModified: row.date_modified,
+      dateCreated: mysqlUtils.toApiAuditTimestamp(row.date_created),
+      dateModified: mysqlUtils.toApiAuditTimestamp(row.date_modified),
     };
   },
 };

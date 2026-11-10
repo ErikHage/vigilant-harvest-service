@@ -11,7 +11,7 @@ export interface PlanningPlanting {
   plantId: string,
   plantName: string,
   currentStatus: string,
-  targetPlantingDate?: Date,
+  targetPlantingDate?: string,
   leadTimeDays?: number, // int
 }
 

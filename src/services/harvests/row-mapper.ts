@@ -6,14 +6,13 @@ import {
   HarvestSummaryRequest,
   HarvestSummaryRow, HarvestUpsertInstruction, HydratedHarvest, HydratedHarvestRow
 } from './types';
-import mysqlUtils from '../../database/mysql-utils';
 
 function fromRow(row: HarvestRow): Harvest {
   return {
     harvestId: row.harvest_id,
     plantingId: row.planting_id,
     quantity: row.quantity,
-    harvestDate: mysqlUtils.dbDateStringToJsDate(row.harvest_date, true),
+    harvestDate: row.harvest_date, // a DATE column: YYYY-MM-DD, as it was sent
     harvestTypeId: row.harvest_type_id,
     harvestType: row.harvest_type_name,
   }
@@ -28,7 +27,7 @@ function fromHydratedRow(row: HydratedHarvestRow): HydratedHarvest {
     plantName: row.plant_name,
     plotName: row.plot_name,
     quantity: row.quantity,
-    harvestDate: mysqlUtils.dbDateStringToJsDate(row.harvest_date, true),
+    harvestDate: row.harvest_date, // a DATE column: YYYY-MM-DD, as it was sent
     harvestTypeId: row.harvest_type_id,
     harvestType: row.harvest_type_name,
   }

@@ -13,7 +13,7 @@ export interface HarvestResponse {
   harvestId: string,
   plantingId: string,
   quantity: number, //int
-  harvestDate: Date,
+  harvestDate: string,
   harvestTypeId: number, //int
   harvestType: string,
 }
@@ -22,7 +22,7 @@ export interface Harvest {
   harvestId: string,
   plantingId: string,
   quantity: number, //int
-  harvestDate: Date,
+  harvestDate: string,
   harvestTypeId: number, //int
   harvestType: string,
 }
@@ -57,7 +57,7 @@ export interface HydratedHarvest {
   plantName: string,
   plotName: string,
   quantity: number, //int
-  harvestDate: Date,
+  harvestDate: string,
   harvestTypeId: number, //int
   harvestType: string,
 }
@@ -120,8 +120,8 @@ export interface HarvestStatsRequest {
 }
 
 export interface HarvestStats {
-  firstHarvestDate: Date | null,
-  lastHarvestDate: Date | null,
+  firstHarvestDate: string | null,
+  lastHarvestDate: string | null,
   numberOfHarvests: number, // int
   numberOfDays: number, // int
   statsType: StatsType,
@@ -129,8 +129,8 @@ export interface HarvestStats {
 }
 
 export interface HarvestStatsResponse {
-  firstHarvestDate: Date | null,
-  lastHarvestDate: Date | null,
+  firstHarvestDate: string | null,
+  lastHarvestDate: string | null,
   numberOfHarvests: number, // int
   numberOfDays: number, // int
   statsType: StatsType,
@@ -147,8 +147,8 @@ export interface ItemStats {
   harvestType: string,
   totalQuantity: number, // int
   averageHarvestPerDay: number // int
-  firstHarvest: Date | null,
-  lastHarvest: Date | null,
+  firstHarvest: string | null,
+  lastHarvest: string | null,
 }
 
 export interface PlantingYearRow extends RowDataPacket {

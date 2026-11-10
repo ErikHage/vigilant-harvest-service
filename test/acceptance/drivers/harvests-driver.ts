@@ -16,6 +16,15 @@ export type StatsType = 'Plant' | 'Planting';
 export interface HarvestDetails {
   quantity: number,
   harvestType: string,
+  /** Checked when given: the day exactly as it was sent. */
+  harvestDate?: string,
+}
+
+/** A year's stats, as the days its harvests fall on. */
+export interface StatsDays {
+  firstHarvestDate: string,
+  lastHarvestDate: string,
+  numberOfDays: number,
 }
 
 /** Ways a save can be wrong. Each is a test of its own. */
@@ -122,6 +131,7 @@ export interface HarvestsDriver {
   queriesOfNonNumericYearAreRejectedAsBadRequest(caller: Actor): Promise<void>,
   summaryIncludes(caller: Actor, plantingId: string, year: number, details: HarvestDetails): Promise<void>,
   statsCountHarvests(caller: Actor, statsType: StatsType, year: number, harvests: number): Promise<void>,
+  statsReportDays(caller: Actor, statsType: StatsType, year: number, days: StatsDays): Promise<void>,
   plantStatsCallThemselvesPlantingStats(caller: Actor, year: number): Promise<void>,
   recordForUnknownPlantingIsRejectedAsBadRequest(caller: Actor, input: NewHarvest): Promise<void>,
   saveOfInvalidHarvestsIsRejectedAsBadRequest(caller: Actor, good: NewHarvest, problem: HarvestSaveProblem): Promise<void>,
@@ -178,9 +188,12 @@ export function createHarvestsDriver(client: HttpClient, registry: ResourceRegis
       const { response, harvests, } = await search(caller, year, what);
       const entry = harvests.find(each => each.harvestId === harvest.harvestId);
 
+      const onDay = details.harvestDate === undefined ? '' : ` on ${details.harvestDate}`;
+
       expectThat(
-        entry?.quantity === details.quantity && entry.harvestType === details.harvestType,
-        `the harvest, ${details.quantity} of ${details.harvestType}`,
+        entry?.quantity === details.quantity && entry.harvestType === details.harvestType
+          && (details.harvestDate === undefined || entry.harvestDate === details.harvestDate),
+        `the harvest, ${details.quantity} of ${details.harvestType}${onDay}`,
         response,
         what
       );
@@ -229,6 +242,24 @@ export function createHarvestsDriver(client: HttpClient, registry: ResourceRegis
 
       expectStatus(response, status.OK, what);
       expectBodyToContain(response, { numberOfHarvests: harvests, }, what);
+    },
+
+    async statsReportDays(caller: Actor, statsType: StatsType, year: number, days: StatsDays): Promise<void> {
+      const what = `reading the days in the ${statsType} stats of ${year}`;
+      const response = await as(caller).get(`/harvests/stats?type=${statsType}&year=${year}`);
+
+      expectStatus(response, status.OK, what);
+      expectBodyToContain(response, { ...days, }, what);
+
+      // the year is the spec's own, so every item is one of its harvests
+      const { stats, } = response.body as { stats: { firstHarvest: unknown, lastHarvest: unknown }[] };
+      expectThat(
+        stats.length > 0 && stats.every(item =>
+          item.firstHarvest === days.firstHarvestDate && item.lastHarvest === days.lastHarvestDate),
+        `every item from ${days.firstHarvestDate} to ${days.lastHarvestDate}`,
+        response,
+        what
+      );
     },
 
     async plantStatsCallThemselvesPlantingStats(caller: Actor, year: number): Promise<void> {

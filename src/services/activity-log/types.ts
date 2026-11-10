@@ -12,23 +12,23 @@ export interface ActivityLogEntryRequest {
 export interface ActivityLogEntryResponse {
   entryId: string,
   plantingYear: number, // int
-  entryDate: Date,
+  entryDate: string,
   activityType: string,
   subType: string,
   comments: string,
-  dateCreated: Date,
-  dateModified: Date,
+  dateCreated: string,
+  dateModified: string,
 }
 
 export interface ActivityLogEntry {
   entryId: string,
   plantingYear: number, // int
-  entryDate: Date,
+  entryDate: string,
   activityType: string,
   subType: string,
   comments: string,
-  dateCreated: Date,
-  dateModified: Date,
+  dateCreated: string,
+  dateModified: string,
 }
 
 export interface ActivityLogEntryRow extends RowDataPacket {

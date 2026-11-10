@@ -1,17 +1,18 @@
-function dbDateStringToJsDate(dateString: string, stripUtc = false): Date {
-  if (stripUtc) {
-    const [ year, month, day, ] = dateString.split('-').map(Number);
-    return new Date(year!, month! - 1, day);
-  } else {
-    return new Date(dateString);
-  }
+/**
+ * A DATETIME as the API returns it: the wall-clock value it holds, with a T in
+ * place of MySQL's space. That is formatting, not a conversion; there is no zone.
+ */
+function toApiDateTime(value: string): string {
+  return value.replace(' ', 'T');
 }
 
-function nullableDbDateStringToJsDate(dateString: string, stripUtc = false): Date | null {
-  if (!dateString) {
-    return null;
-  }
-  return dbDateStringToJsDate(dateString, stripUtc);
+/**
+ * An audit TIMESTAMP as the API returns it. Every service connection reads in
+ * UTC (see mysql-connection), so the value is the UTC instant it holds, to the
+ * second: YYYY-MM-DDTHH:mm:ssZ.
+ */
+function toApiAuditTimestamp(value: string): string {
+  return `${toApiDateTime(value)}Z`;
 }
 
 function booleanToDbInt(val: boolean): number {
@@ -30,8 +31,8 @@ function dbIntToBoolean(val: number): boolean {
 }
 
 export default {
-  dbDateStringToJsDate,
-  nullableDbDateStringToJsDate,
+  toApiDateTime,
+  toApiAuditTimestamp,
   booleanToDbInt,
   nullableBooleanToDbInt,
   dbIntToBoolean,

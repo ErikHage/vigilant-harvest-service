@@ -33,6 +33,25 @@ describe('plantings', () => {
     await plantings.checkHistory('as: gardener', 'planting: row-one', 'entries: 4');
   });
 
+  it('returns its dates as they were sent, with its audit times in UTC', async () => {
+    await plots.createPlot('as: gardener', 'plot: north-bed');
+    await plantings.createPlanting(
+      'as: gardener', 'planting: row-one', 'plant: tomato', 'leadTimeWeeks: 6', 'targetPlantingDate: 2026-05-15'
+    );
+    await plantings.start('as: gardener', 'planting: row-one', 'numberSown: 4', 'sowDate: 2026-03-08');
+    await plantings.plant(
+      'as: gardener', 'planting: row-one', 'plot: north-bed', 'numberTransplanted: 4', 'transplantDate: 2026-05-17'
+    );
+
+    await plantings.checkDates(
+      'as: gardener',
+      'planting: row-one',
+      'targetPlantingDate: 2026-05-15',
+      'sowDate: 2026-03-08',
+      'transplantDate: 2026-05-17'
+    );
+  });
+
   it('records a comment without changing the status', async () => {
     await plantings.createPlanting('as: gardener', 'planting: row-one', 'plant: tomato');
 

@@ -75,8 +75,8 @@ export interface PlantResponse {
   planting: PlantingInfo,
   growing: GrowingInfo,
   harvesting: HarvestingInfo,
-  dateCreated: Date,
-  dateModified: Date,
+  dateCreated: string,
+  dateModified: string,
 }
 
 export interface PlantRow extends RowDataPacket {
@@ -110,8 +110,8 @@ export interface PlantRow extends RowDataPacket {
   fruit_size: string,
   shelf_stability: string,
   harvest_instructions: string,
-  date_created: Date,
-  date_modified: Date,
+  date_created: string,
+  date_modified: string,
 }
 
 export interface Plant {
@@ -130,8 +130,8 @@ export interface Plant {
   planting: PlantingInfo,
   growing: GrowingInfo,
   harvesting: HarvestingInfo,
-  dateCreated?: Date,
-  dateModified?: Date,
+  dateCreated?: string,
+  dateModified?: string,
 }
 
 export interface PlantUpsertInstruction {
@@ -146,8 +146,8 @@ export interface PlantUpsertInstruction {
   planting: PlantingInfo,
   growing: GrowingInfo,
   harvesting: HarvestingInfo,
-  dateCreated?: Date,
-  dateModified?: Date,
+  dateCreated?: string,
+  dateModified?: string,
 }
 
 export interface CategorySubcategoryRow extends RowDataPacket {
