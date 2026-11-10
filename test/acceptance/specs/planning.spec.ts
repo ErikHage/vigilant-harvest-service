@@ -36,4 +36,21 @@ describe('planning', () => {
   it('rejects a year that is not a number', async () => {
     await planning.checkYearMustBeANumber('as: gardener');
   });
+
+  it('plans from the day the app sends as today', async () => {
+    await planning.checkCurrentDay('as: gardener', 'today: 2026-03-01', 'day: 60');
+  });
+
+  it('counts 29 February in a leap year', async () => {
+    await planning.checkCurrentDay('as: gardener', 'today: 2028-03-01', 'day: 61');
+  });
+
+  it.each([
+    'no today',
+    'a today in UTC',
+    'a today with a time',
+    'a today that does not exist',
+  ])('rejects a plan with %s', async problem => {
+    await planning.checkInvalidTodayIsRejected('as: gardener', `problem: ${problem}`);
+  });
 });

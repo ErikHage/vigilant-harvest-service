@@ -16,7 +16,9 @@
     "prepush": "npm run lint",
     "tsc:acceptance": "tsc -p test/acceptance/tsconfig.json",
     "test:acceptance": "vitest run --config test/acceptance/vitest.config.mts",
-    "test:acceptance:watch": "vitest --config test/acceptance/vitest.config.mts"
+    "test:acceptance:watch": "vitest --config test/acceptance/vitest.config.mts",
+    "tsc:unit": "tsc -p test/unit/tsconfig.json",
+    "test:unit": "vitest run --config test/unit/vitest.config.mts"
   },
   "dependencies": {
     "@feral-auth/token-verifier": "0.2.0",

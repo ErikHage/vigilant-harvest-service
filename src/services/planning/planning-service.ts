@@ -1,15 +1,16 @@
 import { getDayOfYear } from 'date-fns'
 
 import { ensureError, FeralError } from '../../errors';
-import { PlanningDetails, PlanningInstance, PlanningPlanting } from './types';
+import { PlanningDetails, PlanningInstance, PlanningPlanting, PlanningRequest } from './types';
 import plantingYearsMysqlDatasource from '../planting-years/planting-years-mysql-datasource';
 import plantingsMysqlDatasource from '../plantings/plantings-mysql-datasource';
 import { PlantingYear } from '../planting-years/types';
 import constants from '../../util/constants';
+import { dayOfYear } from '../../util/local-dates';
 
-async function getPlanningDetailsForYear(year: number): Promise<PlanningDetails> {
+async function getPlanningDetailsForYear({ plantingYear: year, today, }: PlanningRequest): Promise<PlanningDetails> {
   try {
-    const currentDay = getCurrentDayOfYear();
+    const currentDay = dayOfYear(today);
     const plantingYear = await plantingYearsMysqlDatasource.getPlantingYear(year);
     const targetPlantingDay = getDayOfYearFromDate(plantingYear.targetPlantingDate);
 
@@ -37,7 +38,7 @@ async function getPlanningDetailsForYear(year: number): Promise<PlanningDetails>
     }
   } catch (err) {
     throw new FeralError('Error getting planning details for year', ensureError(err))
-      .withDebugParams({ plantingYear: year, });
+      .withDebugParams({ plantingYear: year, today, });
   }
 }
 
@@ -108,11 +109,6 @@ function sortByDaysUntilAction(a: PlanningInstance, b: PlanningInstance) {
   if (bVal == null) return -1;
 
   return aVal - bVal;
-}
-
-function getCurrentDayOfYear(): number {
-  const now = new Date();
-  return getDayOfYearFromDate(now);
 }
 
 function getDayOfYearFromDate(date: Date): number {

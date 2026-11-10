@@ -1,6 +1,7 @@
 import { Request } from 'express';
 
 import { BadRequestError } from '../errors/common';
+import { isCalendarDay } from '../util/local-dates';
 
 /**
  * Checks for values that come from a request: a body field, a route param or a
@@ -225,21 +226,6 @@ export const DATE_YEARS: YearRange = { min: 1000, max: 9999, };
 export interface LocalDateOptions {
   /** DATE_YEARS unless the column holds fewer. */
   years?: YearRange,
-}
-
-function isLeapYear(year: number): boolean {
-  return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
-}
-
-function daysInMonth(year: number, month: number): number {
-  if (month === 2) {
-    return isLeapYear(year) ? 29 : 28;
-  }
-  return DAYS_IN_MONTH[month - 1]!;
-}
-
-function isCalendarDay(year: number, month: number, day: number): boolean {
-  return month >= 1 && month <= 12 && day >= 1 && day <= daysInMonth(year, month);
 }
 
 function assertLocal(value: unknown, field: string): void {

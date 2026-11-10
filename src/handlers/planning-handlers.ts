@@ -5,9 +5,9 @@ import tryDecorator from '../middleware/try-decorator';
 import httpStatus from '../util/http-status';
 
 async function getPlanningDetailsByYear(request: Request, response: Response) {
-  const plantingYear = planningSerializers.planningDetails.fromRequest(request);
+  const planningRequest = planningSerializers.planningDetails.fromRequest(request);
 
-  const planningDetails = await planningService.getPlanningDetailsForYear(plantingYear);
+  const planningDetails = await planningService.getPlanningDetailsForYear(planningRequest);
   const planningDetailsResponse = planningSerializers.planningDetails.toResponse(planningDetails);
 
   response

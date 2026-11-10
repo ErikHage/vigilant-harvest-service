@@ -1,11 +1,12 @@
 import { Request } from 'express';
 
-import { requiredYear } from '../validation';
+import { requiredLocalDate, requiredYear } from '../validation';
 import {
   PlanningDetails,
   PlanningDetailsResponse,
   PlanningInstance,
-  PlanningInstanceResponse
+  PlanningInstanceResponse,
+  PlanningRequest
 } from '../services/planning/types';
 
 function toPlanningInstanceResponse(instance: PlanningInstance): PlanningInstanceResponse {
@@ -21,7 +22,11 @@ function toPlanningInstanceResponse(instance: PlanningInstance): PlanningInstanc
 
 export default {
   planningDetails: {
-    fromRequest: (req: Request): number => requiredYear(req.params.plantingYear, 'plantingYear'),
+    fromRequest: (req: Request): PlanningRequest => ({
+      plantingYear: requiredYear(req.params.plantingYear, 'plantingYear'),
+      // the service's own clock would be the server's day, not the user's
+      today: requiredLocalDate(req.query.today, 'today'),
+    }),
 
     toResponse: (planningDetails: PlanningDetails): PlanningDetailsResponse => ({
       plantingYear: planningDetails.plantingYear,

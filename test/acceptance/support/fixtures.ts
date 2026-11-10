@@ -29,6 +29,9 @@ export const TEST_YEAR_MAX = 9999;
 const HARVEST_DATE = '2026-07-01';
 const ENTRY_DATE = '2026-06-01T09:30:00';
 
+/** The user's own today, which the app sends with every planning request. */
+export const PLANNING_TODAY = '2026-04-01';
+
 export interface NewCategory {
   categoryName: string,
 }

@@ -1,5 +1,10 @@
 import { RowDataPacket } from 'mysql2';
 
+export interface PlanningRequest {
+  plantingYear: number, // int
+  today: string, // YYYY-MM-DD, the user's own day; the plan counts from it
+}
+
 export interface PlanningPlanting {
   plantingId: string,
   plantingName: string,

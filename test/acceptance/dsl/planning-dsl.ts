@@ -1,7 +1,7 @@
-import { parseDslArgs } from '@feral-auth/ts-simple-dsl';
+import { parseDslArgs, required } from '@feral-auth/ts-simple-dsl';
 
 import { actor, alias } from './params';
-import { PlanningDriver } from '../drivers/planning-driver';
+import { PLANNING_TODAY_PROBLEMS, PlanningDriver } from '../drivers/planning-driver';
 import { World } from './world';
 
 export interface PlanningDsl {
@@ -13,6 +13,10 @@ export interface PlanningDsl {
   checkUnknownYearIsNotFound(...args: string[]): Promise<void>,
   /** `as`. */
   checkYearMustBeANumber(...args: string[]): Promise<void>,
+  /** `as`, `today`, `day`: the day of the year planned for `today`, in a year made for the spec. */
+  checkCurrentDay(...args: string[]): Promise<void>,
+  /** `as`, `problem`, one of the driver's PLANNING_TODAY_PROBLEMS. Plans a year made for the spec. */
+  checkInvalidTodayIsRejected(...args: string[]): Promise<void>,
 }
 
 export function createPlanningDsl(world: World, planning: PlanningDriver): PlanningDsl {
@@ -39,6 +43,22 @@ export function createPlanningDsl(world: World, planning: PlanningDriver): Plann
       const params = parseDslArgs(args, { as: actor(), });
 
       await planning.getForNonNumericYearIsRejectedAsBadRequest(await world.actorFor(params.as));
+    },
+
+    async checkCurrentDay(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), today: required(), day: required().asInteger(), });
+      const caller = await world.actorFor(params.as);
+      const { plantingYear, } = await world.yearFor(caller, undefined);
+
+      await planning.currentDayIs(caller, plantingYear, params.today, params.day);
+    },
+
+    async checkInvalidTodayIsRejected(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), problem: required().allowedValues(...PLANNING_TODAY_PROBLEMS), });
+      const caller = await world.actorFor(params.as);
+      const { plantingYear, } = await world.yearFor(caller, undefined);
+
+      await planning.getWithInvalidTodayIsRejectedAsBadRequest(caller, plantingYear, params.problem);
     },
   };
 }
