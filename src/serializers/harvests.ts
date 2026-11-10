@@ -20,8 +20,7 @@ import {
   requiredObject,
   requiredLocalDate,
   requiredString,
-  requiredYear,
-  TIMESTAMP_YEARS
+  requiredYear
 } from '../validation';
 
 const insert = {
@@ -36,8 +35,8 @@ const insert = {
         plantingId: requiredString(harvest.plantingId, `${field}.plantingId`, { maxLength: 36, }),
         // the column is an INT, so a fraction is rounded when it's stored; harvests by weight have them
         quantity: requiredNumber(harvest.quantity, `${field}.quantity`, { greaterThan: 0, max: INT_MAX, }),
-        // a harvest is filed by day; it is still stored in a TIMESTAMP column, so its years are limited
-        harvestDate: requiredLocalDate(harvest.harvestDate, `${field}.harvestDate`, { years: TIMESTAMP_YEARS, }),
+        // a harvest is filed by day
+        harvestDate: requiredLocalDate(harvest.harvestDate, `${field}.harvestDate`),
         harvestTypeId: optionalInteger(harvest.harvestTypeId, `${field}.harvestTypeId`, { min: 1, }),
       };
     }),

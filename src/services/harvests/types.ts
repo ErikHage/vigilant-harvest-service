@@ -44,7 +44,7 @@ export interface HarvestRow extends RowDataPacket {
   harvest_id: string,
   planting_id: string,
   quantity: number, //int
-  date_created: string,
+  harvest_date: string, // YYYY-MM-DD
   harvest_type_id: number, //int
   harvest_type_name: string,
 }
@@ -70,7 +70,7 @@ export interface HydratedHarvestRow extends RowDataPacket {
   plant_name: string,
   plot_name: string,
   quantity: number, //int
-  date_created: string,
+  harvest_date: string, // YYYY-MM-DD
   harvest_type_id: number, //int
   harvest_type_name: string,
 }

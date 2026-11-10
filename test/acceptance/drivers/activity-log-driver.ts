@@ -44,10 +44,10 @@ const invalidEntries: Record<ActivityLogEntryProblem, { body: (good: NewActivity
   'an hour that does not exist': { body: good => ({ ...good, entryDate: '2026-06-01T24:00:00', }), reason: NOT_DATE_TIME, },
   'a second that does not exist': { body: good => ({ ...good, entryDate: '2026-06-01T09:30:60', }), reason: NOT_DATE_TIME, },
   'a day that does not exist': { body: good => ({ ...good, entryDate: '2026-02-30T09:30:00', }), reason: NOT_DATE_TIME, },
-  // entryDate is a TIMESTAMP column, which holds 1970 to 2038
+  // entryDate is a DATETIME column, which holds the years 1000 to 9999
   'a date out of range': {
-    body: good => ({ ...good, entryDate: '1960-06-01T09:30:00', }),
-    reason: 'entryDate must be between 1971 and 2037',
+    body: good => ({ ...good, entryDate: '0999-06-01T09:30:00', }),
+    reason: 'entryDate must be between 1000 and 9999',
   },
   'no year': { body: good => withoutField(good, 'plantingYear'), reason: 'plantingYear is required', },
   'a year that is not a number': {

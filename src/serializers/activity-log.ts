@@ -6,8 +6,7 @@ import {
   requiredLocalDateTime,
   requiredString,
   requiredYear,
-  TEXT_BYTES,
-  TIMESTAMP_YEARS
+  TEXT_BYTES
 } from '../validation';
 
 import { ActivityLogEntry, ActivityLogEntryRequest, ActivityLogEntryResponse } from '../services/activity-log/types';
@@ -19,8 +18,7 @@ const activityLogEntries = {
       return {
         entryId: optionalString(body.entryId, 'entryId', { maxLength: 36, }),
         plantingYear: requiredYear(body.plantingYear, 'plantingYear'),
-        // still stored in a TIMESTAMP column, so its years are limited
-        entryDate: requiredLocalDateTime(body.entryDate, 'entryDate', { years: TIMESTAMP_YEARS, }),
+        entryDate: requiredLocalDateTime(body.entryDate, 'entryDate'),
         activityType: requiredString(body.activityType, 'activityType', { maxLength: 255, }),
         subType: optionalString(body.subType, 'subType', { maxLength: 255, }) ?? null,
         comments: optionalString(body.comments, 'comments', { maxBytes: TEXT_BYTES, }) ?? null,

@@ -1,6 +1,6 @@
 import { Request } from 'express';
 
-import { bodyOf, optionalString, requiredLocalDateTime, requiredYear, TEXT_BYTES, TIMESTAMP_YEARS } from '../validation';
+import { bodyOf, optionalString, requiredLocalDateTime, requiredYear, TEXT_BYTES } from '../validation';
 
 import { JournalEntry, JournalEntryRequest, JournalEntryResponse } from '../services/journal/types';
 
@@ -12,8 +12,7 @@ const journalEntries = {
         entryId: optionalString(body.entryId, 'entryId', { maxLength: 36, }),
         plantingYear: requiredYear(body.plantingYear, 'plantingYear'),
         entry: optionalString(body.entry, 'entry', { maxBytes: TEXT_BYTES, }) ?? null,
-        // still stored in a TIMESTAMP column, so its years are limited
-        entryDate: requiredLocalDateTime(body.entryDate, 'entryDate', { years: TIMESTAMP_YEARS, }),
+        entryDate: requiredLocalDateTime(body.entryDate, 'entryDate'),
       };
     },
   },

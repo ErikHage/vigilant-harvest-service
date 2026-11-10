@@ -1,5 +1,5 @@
 const allHarvestFields: string =
-  'h.harvest_id, h.planting_id, h.quantity, h.date_created, h.harvest_type_id, ht.harvest_type_name';
+  'h.harvest_id, h.planting_id, h.quantity, h.harvest_date, h.harvest_type_id, ht.harvest_type_name';
 
 const harvestTypeJoin: string =
   `JOIN harvest_types ht
@@ -8,13 +8,14 @@ const harvestTypeJoin: string =
 // the service resolves the authoritative harvest_type_id before this runs -- the requested one, or
 // the type already stored, or the plant's default -- so the UPDATE clause writes it back as given
 // planting_year is set only on insert: an existing harvest keeps the year it was filed under
+// date_created is the database's own: a harvest's day is harvest_date
 const upsertHarvest: string =
-  `INSERT INTO harvests (harvest_id, planting_id, planting_year, quantity, date_created, harvest_type_id)
+  `INSERT INTO harvests (harvest_id, planting_id, planting_year, quantity, harvest_date, harvest_type_id)
    VALUES (?, ?, ?, ?, ?, ?)
        ON DUPLICATE KEY
        UPDATE planting_id = VALUES(planting_id),
               quantity = VALUES(quantity),
-              date_created = VALUES(date_created),
+              harvest_date = VALUES(harvest_date),
               harvest_type_id = VALUES(harvest_type_id)`;
 
 const getHarvestById: string =
@@ -28,7 +29,7 @@ const getHarvestByPlantingIdDateAndType: string =
      FROM harvests h
      ${harvestTypeJoin}
     WHERE h.planting_id = ?
-      AND h.date_created = ?
+      AND h.harvest_date = ?
       AND h.harvest_type_id = ?`;
 
 const getPlantingYearByPlantingId: string =
@@ -55,11 +56,11 @@ const searchHarvests: string =
      FROM harvests h
      ${harvestTypeJoin}
     WHERE h.planting_year = ?
-   ORDER BY h.date_created DESC`;
+   ORDER BY h.harvest_date DESC, h.date_created DESC`;
 
 const getHydratedHarvestsByYear: string =
   `SELECT h.harvest_id, h.planting_id, p.planting_name, pl.plant_id, pt.friendly_name as plot_name,
-          pl.friendly_name AS plant_name, h.quantity, h.date_created,
+          pl.friendly_name AS plant_name, h.quantity, h.harvest_date,
           h.harvest_type_id, ht.harvest_type_name
      FROM harvests h
      JOIN plantings p
@@ -70,7 +71,7 @@ const getHydratedHarvestsByYear: string =
        ON p.plot_id = pt.plot_id
      ${harvestTypeJoin}
     WHERE h.planting_year = ?
-   ORDER BY h.date_created DESC`;
+   ORDER BY h.harvest_date DESC, h.date_created DESC`;
 
 const deleteById: string = 'DELETE FROM harvests WHERE harvest_id = ?';
 

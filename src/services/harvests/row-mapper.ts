@@ -13,7 +13,7 @@ function fromRow(row: HarvestRow): Harvest {
     harvestId: row.harvest_id,
     plantingId: row.planting_id,
     quantity: row.quantity,
-    harvestDate: mysqlUtils.dbDateStringToJsDate(row.date_created),
+    harvestDate: mysqlUtils.dbDateStringToJsDate(row.harvest_date, true),
     harvestTypeId: row.harvest_type_id,
     harvestType: row.harvest_type_name,
   }
@@ -28,7 +28,7 @@ function fromHydratedRow(row: HydratedHarvestRow): HydratedHarvest {
     plantName: row.plant_name,
     plotName: row.plot_name,
     quantity: row.quantity,
-    harvestDate: mysqlUtils.dbDateStringToJsDate(row.date_created),
+    harvestDate: mysqlUtils.dbDateStringToJsDate(row.harvest_date, true),
     harvestTypeId: row.harvest_type_id,
     harvestType: row.harvest_type_name,
   }

@@ -41,6 +41,12 @@ describe('harvests', () => {
     await harvests.checkStats('as: gardener', 'statsType: Planting', 'planting: row-one', 'harvests: 1');
   });
 
+  it('accepts a date after 2038', async () => {
+    await harvests.recordHarvest('as: gardener', 'harvest: far-off', 'planting: row-one', 'quantity: 2', 'date: 2040-07-01');
+
+    await harvests.checkHarvest('as: gardener', 'harvest: far-off', 'planting: row-one', 'quantity: 2', 'type: pounds');
+  });
+
   it('keeps a harvest in its year when it is saved again', async () => {
     await harvests.recordHarvest('as: gardener', 'harvest: first', 'planting: row-one', 'quantity: 2');
 

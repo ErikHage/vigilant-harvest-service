@@ -19,6 +19,12 @@ describe('activity log', () => {
     await activityLog.checkListed('as: gardener', 'entry: dawn');
   });
 
+  it('accepts a date after 2038', async () => {
+    await activityLog.createEntry('as: gardener', 'entry: far-off', 'date: 2040-06-01T09:30:00');
+
+    await activityLog.checkListed('as: gardener', 'entry: far-off');
+  });
+
   it('updates an entry', async () => {
     await activityLog.createEntry('as: gardener', 'entry: watered');
 

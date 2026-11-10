@@ -219,13 +219,6 @@ export interface YearRange {
   max: number,
 }
 
-/**
- * A TIMESTAMP column holds 1970-01-01 00:00:01 to 2038-01-19 03:14:07 UTC. The
- * years at either end are left out, so that a date the server shifts into its
- * own time zone still fits.
- */
-export const TIMESTAMP_YEARS: YearRange = { min: 1971, max: 2037, };
-
 /** The years MySQL supports in DATE and DATETIME columns. Earlier ones may be stored, but aren't promised. */
 export const DATE_YEARS: YearRange = { min: 1000, max: 9999, };
 

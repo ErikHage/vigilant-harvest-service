@@ -101,10 +101,10 @@ const invalidSaves: Record<HarvestSaveProblem, { body: (good: NewHarvest) => obj
     body: good => ({ harvests: [ { ...good, harvestDate: '2026-02-30', }, ], }),
     reason: 'harvests[0].harvestDate must be a date, as YYYY-MM-DD',
   },
-  // the harvest date is stored in a TIMESTAMP column, which holds 1970 to 2038
+  // the harvest date is a DATE column, which holds the years 1000 to 9999
   'a date out of range': {
-    body: good => ({ harvests: [ { ...good, harvestDate: '1960-07-01', }, ], }),
-    reason: 'harvests[0].harvestDate must be between 1971 and 2037',
+    body: good => ({ harvests: [ { ...good, harvestDate: '0999-07-01', }, ], }),
+    reason: 'harvests[0].harvestDate must be between 1000 and 9999',
   },
   'a harvest type that is not a number': {
     body: good => ({ harvests: [ { ...good, harvestTypeId: 'abc', }, ], }),
