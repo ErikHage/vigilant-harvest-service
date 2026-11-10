@@ -18,9 +18,10 @@ import {
   requiredList,
   requiredNumber,
   requiredObject,
+  requiredLocalDate,
   requiredString,
-  requiredTimestamp,
-  requiredYear
+  requiredYear,
+  TIMESTAMP_YEARS
 } from '../validation';
 
 const insert = {
@@ -29,16 +30,14 @@ const insert = {
       const field = `harvests[${index}]`;
       const harvest = requiredObject(entry, field);
 
-      const harvestDate = requiredTimestamp(harvest.harvestDate, `${field}.harvestDate`);
-      harvestDate.setHours(0, 0, 0, 0); // a harvest is filed by day
-
       return {
         harvestId: optionalString(harvest.harvestId, `${field}.harvestId`, { maxLength: 36, }),
         // only checked for shape here; the service confirms the planting and the type exist
         plantingId: requiredString(harvest.plantingId, `${field}.plantingId`, { maxLength: 36, }),
         // the column is an INT, so a fraction is rounded when it's stored; harvests by weight have them
         quantity: requiredNumber(harvest.quantity, `${field}.quantity`, { greaterThan: 0, max: INT_MAX, }),
-        harvestDate,
+        // a harvest is filed by day; it is still stored in a TIMESTAMP column, so its years are limited
+        harvestDate: requiredLocalDate(harvest.harvestDate, `${field}.harvestDate`, { years: TIMESTAMP_YEARS, }),
         harvestTypeId: optionalInteger(harvest.harvestTypeId, `${field}.harvestTypeId`, { min: 1, }),
       };
     }),

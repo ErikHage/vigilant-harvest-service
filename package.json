@@ -19,7 +19,6 @@
     "test:acceptance:watch": "vitest --config test/acceptance/vitest.config.mts"
   },
   "dependencies": {
-    "@date-fns/utc": "^1.2.0",
     "@feral-auth/token-verifier": "0.2.0",
     "@types/db-migrate-base": "^0.0.14",
     "body-parser": "^1.20.2",

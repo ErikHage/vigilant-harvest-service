@@ -18,12 +18,12 @@ import {
   bodyOf,
   INT_MAX,
   oneOf,
-  optionalDate,
   optionalInteger,
+  optionalLocalDate,
   optionalString,
-  requiredDate,
   requiredInteger,
   requiredList,
+  requiredLocalDate,
   requiredObject,
   requiredString,
   requiredYear,
@@ -48,7 +48,7 @@ const insert = {
       name: requiredString(body.name, 'name', NAME),
       seedSource: optionalString(body.seedSource, 'seedSource', NAME),
       lotNumber: optionalString(body.lotNumber, 'lotNumber', NAME),
-      targetPlantingDate: optionalDate(blankAsMissing(body.targetPlantingDate), 'targetPlantingDate'),
+      targetPlantingDate: optionalLocalDate(blankAsMissing(body.targetPlantingDate), 'targetPlantingDate'),
       // the app's lead time box sends '' when it's cleared
       leadTimeWeeks: optionalInteger(blankAsMissing(body.leadTimeWeeks), 'leadTimeWeeks', COUNT),
     };
@@ -92,12 +92,12 @@ const update = {
       lotNumber: optionalString(sent('lotNumber'), 'lotNumber', NAME),
       plotId: optionalString(sent('plotId'), 'plotId', ID),
       numberTransplanted: optionalInteger(sent('numberTransplanted'), 'numberTransplanted', COUNT),
-      targetPlantingDate: optionalDate(sent('targetPlantingDate'), 'targetPlantingDate'),
+      targetPlantingDate: optionalLocalDate(sent('targetPlantingDate'), 'targetPlantingDate'),
       leadTimeWeeks: optionalInteger(sent('leadTimeWeeks'), 'leadTimeWeeks', COUNT),
-      sowDate: optionalDate(sent('sowDate'), 'sowDate'),
+      sowDate: optionalLocalDate(sent('sowDate'), 'sowDate'),
       sowType: optionalString(sent('sowType'), 'sowType', NAME),
       numberSown: optionalInteger(sent('numberSown'), 'numberSown', COUNT),
-      transplantDate: optionalDate(sent('transplantDate'), 'transplantDate'),
+      transplantDate: optionalLocalDate(sent('transplantDate'), 'transplantDate'),
       notes: optionalString(sent('notes'), 'notes', TEXT),
     };
   },
@@ -117,7 +117,7 @@ function _comment(body: Record<string, unknown>): string {
 
 function _parseSowActionData(body: Record<string, unknown>): SowActionData {
   return {
-    sowDate: requiredDate(body.sowDate, 'sowDate'),
+    sowDate: requiredLocalDate(body.sowDate, 'sowDate'),
     numberSown: optionalInteger(blankAsMissing(body.numberSown), 'numberSown', COUNT),
     comment: _comment(body),
   };
@@ -144,7 +144,7 @@ function _parseTransplantActionData(body: Record<string, unknown>): TransplantAc
   return {
     // the service checks that it exists; the app sends null when no plot is picked
     plotId: optionalString(body.plotId, 'plotId', ID),
-    transplantDate: requiredDate(body.transplantDate, 'transplantDate'),
+    transplantDate: requiredLocalDate(body.transplantDate, 'transplantDate'),
     numberTransplanted: optionalInteger(blankAsMissing(body.numberTransplanted), 'numberTransplanted', COUNT),
     comment: _comment(body),
   };

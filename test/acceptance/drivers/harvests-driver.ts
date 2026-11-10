@@ -32,6 +32,10 @@ export const HARVEST_SAVE_PROBLEMS = [
   'a quantity too large to store',
   'no date',
   'an unparseable date',
+  'a date in UTC',
+  'a date with an offset',
+  'a date with a time',
+  'a day that does not exist',
   'a date out of range',
   'a harvest type that is not a number',
 ] as const;
@@ -79,6 +83,23 @@ const invalidSaves: Record<HarvestSaveProblem, { body: (good: NewHarvest) => obj
   'an unparseable date': {
     body: good => ({ harvests: [ { ...good, harvestDate: 'not-a-date', }, ], }),
     reason: 'harvests[0].harvestDate must be a date',
+  },
+  // a harvest date is the user's own day, so an instant is refused rather than guessed at
+  'a date in UTC': {
+    body: good => ({ harvests: [ { ...good, harvestDate: '2026-07-01T04:00:00.000Z', }, ], }),
+    reason: 'harvests[0].harvestDate must be a local time, with no Z or offset',
+  },
+  'a date with an offset': {
+    body: good => ({ harvests: [ { ...good, harvestDate: '2026-07-01T00:00:00-04:00', }, ], }),
+    reason: 'harvests[0].harvestDate must be a local time, with no Z or offset',
+  },
+  'a date with a time': {
+    body: good => ({ harvests: [ { ...good, harvestDate: '2026-07-01T12:00:00', }, ], }),
+    reason: 'harvests[0].harvestDate must be a date, as YYYY-MM-DD',
+  },
+  'a day that does not exist': {
+    body: good => ({ harvests: [ { ...good, harvestDate: '2026-02-30', }, ], }),
+    reason: 'harvests[0].harvestDate must be a date, as YYYY-MM-DD',
   },
   // the harvest date is stored in a TIMESTAMP column, which holds 1970 to 2038
   'a date out of range': {
@@ -240,13 +261,13 @@ export function createHarvestsDriver(client: HttpClient, registry: ResourceRegis
     async saveAsTheAppSendsItSucceeds(caller: Actor, plantingId: string): Promise<void> {
       const what = 'saving a harvest as the app sends it';
       // The app adds the store's plantingYear, possibly a string, which the service ignores. Its
-      // quantity is whatever was typed, fractions included, and its date is a Date sent as JSON.
+      // quantity is whatever was typed, fractions included, and its date is the user's own day.
       const response = await as(caller).put('/harvests', {
         harvests: [ {
           plantingYear: '2026',
           plantingId,
           quantity: 1.5,
-          harvestDate: '2026-07-01T04:00:00.000Z',
+          harvestDate: '2026-07-01',
         }, ],
       });
 

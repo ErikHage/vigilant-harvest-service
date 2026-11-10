@@ -5,7 +5,7 @@ export interface HarvestRequest {
   harvestId: string | undefined,
   plantingId: string,
   quantity: number, //int
-  harvestDate: Date,
+  harvestDate: string, // YYYY-MM-DD, the user's own day
   harvestTypeId?: number, //int, overrides the plant's default when supplied
 }
 
@@ -33,7 +33,7 @@ export interface HarvestUpsertInstruction {
   plantingId: string,
   plantingYear: number, // int; only written for a new harvest
   quantity: number, //int
-  harvestDate: Date,
+  harvestDate: string, // YYYY-MM-DD
   harvestTypeId: number, //int
   // set when retyping an existing harvest onto a day that already holds one of the new type: its
   // quantity moves to that harvest and this row is deleted in the same transaction

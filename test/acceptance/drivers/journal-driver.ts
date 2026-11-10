@@ -9,6 +9,13 @@ import { status } from '../support/status-codes';
 export const JOURNAL_ENTRY_PROBLEMS = [
   'no date',
   'an unparseable date',
+  'a date in UTC',
+  'a date with an offset',
+  'a date with no time',
+  'fractional seconds',
+  'an hour that does not exist',
+  'a second that does not exist',
+  'a day that does not exist',
   'a date out of range',
   'no year',
   'a year that is not a number',
@@ -19,13 +26,24 @@ export const JOURNAL_ENTRY_PROBLEMS = [
 
 export type JournalEntryProblem = (typeof JOURNAL_ENTRY_PROBLEMS)[number];
 
+const NOT_LOCAL = 'entryDate must be a local time, with no Z or offset';
+const NOT_DATE_TIME = 'entryDate must be a date and time, as YYYY-MM-DDTHH:mm:ss';
+
 /** For each problem: a good entry made bad, and the reason the service gives. */
 const invalidEntries: Record<JournalEntryProblem, { body: (good: NewJournalEntry) => object, reason: string }> = {
   'no date': { body: good => withoutField(good, 'entryDate'), reason: 'entryDate is required', },
   'an unparseable date': { body: good => ({ ...good, entryDate: 'not-a-date', }), reason: 'entryDate must be a date', },
+  // an entry is written at the user's own wall-clock time, so an instant is refused rather than guessed at
+  'a date in UTC': { body: good => ({ ...good, entryDate: '2026-06-01T13:30:00.000Z', }), reason: NOT_LOCAL, },
+  'a date with an offset': { body: good => ({ ...good, entryDate: '2026-06-01T09:30:00-04:00', }), reason: NOT_LOCAL, },
+  'a date with no time': { body: good => ({ ...good, entryDate: '2026-06-01', }), reason: NOT_DATE_TIME, },
+  'fractional seconds': { body: good => ({ ...good, entryDate: '2026-06-01T09:30:00.000', }), reason: NOT_DATE_TIME, },
+  'an hour that does not exist': { body: good => ({ ...good, entryDate: '2026-06-01T24:00:00', }), reason: NOT_DATE_TIME, },
+  'a second that does not exist': { body: good => ({ ...good, entryDate: '2026-06-01T09:30:60', }), reason: NOT_DATE_TIME, },
+  'a day that does not exist': { body: good => ({ ...good, entryDate: '2026-02-30T09:30:00', }), reason: NOT_DATE_TIME, },
   // entryDate is a TIMESTAMP column, which holds 1970 to 2038
   'a date out of range': {
-    body: good => ({ ...good, entryDate: '1960-06-01', }),
+    body: good => ({ ...good, entryDate: '1960-06-01T09:30:00', }),
     reason: 'entryDate must be between 1971 and 2037',
   },
   'no year': { body: good => withoutField(good, 'plantingYear'), reason: 'plantingYear is required', },
@@ -95,7 +113,7 @@ export function createJournalDriver(client: HttpClient, registry: ResourceRegist
         entryId: entry.entryId,
         plantingYear: entry.plantingYear,
         entry: text,
-        entryDate: '2026-06-02',
+        entryDate: '2026-06-02T18:45:00',
       });
 
       expectStatus(response, status.OK, what);
@@ -139,10 +157,11 @@ export function createJournalDriver(client: HttpClient, registry: ResourceRegist
 
     async createOfEntryAsTheAppSendsItSucceeds(caller: Actor, plantingYear: number): Promise<void> {
       const what = 'writing a journal entry as the app sends it';
-      // The app's year can be a string, its date is toISOString(), and its text can be empty.
+      // The app's year can be a string, its date is the local wall-clock time to the second, and its
+      // text can be empty.
       const response = await as(caller).put('/journal', {
         plantingYear: String(plantingYear),
-        entryDate: '2026-06-01T17:00:00.000Z',
+        entryDate: '2026-06-01T13:00:00',
         entry: '',
       });
 

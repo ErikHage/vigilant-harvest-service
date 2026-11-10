@@ -88,7 +88,7 @@ async function getDefaultHarvestTypeIdByPlantingId(plantingId: string): Promise<
 
 async function getHarvestByPlantingIdDateAndType(
   plantingId: string,
-  harvestDate: Date,
+  harvestDate: string,
   harvestTypeId: number
 ): Promise<Harvest | null> {
   const query = {

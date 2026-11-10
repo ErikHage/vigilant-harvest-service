@@ -3,7 +3,7 @@ import { RowDataPacket } from 'mysql2';
 export interface ActivityLogEntryRequest {
   entryId: string | undefined,
   plantingYear: number, // int
-  entryDate: Date,
+  entryDate: string, // YYYY-MM-DDTHH:mm:ss, the user's own wall-clock time
   activityType: string,
   subType: string | null,
   comments: string | null,

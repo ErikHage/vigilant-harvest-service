@@ -40,7 +40,7 @@ const insert = {
     harvest.plantingId,
     harvest.plantingYear,
     harvest.quantity,
-    mysqlUtils.dateToDbString(harvest.harvestDate),
+    harvest.harvestDate,
     harvest.harvestTypeId,
   ]),
 };
@@ -66,9 +66,9 @@ const search = {
 };
 
 const getByPlantingIdDateAndType = {
-  toParams: (plantingId: string, harvestDate: Date, harvestTypeId: number): Array<string | number> => ([
+  toParams: (plantingId: string, harvestDate: string, harvestTypeId: number): Array<string | number> => ([
     plantingId,
-    mysqlUtils.dateToDbString(harvestDate),
+    harvestDate,
     harvestTypeId,
   ]),
 };

@@ -200,39 +200,21 @@ export function optionalObject(value: unknown, field: string): Record<string, un
   return isMissing(value) ? {} : requiredObject(value, field);
 }
 
-/** A date (2026-06-01), or an ISO 8601 timestamp with or without its offset (2026-06-01T17:00:00.000Z). */
-const DATE_FORMAT = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})?)?$/;
-const BARE_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
-
 /**
- * A bare date is that day in the service's own time zone, where its dates are
- * written. `new Date('2026-07-01')` would be UTC midnight instead, which is the
- * evening before in America/New_York, and is filed under that day (L7).
+ * Dates are the user's own wall-clock values: a day (2026-06-01), or a day and
+ * a time (2026-06-01T09:30:00). They are stored and returned as sent, so they
+ * stay strings and are never turned into a JS Date, which would tie them to a
+ * time zone. An instant, with a Z or an offset, is refused rather than guessed
+ * at.
  */
-function parseDate(value: string): Date {
-  const bare = BARE_DATE.exec(value);
-  if (!bare) {
-    return new Date(value);
-  }
+const LOCAL_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
+const LOCAL_DATE_TIME = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})$/;
+/** A time given to the minute, which is stored with :00 seconds. */
+const NO_SECONDS = /T\d{2}:\d{2}$/;
+/** A Z or an offset after a time: 2026-06-01T13:30:00Z, ...T09:30:00-04:00, ...T09:30-0400 */
+const ZONED = /T.*(Z|[+-]\d{2}(:?\d{2})?)$/i;
 
-  const [ year, month, day, ] = bare.slice(1).map(Number) as [number, number, number];
-  const date = new Date(year, month - 1, day);
-
-  // Date rolls 2026-02-30 over into March; a day that doesn't exist isn't a date
-  return date.getMonth() === month - 1 ? date : new Date(Number.NaN);
-}
-
-function toDate(value: unknown, field: string): Date {
-  const date = typeof value === 'string' && DATE_FORMAT.test(value) ? parseDate(value) : undefined;
-
-  if (date === undefined || Number.isNaN(date.getTime())) {
-    throw new BadRequestError(`${field} must be a date, as YYYY-MM-DD or an ISO 8601 timestamp`);
-  }
-
-  return date;
-}
-
-interface YearRange {
+export interface YearRange {
   min: number,
   max: number,
 }
@@ -242,46 +224,92 @@ interface YearRange {
  * years at either end are left out, so that a date the server shifts into its
  * own time zone still fits.
  */
-const TIMESTAMP_YEARS: YearRange = { min: 1971, max: 2037, };
+export const TIMESTAMP_YEARS: YearRange = { min: 1971, max: 2037, };
 
-/** The years MySQL supports in a DATE column. Earlier ones may be stored, but aren't promised. */
-const DATE_YEARS: YearRange = { min: 1000, max: 9999, };
+/** The years MySQL supports in DATE and DATETIME columns. Earlier ones may be stored, but aren't promised. */
+export const DATE_YEARS: YearRange = { min: 1000, max: 9999, };
 
-function toDateIn(value: unknown, field: string, years: YearRange): Date {
-  const date = toDate(value, field);
-  // the year it is written with: dates are formatted in the service's own zone
-  const year = date.getFullYear();
+export interface LocalDateOptions {
+  /** DATE_YEARS unless the column holds fewer. */
+  years?: YearRange,
+}
 
+function isLeapYear(year: number): boolean {
+  return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+}
+
+function daysInMonth(year: number, month: number): number {
+  if (month === 2) {
+    return isLeapYear(year) ? 29 : 28;
+  }
+  return DAYS_IN_MONTH[month - 1]!;
+}
+
+function isCalendarDay(year: number, month: number, day: number): boolean {
+  return month >= 1 && month <= 12 && day >= 1 && day <= daysInMonth(year, month);
+}
+
+function assertLocal(value: unknown, field: string): void {
+  if (typeof value === 'string' && ZONED.test(value)) {
+    throw new BadRequestError(`${field} must be a local time, with no Z or offset`);
+  }
+}
+
+function assertYearIn(year: number, field: string, years: YearRange): void {
   if (year < years.min || year > years.max) {
     throw new BadRequestError(`${field} must be between ${years.min} and ${years.max}`);
   }
-
-  return date;
 }
 
-/** A date for a TIMESTAMP column. */
-export function requiredTimestamp(value: unknown, field: string): Date {
+function toLocalDate(value: unknown, field: string, { years = DATE_YEARS, }: LocalDateOptions): string {
+  assertLocal(value, field);
+
+  const parts = typeof value === 'string' ? LOCAL_DATE.exec(value) : null;
+  const [ year, month, day, ] = (parts?.slice(1) ?? []).map(Number) as [number, number, number];
+
+  if (!parts || !isCalendarDay(year, month, day)) {
+    throw new BadRequestError(`${field} must be a date, as YYYY-MM-DD`);
+  }
+  assertYearIn(year, field, years);
+
+  return value as string;
+}
+
+/** A day, as YYYY-MM-DD. */
+export function requiredLocalDate(value: unknown, field: string, options: LocalDateOptions = {}): string {
   if (isMissing(value)) {
     throw new BadRequestError(`${field} is required`);
   }
-  return toDateIn(value, field, TIMESTAMP_YEARS);
+  return toLocalDate(value, field, options);
 }
 
-/** A date for a DATE column. */
-export function requiredDate(value: unknown, field: string): Date {
+export function optionalLocalDate(value: unknown, field: string, options: LocalDateOptions = {}): string | undefined {
+  return isMissing(value) ? undefined : toLocalDate(value, field, options);
+}
+
+/** A day and a time, as YYYY-MM-DDTHH:mm:ss, or YYYY-MM-DDTHH:mm, which is returned with :00 seconds. */
+export function requiredLocalDateTime(value: unknown, field: string, { years = DATE_YEARS, }: LocalDateOptions = {}): string {
   if (isMissing(value)) {
     throw new BadRequestError(`${field} is required`);
   }
-  return toDateIn(value, field, DATE_YEARS);
-}
+  assertLocal(value, field);
 
-export function optionalDate(value: unknown, field: string): Date | undefined {
-  return isMissing(value) ? undefined : toDateIn(value, field, DATE_YEARS);
+  const withSeconds = typeof value === 'string' && NO_SECONDS.test(value) ? `${value}:00` : value;
+  const parts = typeof withSeconds === 'string' ? LOCAL_DATE_TIME.exec(withSeconds) : null;
+  const [ year, month, day, hour, minute, second, ] =
+    (parts?.slice(1) ?? []).map(Number) as [number, number, number, number, number, number];
+
+  if (!parts || !isCalendarDay(year, month, day) || hour > 23 || minute > 59 || second > 59) {
+    throw new BadRequestError(`${field} must be a date and time, as YYYY-MM-DDTHH:mm:ss`);
+  }
+  assertYearIn(year, field, years);
+
+  return withSeconds as string;
 }
 
 /** A month and day with no year, as a schedule item's VARCHAR(5) holds it: 05-01. */
 const MONTH_DAY = /^(\d{2})-(\d{2})$/;
-/** The longest each month can be; 02-29 is allowed, since the year is not known. */
+/** The longest each month can be; 02-29 is allowed here, since the year is not known. */
 const DAYS_IN_MONTH = [ 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31, ];
 
 export function optionalMonthDay(value: unknown, field: string): string | undefined {

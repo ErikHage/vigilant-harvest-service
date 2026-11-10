@@ -1,4 +1,4 @@
-import { PlantingYear, PlantingYearRow, PlantingYearUsage, PlantingYearUsageRow } from './types';
+import { NewPlantingYear, PlantingYear, PlantingYearRow, PlantingYearUsage, PlantingYearUsageRow } from './types';
 import { QueryPayload } from '../../database/types';
 
 import queries from './queries';
@@ -6,7 +6,7 @@ import plantingQueries from '../plantings/queries';
 import db, { RowNotFoundError } from '../../database';
 import rowMapper from './row-mapper';
 
-async function insertPlantingYear(plantingYear: PlantingYear, carryForwardPlantingIds: string[]): Promise<PlantingYear> {
+async function insertPlantingYear(plantingYear: NewPlantingYear, carryForwardPlantingIds: string[]): Promise<PlantingYear> {
   const plantingPlantingYearQueries: QueryPayload[] = [];
 
   for (const plantingId of carryForwardPlantingIds) {
@@ -26,7 +26,8 @@ async function insertPlantingYear(plantingYear: PlantingYear, carryForwardPlanti
 
   await db.execTransactionQuery(queriesToRun);
 
-  return plantingYear;
+  // read back, so a new year is returned the way every other read returns one
+  return await getPlantingYear(plantingYear.plantingYear);
 }
 
 async function getPlantingYears(): Promise<PlantingYear[]> {

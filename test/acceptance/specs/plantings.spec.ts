@@ -124,6 +124,10 @@ describe('plantings', () => {
     'a lead time that is not a whole number',
     'a negative lead time',
     'an unparseable target date',
+    'a target date in UTC',
+    'a target date with an offset',
+    'a target date with a time',
+    'a target date that does not exist',
     'a seed source that is too long',
   ])('rejects a planting with %s', async problem => {
     await plantings.checkInvalidPlantingIsRejected('as: gardener', 'plant: tomato', `problem: ${problem}`);
@@ -137,6 +141,10 @@ describe('plantings', () => {
     'a name that is not a string',
     'a lead time that is not a number',
     'an unparseable target date',
+    'a target date in UTC',
+    'a sow date with an offset',
+    'a transplant date with a time',
+    'a sow date that does not exist',
     'a target date out of range',
   ])('rejects an update with %s', async problem => {
     await plantings.createPlanting('as: gardener', 'planting: row-one', 'plant: tomato');
@@ -155,9 +163,13 @@ describe('plantings', () => {
     'an unknown action type',
     'a start with no sow date',
     'a start with an unparseable sow date',
+    'a start with a sow date in UTC',
+    'a start with a sow date that does not exist',
     'a start with a count that is not a number',
     'a start with a negative count',
     'a plant with no transplant date',
+    'a plant with a transplant date with an offset',
+    'a plant with a transplant date with a time',
     'a plant with a plot id that is too long',
     'a split with no list',
     'a split with a nameless entry',

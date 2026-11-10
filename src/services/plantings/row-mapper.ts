@@ -22,7 +22,7 @@ const plantings = {
         planting.name,
         planting.seedSource ?? null,
         planting.lotNumber ?? null,
-        mysqlUtils.nullableDateToDbString(planting.targetPlantingDate),
+        planting.targetPlantingDate ?? null,
         planting.leadTimeWeeks ?? null,
         planting.currentStatus,
         planting.notes ?? null,
@@ -41,12 +41,12 @@ const plantings = {
       if (plantingUpdate.seedSource) params.push(plantingUpdate.seedSource);
       if (plantingUpdate.lotNumber) params.push(plantingUpdate.lotNumber);
       if (plantingUpdate.plotId) params.push(plantingUpdate.plotId);
-      if (plantingUpdate.targetPlantingDate) params.push(mysqlUtils.dateToDbString(plantingUpdate.targetPlantingDate));
+      if (plantingUpdate.targetPlantingDate) params.push(plantingUpdate.targetPlantingDate);
       if (plantingUpdate.leadTimeWeeks) params.push(plantingUpdate.leadTimeWeeks);
       if (plantingUpdate.numberSown) params.push(plantingUpdate.numberSown);
-      if (plantingUpdate.sowDate) params.push(mysqlUtils.dateToDbString(plantingUpdate.sowDate));
+      if (plantingUpdate.sowDate) params.push(plantingUpdate.sowDate);
       if (plantingUpdate.sowType) params.push(plantingUpdate.sowType);
-      if (plantingUpdate.transplantDate) params.push(mysqlUtils.dateToDbString(plantingUpdate.transplantDate));
+      if (plantingUpdate.transplantDate) params.push(plantingUpdate.transplantDate);
       if (plantingUpdate.numberTransplanted) params.push(plantingUpdate.numberTransplanted);
       if (plantingUpdate.notes) params.push(plantingUpdate.notes);
 

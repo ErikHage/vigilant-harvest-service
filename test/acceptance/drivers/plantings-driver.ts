@@ -24,8 +24,16 @@ export const NEW_PLANTING_PROBLEMS = [
   'a lead time that is not a whole number',
   'a negative lead time',
   'an unparseable target date',
+  'a target date in UTC',
+  'a target date with an offset',
+  'a target date with a time',
+  'a target date that does not exist',
   'a seed source that is too long',
 ] as const;
+
+// a planting's dates are the user's own days, so an instant is refused rather than guessed at
+const notLocal = (field: string): string => `${field} must be a local time, with no Z or offset`;
+const notDate = (field: string): string => `${field} must be a date, as YYYY-MM-DD`;
 
 export type NewPlantingProblem = (typeof NEW_PLANTING_PROBLEMS)[number];
 
@@ -55,6 +63,22 @@ const invalidPlantings: Record<NewPlantingProblem, { body: (good: NewPlanting) =
     body: good => ({ ...good, targetPlantingDate: 'not-a-date', }),
     reason: 'targetPlantingDate must be a date',
   },
+  'a target date in UTC': {
+    body: good => ({ ...good, targetPlantingDate: '2026-05-15T04:00:00.000Z', }),
+    reason: notLocal('targetPlantingDate'),
+  },
+  'a target date with an offset': {
+    body: good => ({ ...good, targetPlantingDate: '2026-05-15T00:00:00-04:00', }),
+    reason: notLocal('targetPlantingDate'),
+  },
+  'a target date with a time': {
+    body: good => ({ ...good, targetPlantingDate: '2026-05-15T00:00:00', }),
+    reason: notDate('targetPlantingDate'),
+  },
+  'a target date that does not exist': {
+    body: good => ({ ...good, targetPlantingDate: '2026-02-29', }),
+    reason: notDate('targetPlantingDate'),
+  },
   'a seed source that is too long': {
     body: good => ({ ...good, seedSource: tooLong(255), }),
     reason: 'seedSource must be at most 255 characters',
@@ -66,6 +90,10 @@ export const PLANTING_UPDATE_PROBLEMS = [
   'a name that is not a string',
   'a lead time that is not a number',
   'an unparseable target date',
+  'a target date in UTC',
+  'a sow date with an offset',
+  'a transplant date with a time',
+  'a sow date that does not exist',
   'a target date out of range',
 ] as const;
 
@@ -78,6 +106,13 @@ const invalidUpdates: Record<PlantingUpdateProblem, { body: object, reason: stri
     body: { targetPlantingDate: 'not-a-date', },
     reason: 'targetPlantingDate must be a date',
   },
+  'a target date in UTC': {
+    body: { targetPlantingDate: '2026-05-15T04:00:00.000Z', },
+    reason: notLocal('targetPlantingDate'),
+  },
+  'a sow date with an offset': { body: { sowDate: '2026-03-01T00:00:00-05:00', }, reason: notLocal('sowDate'), },
+  'a transplant date with a time': { body: { transplantDate: '2026-05-20T08:00:00', }, reason: notDate('transplantDate'), },
+  'a sow date that does not exist': { body: { sowDate: '2026-03-32', }, reason: notDate('sowDate'), },
   // the planting dates are DATE columns, which hold the years 1000 to 9999
   'a target date out of range': {
     body: { targetPlantingDate: '0999-05-01', },
@@ -91,9 +126,13 @@ export const PLANTING_ACTION_PROBLEMS = [
   'an unknown action type',
   'a start with no sow date',
   'a start with an unparseable sow date',
+  'a start with a sow date in UTC',
+  'a start with a sow date that does not exist',
   'a start with a count that is not a number',
   'a start with a negative count',
   'a plant with no transplant date',
+  'a plant with a transplant date with an offset',
+  'a plant with a transplant date with a time',
   'a plant with a plot id that is too long',
   'a split with no list',
   'a split with a nameless entry',
@@ -114,6 +153,14 @@ const invalidActions: Record<PlantingActionProblem, { body: object, reason: stri
     body: { actionType: 'START', sowDate: 'not-a-date', numberSown: 4, },
     reason: 'sowDate must be a date',
   },
+  'a start with a sow date in UTC': {
+    body: { actionType: 'START', sowDate: '2026-03-01T17:00:00.000Z', numberSown: 4, },
+    reason: notLocal('sowDate'),
+  },
+  'a start with a sow date that does not exist': {
+    body: { actionType: 'START', sowDate: '2026-13-01', numberSown: 4, },
+    reason: notDate('sowDate'),
+  },
   'a start with a count that is not a number': {
     body: { actionType: 'START', sowDate: '2026-03-01', numberSown: 'many', },
     reason: 'numberSown must be an integer',
@@ -125,6 +172,14 @@ const invalidActions: Record<PlantingActionProblem, { body: object, reason: stri
   'a plant with no transplant date': {
     body: { actionType: 'PLANT', numberTransplanted: 2, },
     reason: 'transplantDate is required',
+  },
+  'a plant with a transplant date with an offset': {
+    body: { actionType: 'PLANT', transplantDate: '2026-05-20T00:00:00+01:00', numberTransplanted: 2, },
+    reason: notLocal('transplantDate'),
+  },
+  'a plant with a transplant date with a time': {
+    body: { actionType: 'PLANT', transplantDate: '2026-05-20T08:00', numberTransplanted: 2, },
+    reason: notDate('transplantDate'),
   },
   'a plant with a plot id that is too long': {
     body: { actionType: 'PLANT', transplantDate: '2026-05-20', plotId: tooLong(36), },
@@ -519,11 +574,11 @@ export function createPlantingsDriver(client: HttpClient, registry: ResourceRegi
 
     async updateAsTheAppSendsItSucceeds(caller: Actor, planting: CreatedPlanting): Promise<void> {
       const what = `updating planting "${planting.name}" as the app sends it`;
-      // A CREATED planting's edit form: a date from the picker, as JSON, and a cleared lead time box.
+      // A CREATED planting's edit form: the day picked, and a cleared lead time box.
       const response = await as(caller).put(`/plantings/${planting.plantingId}`, {
         name: planting.name,
         seedSource: 'Saved by the app',
-        targetPlantingDate: '2026-05-15T04:00:00.000Z',
+        targetPlantingDate: '2026-05-15',
         leadTimeWeeks: '',
       });
 
@@ -545,12 +600,12 @@ export function createPlantingsDriver(client: HttpClient, registry: ResourceRegi
     },
 
     async startAsTheAppSendsItSucceeds(caller: Actor, planting: CreatedPlanting): Promise<void> {
-      // The start dialog's date is toISOString(), its count box cleared sends '', and an untouched
+      // The start dialog's date is the day picked, its count box cleared sends '', and an untouched
       // comment is null.
       const response = await act(
         caller,
         planting,
-        { actionType: 'START', sowDate: '2026-03-01T17:00:00.000Z', numberSown: '', comment: null, },
+        { actionType: 'START', sowDate: '2026-03-01', numberSown: '', comment: null, },
         `starting planting "${planting.name}" as the app sends it`
       );
 

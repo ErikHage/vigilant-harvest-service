@@ -1,8 +1,7 @@
 import { Request } from 'express';
 
 import { PlantingYearRequest, PlantingYear, PlantingYearResponse } from '../services/planting-years/types';
-import { UTCDate } from '@date-fns/utc';
-import { blankAsMissing, bodyOf, optionalInteger, requiredDate, requiredYear } from '../validation';
+import { blankAsMissing, bodyOf, optionalInteger, requiredLocalDate, requiredYear } from '../validation';
 
 export default {
   get: {
@@ -18,9 +17,8 @@ export default {
       // the app's box for it sends '' when cleared; then nothing is carried forward
       previousPlantingYear: optionalInteger(blankAsMissing(body.previousPlantingYear), 'previousPlantingYear', { min: 1, }),
       plantingYear: requiredYear(body.plantingYear, 'plantingYear'),
-      // written as the UTC day, as before; a bare date is that day either way
-      lastFrostDate: new UTCDate(requiredDate(body.lastFrostDate, 'lastFrostDate')),
-      targetPlantingDate: new UTCDate(requiredDate(body.targetPlantingDate, 'targetPlantingDate')),
+      lastFrostDate: requiredLocalDate(body.lastFrostDate, 'lastFrostDate'),
+      targetPlantingDate: requiredLocalDate(body.targetPlantingDate, 'targetPlantingDate'),
     };
   },
 

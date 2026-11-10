@@ -4,7 +4,7 @@ export interface CreatePlantingRequest {
   plantId: string,
   plantingYear: number, // int
   name: string,
-  targetPlantingDate?: Date,
+  targetPlantingDate?: string, // YYYY-MM-DD
   leadTimeWeeks?: number, // int
   seedSource?: string,
   lotNumber?: string,
@@ -21,14 +21,14 @@ export interface PerformActionRequest {
 }
 
 export interface SowActionData {
-  sowDate: Date,
+  sowDate: string, // YYYY-MM-DD
   numberSown?: number, // int
   comment: string
 }
 
 export interface TransplantActionData {
   plotId?: string,
-  transplantDate: Date,
+  transplantDate: string, // YYYY-MM-DD
   numberTransplanted?: number, // int
   comment: string
 }
@@ -62,12 +62,12 @@ export interface PlantingResponse {
   name: string,
   seedSource?: string,
   lotNumber?: string,
-  targetPlantingDate?: Date,
+  targetPlantingDate?: string, // YYYY-MM-DD
   leadTimeWeeks?: number, // int
-  sowDate?: Date,
+  sowDate?: string, // YYYY-MM-DD
   sowType?: string,
   numberSown?: number, //int
-  transplantDate?: Date,
+  transplantDate?: string, // YYYY-MM-DD
   currentStatus?: string,
   notes?: string,
   dateCreated: Date,
@@ -85,12 +85,12 @@ export interface Planting {
   name: string,
   seedSource?: string,
   lotNumber?: string,
-  targetPlantingDate?: Date,
+  targetPlantingDate?: string, // YYYY-MM-DD
   leadTimeWeeks?: number, // int
-  sowDate?: Date,
+  sowDate?: string, // YYYY-MM-DD
   sowType?: string,
   numberSown?: number, //int
-  transplantDate?: Date,
+  transplantDate?: string, // YYYY-MM-DD
   currentStatus: string,
   notes?: string,
   dateCreated?: Date,
@@ -103,14 +103,14 @@ export interface PlantingUpdateRequest {
   name?: string,
   seedSource?: string,
   lotNumber?: string,
-  targetPlantingDate?: Date,
+  targetPlantingDate?: string, // YYYY-MM-DD
   plotId?: string,
   numberTransplanted?: number, // int
   leadTimeWeeks?: number, // int
-  sowDate?: Date,
+  sowDate?: string, // YYYY-MM-DD
   sowType?: string,
   numberSown?: number, //int
-  transplantDate?: Date,
+  transplantDate?: string, // YYYY-MM-DD
   notes?: string,
 }
 
@@ -122,12 +122,12 @@ export interface PlantingUpdate {
   lotNumber?: string,
   plotId?: string,
   numberTransplanted?: number, // int
-  targetPlantingDate?: Date,
+  targetPlantingDate?: string, // YYYY-MM-DD
   leadTimeWeeks?: number, // int
-  sowDate?: Date,
+  sowDate?: string, // YYYY-MM-DD
   sowType?: string,
   numberSown?: number, //int
-  transplantDate?: Date,
+  transplantDate?: string, // YYYY-MM-DD
   notes?: string,
 }
 
@@ -143,13 +143,13 @@ export interface PlantingRow extends RowDataPacket  {
   current_planting_year: number, // int
   planting_name: string,
   seed_source: string,
-  target_planting_date: Date,
+  target_planting_date: string,
   lot_number: string,
   lead_time_weeks: number, // int
-  sow_date: Date,
+  sow_date: string,
   sow_type: string,
   number_sown: number, //int
-  transplant_date: Date,
+  transplant_date: string,
   current_status: string,
   notes: string,
   date_created: Date,

@@ -41,16 +41,6 @@ describe('harvests', () => {
     await harvests.checkStats('as: gardener', 'statsType: Planting', 'planting: row-one', 'harvests: 1');
   });
 
-  it('files a harvest sent as a bare date on that day', async () => {
-    await harvests.recordHarvest('as: gardener', 'harvest: noon', 'planting: row-one', 'quantity: 2', 'date: 2026-07-01');
-    await harvests.recordHarvest(
-      'as: gardener', 'harvest: bare', 'planting: row-one', 'quantity: 3', 'date: 2026-07-01', 'time: none'
-    );
-
-    await harvests.checkHarvest('as: gardener', 'harvest: noon', 'planting: row-one', 'quantity: 5', 'type: pounds');
-    await harvests.checkStats('as: gardener', 'statsType: Planting', 'planting: row-one', 'harvests: 1');
-  });
-
   it('keeps a harvest in its year when it is saved again', async () => {
     await harvests.recordHarvest('as: gardener', 'harvest: first', 'planting: row-one', 'quantity: 2');
 
@@ -100,6 +90,10 @@ describe('harvests', () => {
     'a quantity too large to store',
     'no date',
     'an unparseable date',
+    'a date in UTC',
+    'a date with an offset',
+    'a date with a time',
+    'a day that does not exist',
     'a date out of range',
     'a harvest type that is not a number',
   ])('rejects a save with %s', async problem => {

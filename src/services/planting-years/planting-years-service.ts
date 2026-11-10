@@ -1,4 +1,4 @@
-import { PlantingYear, PlantingYearRequest, PlantingYearUsage } from './types';
+import { NewPlantingYear, PlantingYear, PlantingYearRequest, PlantingYearUsage } from './types';
 
 import datasource from './planting-years-mysql-datasource';
 import plantingsDatasource from '../plantings/plantings-mysql-datasource';
@@ -12,7 +12,7 @@ async function insertPlantingYear(plantingYearRequest: PlantingYearRequest): Pro
       ? []
       : await plantingsDatasource.getPlantingIdsToCarryForward(previousPlantingYear);
 
-    const plantingYear: PlantingYear = {
+    const plantingYear: NewPlantingYear = {
       plantingYear: plantingYearRequest.plantingYear,
       lastFrostDate: plantingYearRequest.lastFrostDate,
       targetPlantingDate: plantingYearRequest.targetPlantingDate,

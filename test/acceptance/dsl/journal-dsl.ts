@@ -8,7 +8,7 @@ import { World } from './world';
 const NO_SUCH_YEAR = 8999;
 
 export interface JournalDsl {
-  /** `as`, `entry`, the alias, optional `year`, made for the spec when omitted. */
+  /** `as`, `entry`, the alias, optional `year`, made for the spec when omitted, and optional `date`. */
   createEntry(...args: string[]): Promise<void>,
   /** `as`, `entry`, `text`. */
   updateEntry(...args: string[]): Promise<void>,
@@ -29,11 +29,12 @@ export interface JournalDsl {
 export function createJournalDsl(world: World, journal: JournalDriver): JournalDsl {
   return {
     async createEntry(...args: string[]): Promise<void> {
-      const params = parseDslArgs(args, { as: actor(), entry: alias(), year: optional(), });
+      const params = parseDslArgs(args, { as: actor(), entry: alias(), year: optional(), date: optional(), });
       const caller = await world.actorFor(params.as);
       const { plantingYear, } = await world.yearFor(caller, params.year);
+      const input = aJournalEntry(plantingYear, params.date === undefined ? {} : { entryDate: params.date, });
 
-      world.nameJournalEntry(params.entry, await journal.createEntry(caller, aJournalEntry(plantingYear)));
+      world.nameJournalEntry(params.entry, await journal.createEntry(caller, input));
     },
 
     async updateEntry(...args: string[]): Promise<void> {

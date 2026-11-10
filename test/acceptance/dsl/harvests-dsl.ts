@@ -6,10 +6,7 @@ import { HARVEST_SAVE_PROBLEMS, HarvestsDriver } from '../drivers/harvests-drive
 import { World } from './world';
 
 export interface HarvestsDsl {
-  /**
-   * `as`, `harvest`, the alias, `planting`, `quantity`, optional `type`, by name, optional `date`, and
-   * optional `time: noon | none`: the date is sent at noon, or with no time at all.
-   */
+  /** `as`, `harvest`, the alias, `planting`, `quantity`, optional `type`, by name, and optional `date`. */
   recordHarvest(...args: string[]): Promise<void>,
   /** `as`, `harvest`, `planting`, `quantity`. Saves it again under its own id. */
   saveAgain(...args: string[]): Promise<void>,
@@ -35,11 +32,6 @@ export interface HarvestsDsl {
   deleteHarvest(...args: string[]): Promise<void>,
 }
 
-/** A day at noon, which no time zone moves to another day, or the bare day. */
-function harvestDate(date: string, time: 'noon' | 'none' | undefined): string {
-  return time === 'none' ? date : `${date}T12:00:00`;
-}
-
 export function createHarvestsDsl(world: World, harvests: HarvestsDriver): HarvestsDsl {
   const { harvestTypes, } = world.drivers;
 
@@ -52,12 +44,11 @@ export function createHarvestsDsl(world: World, harvests: HarvestsDriver): Harve
         quantity: required().asInteger(),
         type: optional(),
         date: optional(),
-        time: optional().allowedValues('noon', 'none'),
       });
       const caller = await world.actorFor(params.as);
       const input = aHarvest(world.plantingNamed(params.planting).plantingId, {
         quantity: params.quantity,
-        ...(params.date === undefined ? {} : { harvestDate: harvestDate(params.date, params.time), }),
+        ...(params.date === undefined ? {} : { harvestDate: params.date, }),
         ...(params.type === undefined ? {} : { harvestTypeId: await harvestTypes.idOfTypeNamed(caller, params.type), }),
       });
 

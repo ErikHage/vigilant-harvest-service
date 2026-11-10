@@ -8,7 +8,7 @@ const activityLogEntries = {
       return [
         activityLogEntry.entryId!,
         activityLogEntry.plantingYear,
-        mysqlUtils.dateToDbString(activityLogEntry.entryDate),
+        activityLogEntry.entryDate,
         activityLogEntry.activityType,
         activityLogEntry.subType,
         activityLogEntry.comments,

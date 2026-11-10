@@ -19,6 +19,11 @@ export const NEW_YEAR_PROBLEMS = [
   'a previous year that is not a number',
   'no last frost date',
   'an unparseable target date',
+  'a last frost date in UTC',
+  'a target date with an offset',
+  'a last frost date with a time',
+  'a target date that does not exist',
+  'a last frost date out of range',
 ] as const;
 
 export type NewYearProblem = (typeof NEW_YEAR_PROBLEMS)[number];
@@ -37,6 +42,28 @@ const invalidYears: Record<NewYearProblem, { body: (good: NewPlantingYear) => ob
   'an unparseable target date': {
     body: good => ({ ...good, targetPlantingDate: 'mid-May', }),
     reason: 'targetPlantingDate must be a date',
+  },
+  // the year's dates are the user's own days, so an instant is refused rather than guessed at
+  'a last frost date in UTC': {
+    body: good => ({ ...good, lastFrostDate: `${good.plantingYear}-05-01T04:00:00.000Z`, }),
+    reason: 'lastFrostDate must be a local time, with no Z or offset',
+  },
+  'a target date with an offset': {
+    body: good => ({ ...good, targetPlantingDate: `${good.plantingYear}-05-15T00:00:00-04:00`, }),
+    reason: 'targetPlantingDate must be a local time, with no Z or offset',
+  },
+  'a last frost date with a time': {
+    body: good => ({ ...good, lastFrostDate: `${good.plantingYear}-05-01T00:00:00`, }),
+    reason: 'lastFrostDate must be a date, as YYYY-MM-DD',
+  },
+  'a target date that does not exist': {
+    body: good => ({ ...good, targetPlantingDate: `${good.plantingYear}-04-31`, }),
+    reason: 'targetPlantingDate must be a date, as YYYY-MM-DD',
+  },
+  // the year's dates are DATE columns, which hold the years 1000 to 9999
+  'a last frost date out of range': {
+    body: good => ({ ...good, lastFrostDate: '0999-05-01', }),
+    reason: 'lastFrostDate must be between 1000 and 9999',
   },
 };
 
@@ -88,12 +115,12 @@ export function createPlantingYearsDriver(client: HttpClient, registry: Resource
 
     async createAsTheAppSendsItSucceeds(caller: Actor, good: NewPlantingYear): Promise<void> {
       const what = `creating planting year ${good.plantingYear} as the app sends it`;
-      // The app's dates come from pickers, as JSON Dates, and its previous-year box sends '' when cleared.
+      // The app's dates are the days picked, and its previous-year box sends '' when cleared.
       const response = await as(caller).put('/planting-years', {
         plantingYear: good.plantingYear,
         previousPlantingYear: '',
-        lastFrostDate: `${good.plantingYear}-05-01T04:00:00.000Z`,
-        targetPlantingDate: `${good.plantingYear}-05-15T04:00:00.000Z`,
+        lastFrostDate: `${good.plantingYear}-05-01`,
+        targetPlantingDate: `${good.plantingYear}-05-15`,
       });
 
       registerIfCreated(response, good.plantingYear);

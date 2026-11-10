@@ -9,7 +9,7 @@ const journalEntries = {
         journalEntry.entryId!,
         journalEntry.plantingYear,
         journalEntry.entry,
-        mysqlUtils.dateToDbString(journalEntry.entryDate),
+        journalEntry.entryDate,
       ];
     },
   },

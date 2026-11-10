@@ -3,8 +3,15 @@ import { RowDataPacket } from 'mysql2';
 export interface PlantingYearRequest {
   previousPlantingYear?: number, // int; none carries nothing forward
   plantingYear: number, // int
-  lastFrostDate: Date,
-  targetPlantingDate: Date,
+  lastFrostDate: string, // YYYY-MM-DD
+  targetPlantingDate: string, // YYYY-MM-DD
+}
+
+/** What is written for a new year; it is read back as a PlantingYear. */
+export interface NewPlantingYear {
+  plantingYear: number, // int
+  lastFrostDate: string, // YYYY-MM-DD
+  targetPlantingDate: string, // YYYY-MM-DD
 }
 
 export interface PlantingYear {

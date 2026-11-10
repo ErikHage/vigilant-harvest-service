@@ -13,6 +13,12 @@ describe('activity log', () => {
     await activityLog.checkListed('as: gardener', 'entry: watered');
   });
 
+  it('accepts an entry time with no seconds', async () => {
+    await activityLog.createEntry('as: gardener', 'entry: dawn', 'date: 2026-06-01T06:15');
+
+    await activityLog.checkListed('as: gardener', 'entry: dawn');
+  });
+
   it('updates an entry', async () => {
     await activityLog.createEntry('as: gardener', 'entry: watered');
 
@@ -34,6 +40,13 @@ describe('activity log', () => {
   it.each([
     'no date',
     'an unparseable date',
+    'a date in UTC',
+    'a date with an offset',
+    'a date with no time',
+    'fractional seconds',
+    'an hour that does not exist',
+    'a second that does not exist',
+    'a day that does not exist',
     'a date out of range',
     'no year',
     'a year that is not a number',

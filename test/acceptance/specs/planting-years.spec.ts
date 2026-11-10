@@ -20,6 +20,11 @@ describe('planting years', () => {
     'a previous year that is not a number',
     'no last frost date',
     'an unparseable target date',
+    'a last frost date in UTC',
+    'a target date with an offset',
+    'a last frost date with a time',
+    'a target date that does not exist',
+    'a last frost date out of range',
   ])('rejects a year with %s', async problem => {
     await plantingYears.checkInvalidYearIsRejected('as: gardener', `problem: ${problem}`);
   });

@@ -1,13 +1,13 @@
-import { PlantingYear, PlantingYearRow } from './types';
+import { NewPlantingYear, PlantingYear, PlantingYearRow } from './types';
 import mysqlUtils from '../../database/mysql-utils';
 
 const plantingYears = {
   insert: {
-    toParams: function(plantingYear: PlantingYear): Array<string | number> {
+    toParams: function(plantingYear: NewPlantingYear): Array<string | number> {
       return [
         plantingYear.plantingYear,
-        mysqlUtils.dateToDbString(plantingYear.lastFrostDate),
-        mysqlUtils.dateToDbString(plantingYear.targetPlantingDate),
+        plantingYear.lastFrostDate,
+        plantingYear.targetPlantingDate,
       ];
     },
   },

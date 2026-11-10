@@ -24,10 +24,11 @@ export const TEST_YEAR_MAX = 9999;
 /**
  * Real dates, whatever the test year. Harvest, journal and log dates are MySQL
  * TIMESTAMPs, which end in 2038, and the service never ties them to the
- * planting year.
+ * planting year. Each is the user's local wall-clock value: a harvest is a
+ * day, and an entry is a day and a time.
  */
-const HARVEST_DATE = '2026-07-01T12:00:00';
-const ENTRY_DATE = '2026-06-01';
+const HARVEST_DATE = '2026-07-01';
+const ENTRY_DATE = '2026-06-01T09:30:00';
 
 export interface NewCategory {
   categoryName: string,

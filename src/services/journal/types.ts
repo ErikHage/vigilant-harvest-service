@@ -4,7 +4,7 @@ export interface JournalEntryRequest {
   entryId: string | undefined,
   plantingYear: number, // int
   entry: string | null,
-  entryDate: Date,
+  entryDate: string, // YYYY-MM-DDTHH:mm:ss, the user's own wall-clock time
 }
 
 export interface JournalEntryResponse {
