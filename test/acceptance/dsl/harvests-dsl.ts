@@ -11,8 +11,9 @@ export interface HarvestsDsl {
   /** `as`, `harvest`, `planting`, `quantity`. Saves it again under its own id. */
   saveAgain(...args: string[]): Promise<void>,
   /**
-   * `as`, `harvest`, `planting`, `quantity`, `type`, and optional `date`, the day it was sent with.
-   * Asserts it is filed under the planting's year.
+   * `as`, `harvest`, `planting`, `quantity`, `type`, optional `date`, the day it was sent with,
+   * and optional `year`, a year alias. Asserts it is filed under that year, or, with none, the
+   * year the planting was created in.
    */
   checkHarvest(...args: string[]): Promise<void>,
   /** `as`, `planting`, `quantity`, `type`. */
@@ -78,12 +79,13 @@ export function createHarvestsDsl(world: World, harvests: HarvestsDriver): Harve
         quantity: required().asInteger(),
         type: required(),
         date: optional(),
+        year: optional(),
       });
 
       await harvests.searchIncludes(
         await world.actorFor(params.as),
         world.harvestNamed(params.harvest),
-        world.plantingNamed(params.planting).plantingYear,
+        params.year === undefined ? world.plantingNamed(params.planting).plantingYear : world.yearNamed(params.year).plantingYear,
         {
           quantity: params.quantity,
           harvestType: params.type,

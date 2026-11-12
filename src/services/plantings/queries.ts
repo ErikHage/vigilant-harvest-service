@@ -157,6 +157,10 @@ const yearMapping = {
   insert: 'INSERT INTO planting_planting_years (planting_id, planting_year) ' +
     'VALUES (?, ?)',
 
+  // carrying a planting into a year makes it the planting's current one: a
+  // new harvest is filed under it, and the year's counts go by it
+  setCurrentYear: 'UPDATE plantings SET current_planting_year = ? WHERE planting_id = ?',
+
   clone: `
     INSERT INTO planting_planting_years (planting_id, planting_year)
     SELECT ?, -- new planting_id
