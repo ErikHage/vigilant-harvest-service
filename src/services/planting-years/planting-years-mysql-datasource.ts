@@ -7,13 +7,19 @@ import db, { RowNotFoundError } from '../../database';
 import rowMapper from './row-mapper';
 
 async function insertPlantingYear(plantingYear: NewPlantingYear, carryForwardPlantingIds: string[]): Promise<PlantingYear> {
-  const plantingPlantingYearQueries: QueryPayload[] = [];
+  const carryForwardQueries: QueryPayload[] = [];
 
   for (const plantingId of carryForwardPlantingIds) {
-    plantingPlantingYearQueries.push({
-      sql: plantingQueries.yearMapping.insert,
-      params: [ plantingId, plantingYear.plantingYear, ],
-    });
+    carryForwardQueries.push(
+      {
+        sql: plantingQueries.yearMapping.insert,
+        params: [ plantingId, plantingYear.plantingYear, ],
+      },
+      {
+        sql: plantingQueries.yearMapping.setCurrentYear,
+        params: [ plantingYear.plantingYear, plantingId, ],
+      }
+    );
   }
 
   const queriesToRun: QueryPayload[] = [
@@ -21,7 +27,7 @@ async function insertPlantingYear(plantingYear: NewPlantingYear, carryForwardPla
       sql: queries.plantingYears.insert,
       params: rowMapper.plantingYears.insert.toParams(plantingYear),
     },
-    ...plantingPlantingYearQueries,
+    ...carryForwardQueries,
   ];
 
   await db.execTransactionQuery(queriesToRun);

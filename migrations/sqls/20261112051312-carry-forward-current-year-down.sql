@@ -1,0 +1,2 @@
+-- Nothing to undo: the years the plantings were left on aren't kept, and the up migration only
+-- corrects them. Code before this migration reads the corrected year as it would any other.

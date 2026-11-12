@@ -53,6 +53,37 @@ describe('planting years', () => {
     await plantings.checkInYear('as: gardener', 'planting: row-one', 'year: this-season');
   });
 
+  // A new harvest is filed under its planting's current year, which carrying
+  // forward left behind, so it went to the year before
+  it('files a harvest of a carried planting under the new year', async () => {
+    await plantingYears.createYear('as: gardener', 'year: last-season');
+    await plants.createPlant('as: gardener', 'plant: tomato');
+    await plots.createPlot('as: gardener', 'plot: north-bed');
+    await plantings.createPlanting('as: gardener', 'planting: row-one', 'plant: tomato', 'year: last-season');
+    await plantings.plant('as: gardener', 'planting: row-one', 'plot: north-bed', 'numberTransplanted: 4');
+    await plantingYears.createYear('as: gardener', 'year: this-season', 'previous: last-season');
+
+    await harvests.recordHarvest('as: gardener', 'harvest: first', 'planting: row-one', 'quantity: 2');
+
+    await harvests.checkHarvest('as: gardener', 'harvest: first', 'planting: row-one', 'quantity: 2', 'type: unspecified',
+      'year: this-season');
+  });
+
+  // The counts go by a planting's current year, which carrying forward left
+  // behind
+  it('counts a carried planting in the new year, not the one before', async () => {
+    await plantingYears.createYear('as: gardener', 'year: last-season');
+    await plants.createPlant('as: gardener', 'plant: tomato');
+    await plots.createPlot('as: gardener', 'plot: north-bed');
+    await plantings.createPlanting('as: gardener', 'planting: row-one', 'plant: tomato', 'year: last-season');
+    await plantings.plant('as: gardener', 'planting: row-one', 'plot: north-bed', 'numberTransplanted: 4');
+
+    await plantingYears.createYear('as: gardener', 'year: this-season', 'previous: last-season');
+
+    await plantingYears.checkDetails('as: gardener', 'year: this-season', 'planted: 1');
+    await plantingYears.checkDetails('as: gardener', 'year: last-season');
+  });
+
   it('counts each status of the plantings in a year', async () => {
     await plantingYears.createYear('as: gardener', 'year: this-season');
     await plants.createPlant('as: gardener', 'plant: tomato');
