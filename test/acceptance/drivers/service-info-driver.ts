@@ -1,6 +1,6 @@
 import { Actor } from '../support/actors';
 import { expectBodyToContain, expectBodyToHaveKeys, expectNoHeader, expectStatus, expectThat } from './assertions';
-import { HttpClient } from '../support/http-client';
+import { ApiResponse, HttpClient } from '../support/http-client';
 import { status } from '../support/status-codes';
 
 /** Express's default; it tells a caller what the service is built with. */
@@ -33,7 +33,17 @@ export interface ServiceInfoDriver {
    * unauthorized: the token is checked before the route is looked for.
    */
   unknownRouteIsRejectedAsUnauthorized(caller: Actor): Promise<void>,
+  /**
+   * Asserts a browser on `origin` may read the service's answers: a read, and
+   * the preflight before a write with the token, both name the origin as allowed.
+   */
+  answersAreReadableFrom(caller: Actor, origin: string): Promise<void>,
+  /** Asserts neither names `origin`, nor any origin, as allowed, so a browser there can't read them. */
+  answersAreNotReadableFrom(caller: Actor, origin: string): Promise<void>,
 }
+
+/** The header that tells a browser which site may read an answer. */
+const ALLOW_ORIGIN_HEADER = 'access-control-allow-origin';
 
 /** Calls the service has no route for: an unknown path, a deeper one, and a method a route doesn't take. */
 const UNKNOWN_ROUTE_CALLS = [
@@ -43,6 +53,21 @@ const UNKNOWN_ROUTE_CALLS = [
 ];
 
 export function createServiceInfoDriver(client: HttpClient): ServiceInfoDriver {
+  /** A read, and a write's preflight, as a browser on `origin` makes them. */
+  async function crossOriginCalls(caller: Actor, origin: string): Promise<{ response: ApiResponse, what: string }[]> {
+    const fromOrigin = client.withToken(caller.token).withOrigin(origin);
+    const read = await fromOrigin.get('/harvest-types');
+    const preflight = await fromOrigin.preflight('/plots', 'PUT');
+
+    expectStatus(read, status.OK, `listing harvest types from ${origin}`);
+    expectStatus(preflight, status.NO_CONTENT, `asking from ${origin} whether a plot may be saved`);
+
+    return [
+      { response: read, what: `listing harvest types from ${origin}`, },
+      { response: preflight, what: `asking from ${origin} whether a plot may be saved`, },
+    ];
+  }
+
   async function unknownRouteIsRejectedAs(caller: Actor, expected: number): Promise<void> {
     const callerClient = client.withToken(caller.token);
 
@@ -105,6 +130,18 @@ export function createServiceInfoDriver(client: HttpClient): ServiceInfoDriver {
 
     async unknownRouteIsRejectedAsUnauthorized(caller: Actor): Promise<void> {
       await unknownRouteIsRejectedAs(caller, status.UNAUTHORIZED);
+    },
+
+    async answersAreReadableFrom(caller: Actor, origin: string): Promise<void> {
+      for (const { response, what, } of await crossOriginCalls(caller, origin)) {
+        expectThat(response.headers[ALLOW_ORIGIN_HEADER] === origin, `${ALLOW_ORIGIN_HEADER}: ${origin}`, response, what);
+      }
+    },
+
+    async answersAreNotReadableFrom(caller: Actor, origin: string): Promise<void> {
+      for (const { response, what, } of await crossOriginCalls(caller, origin)) {
+        expectNoHeader(response, ALLOW_ORIGIN_HEADER, what);
+      }
     },
   };
 }

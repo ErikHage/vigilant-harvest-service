@@ -1,4 +1,4 @@
-import { parseDslArgs } from '@feral-auth/ts-simple-dsl';
+import { parseDslArgs, required } from '@feral-auth/ts-simple-dsl';
 
 import { actor, outcome } from './params';
 import { ServiceInfoDriver } from '../drivers/service-info-driver';
@@ -19,6 +19,11 @@ export interface ServiceInfoDsl {
    * error shape.
    */
   checkUnknownRouteIsRejected(...args: string[]): Promise<void>,
+  /**
+   * `as`, `origin`, a site's origin, `expect: readable | not readable`. Asserts whether a browser on
+   * that site may read the service's answers.
+   */
+  checkCrossOriginReads(...args: string[]): Promise<void>,
 }
 
 export function createServiceInfoDsl(world: World, serviceInfo: ServiceInfoDriver): ServiceInfoDsl {
@@ -57,6 +62,18 @@ export function createServiceInfoDsl(world: World, serviceInfo: ServiceInfoDrive
       }
 
       await serviceInfo.unknownRouteIsRejectedAsUnauthorized(caller);
+    },
+
+    async checkCrossOriginReads(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), origin: required(), expect: outcome('readable', 'not readable'), });
+      const caller = await world.actorFor(params.as);
+
+      if (params.expect === 'readable') {
+        await serviceInfo.answersAreReadableFrom(caller, params.origin);
+        return;
+      }
+
+      await serviceInfo.answersAreNotReadableFrom(caller, params.origin);
     },
   };
 }

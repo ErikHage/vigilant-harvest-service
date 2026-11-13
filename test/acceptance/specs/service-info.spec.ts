@@ -34,4 +34,19 @@ describe('service info', () => {
   it('asks for a token before saying a route does not exist', async () => {
     await serviceInfo.checkUnknownRouteIsRejected('as: anonymous', 'expect: unauthorized');
   });
+
+  // The service's default CORS_ORIGINS: the dev app (vite --port 5174), and the live site
+  it.each([
+    [ 'the dev app', 'http://localhost:5174', ],
+    [ 'the live site', 'https://theferalrooster.com', ],
+  ])('lets %s read its answers', async (_, origin) => {
+    await serviceInfo.checkCrossOriginReads('as: gardener', `origin: ${origin}`, 'expect: readable');
+  });
+
+  it.each([
+    [ 'another site', 'https://elsewhere.example', ],
+    [ 'feral\'s login app', 'http://localhost:5173', ],
+  ])('does not let %s read its answers', async (_, origin) => {
+    await serviceInfo.checkCrossOriginReads('as: gardener', `origin: ${origin}`, 'expect: not readable');
+  });
 });

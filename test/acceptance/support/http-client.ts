@@ -15,7 +15,7 @@ export interface ApiResponse {
   rawBody: string,
   /** Response headers, with lower-case names. */
   headers: Record<string, string>,
-  method: HttpMethod,
+  method: HttpMethod | 'OPTIONS',
   path: string,
 }
 
@@ -27,12 +27,17 @@ export interface HttpClient {
   putRaw(path: string, rawBody: string): Promise<ApiResponse>,
   patch(path: string, body?: unknown): Promise<ApiResponse>,
   del(path: string): Promise<ApiResponse>,
+  /** A browser's CORS preflight: OPTIONS, asking whether `method` may be sent with the token and a JSON body. */
+  preflight(path: string, method: HttpMethod): Promise<ApiResponse>,
   withToken(token: string | undefined): HttpClient,
+  /** Sends each request with an `Origin` header, as a browser on that site would. */
+  withOrigin(origin: string): HttpClient,
 }
 
 export interface HttpClientOptions {
   baseUrl: string,
   token?: string,
+  origin?: string,
   timeoutMs: number,
 }
 
@@ -55,13 +60,22 @@ function parseBody(rawBody: string): unknown {
 }
 
 export function createHttpClient(options: HttpClientOptions): HttpClient {
-  const { baseUrl, token, timeoutMs, } = options;
+  const { baseUrl, token, origin, timeoutMs, } = options;
 
-  async function send(method: HttpMethod, path: string, body?: unknown, raw = false): Promise<ApiResponse> {
-    const headers: Record<string, string> = { accept: 'application/json', };
+  async function send(
+    method: HttpMethod | 'OPTIONS',
+    path: string,
+    body?: unknown,
+    raw = false,
+    extraHeaders: Record<string, string> = {}
+  ): Promise<ApiResponse> {
+    const headers: Record<string, string> = { accept: 'application/json', ...extraHeaders, };
 
     if (token !== undefined) {
       headers[AUTH_HEADER] = token;
+    }
+    if (origin !== undefined) {
+      headers.origin = origin;
     }
     if (body !== undefined) {
       headers['content-type'] = 'application/json';
@@ -111,6 +125,11 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
     putRaw: (path: string, rawBody: string) => send('PUT', path, rawBody, true),
     patch: (path: string, body?: unknown) => send('PATCH', path, body),
     del: (path: string) => send('DELETE', path),
+    preflight: (path: string, method: HttpMethod) => send('OPTIONS', path, undefined, false, {
+      'access-control-request-method': method,
+      'access-control-request-headers': `${AUTH_HEADER},content-type`,
+    }),
     withToken: (nextToken: string | undefined) => createHttpClient({ ...options, token: nextToken, }),
+    withOrigin: (nextOrigin: string) => createHttpClient({ ...options, origin: nextOrigin, }),
   };
 }
