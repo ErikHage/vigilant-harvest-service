@@ -129,6 +129,8 @@ export interface HarvestsDriver {
   /** Sends each harvest in a save of its own, all at once. Answers with the harvest the first was written to. */
   recordHarvestsInSavesAtOnce(caller: Actor, inputs: NewHarvest[]): Promise<CreatedHarvest>,
   resaveChangesQuantity(caller: Actor, harvest: CreatedHarvest, input: NewHarvest): Promise<void>,
+  /** A new harvest answers 201; the same again, added to it, and an edit of it, answer 200. */
+  saveAnswersCreatedOnlyForANewHarvest(caller: Actor, input: NewHarvest): Promise<void>,
   /** Saves each harvest again under its own id, all in one save: the nth harvest with the nth input. */
   resaveInOneSave(caller: Actor, harvests: CreatedHarvest[], inputs: NewHarvest[]): Promise<void>,
   searchIncludes(caller: Actor, harvest: CreatedHarvest, year: number, details: HarvestDetails): Promise<void>,
@@ -161,9 +163,12 @@ export function createHarvestsDriver(client: HttpClient, registry: ResourceRegis
     return { response, harvests: expectListEntries(response, what), };
   }
 
-  /** Files whatever a save wrote for teardown, before anything asserts on it. */
+  /**
+   * Files whatever a save answered with for teardown, before anything asserts on it. A save adding to
+   * a harvest answers 200 with that harvest, and deleting the same id twice does no harm.
+   */
   function registerIfCreated(response: ApiResponse): void {
-    if (response.status === status.CREATED && Array.isArray(response.body)) {
+    if ((response.status === status.CREATED || response.status === status.OK) && Array.isArray(response.body)) {
       for (const { harvestId, } of response.body as { harvestId: string }[]) {
         registry.register({ kind: 'harvest', path: `/harvests/${harvestId}`, label: harvestId, });
       }
@@ -175,7 +180,14 @@ export function createHarvestsDriver(client: HttpClient, registry: ResourceRegis
       const what = `recording ${input.quantity} from planting ${input.plantingId}`;
       const response = await as(caller).put('/harvests', { harvests: [ input, ], });
 
-      expectStatus(response, status.CREATED, what);
+      // 201 for a new harvest, 200 when it was added to one on its day and type: the specs that fold
+      // harvests record them with this too, and saveAnswersCreatedOnlyForANewHarvest checks which
+      expectThat(
+        response.status === status.CREATED || response.status === status.OK,
+        'status 201, or 200 when added to another harvest',
+        response,
+        what
+      );
 
       const [ written, ] = expectListEntries(response, what);
       const harvestId = written?.harvestId as string;
@@ -204,7 +216,14 @@ export function createHarvestsDriver(client: HttpClient, registry: ResourceRegis
       const responses = await Promise.all(inputs.map(input => as(caller).put('/harvests', { harvests: [ input, ], })));
 
       responses.forEach(registerIfCreated);
-      responses.forEach((response, index) => expectStatus(response, status.CREATED, `${what}: save ${index + 1}`));
+      // one of them made the harvest, and each of the others added to it
+      expectThat(
+        responses.filter(response => response.status === status.CREATED).length === 1
+          && responses.filter(response => response.status === status.OK).length === responses.length - 1,
+        `one save answered 201, and the other ${responses.length - 1} answered 200`,
+        responses[0]!,
+        `${what}: ${responses.map(response => response.status).join(', ')}`
+      );
 
       const [ written, ] = expectListEntries(responses[0]!, what);
 
@@ -225,14 +244,32 @@ export function createHarvestsDriver(client: HttpClient, registry: ResourceRegis
       });
 
       registerIfCreated(response);
-      expectStatus(response, status.CREATED, what);
+      expectStatus(response, status.OK, what);
     },
 
     async resaveChangesQuantity(caller: Actor, harvest: CreatedHarvest, input: NewHarvest): Promise<void> {
       const what = `saving harvest ${harvest.harvestId} again`;
       const response = await as(caller).put('/harvests', { harvests: [ { ...input, harvestId: harvest.harvestId, }, ], });
 
-      expectStatus(response, status.CREATED, what);
+      expectStatus(response, status.OK, what);
+    },
+
+    async saveAnswersCreatedOnlyForANewHarvest(caller: Actor, input: NewHarvest): Promise<void> {
+      const what = `saving ${input.quantity} from planting ${input.plantingId}`;
+      const created = await as(caller).put('/harvests', { harvests: [ input, ], });
+
+      registerIfCreated(created);
+      expectStatus(created, status.CREATED, `${what}: a new harvest`);
+
+      const [ written, ] = expectListEntries(created, what);
+      const added = await as(caller).put('/harvests', { harvests: [ input, ], });
+
+      registerIfCreated(added);
+      expectStatus(added, status.OK, `${what}: again, on the same day and type`);
+
+      const edited = await as(caller).put('/harvests', { harvests: [ { ...input, harvestId: written?.harvestId, quantity: 7, }, ], });
+
+      expectStatus(edited, status.OK, `${what}: an edit of it`);
     },
 
     async searchIncludes(caller: Actor, harvest: CreatedHarvest, year: number, details: HarvestDetails): Promise<void> {
@@ -373,7 +410,7 @@ export function createHarvestsDriver(client: HttpClient, registry: ResourceRegis
     async deleteRemovesHarvest(caller: Actor, harvest: CreatedHarvest, year: number): Promise<void> {
       const what = `deleting harvest ${harvest.harvestId}`;
 
-      expectStatus(await as(caller).del(`/harvests/${harvest.harvestId}`), status.OK, what);
+      expectStatus(await as(caller).del(`/harvests/${harvest.harvestId}`), status.NO_CONTENT, what);
 
       const { response, harvests, } = await search(caller, year, `${what}: re-reading ${year}`);
 

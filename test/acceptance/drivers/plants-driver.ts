@@ -458,7 +458,7 @@ export function createPlantsDriver(client: HttpClient, registry: ResourceRegistr
     async deleteRemovesPlant(caller: Actor, plant: CreatedPlant): Promise<void> {
       const what = `deleting plant "${plant.friendlyName}"`;
 
-      expectStatus(await as(caller).del(`/plants/${plant.plantId}`), status.OK, what);
+      expectStatus(await as(caller).del(`/plants/${plant.plantId}`), status.NO_CONTENT, what);
       expectStatus(await as(caller).get(`/plants/${plant.plantId}`), status.NOT_FOUND, `${what}: re-reading it`);
     },
   };

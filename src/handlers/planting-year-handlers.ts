@@ -41,7 +41,7 @@ async function deletePlantingYear(request: Request, response: Response) {
 
   await plantingYearsService.deletePlantingYear(year);
 
-  response.sendStatus(httpStatus.OK);
+  response.sendStatus(httpStatus.NO_CONTENT);
 }
 
 export default {

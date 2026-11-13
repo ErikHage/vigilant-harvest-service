@@ -47,7 +47,7 @@ async function deletePlantById(request: Request, response: Response) {
 
   await plantsService.deletePlantById(plantId!);
 
-  response.sendStatus(httpStatus.OK);
+  response.sendStatus(httpStatus.NO_CONTENT);
 }
 
 async function insertCategory(request: Request, response: Response) {
@@ -84,7 +84,7 @@ async function deleteCategoryById(request: Request, response: Response) {
 
   await plantsService.deleteCategoryById(categoryId);
 
-  response.sendStatus(httpStatus.OK);
+  response.sendStatus(httpStatus.NO_CONTENT);
 }
 
 async function deleteSubcategoryById(request: Request, response: Response) {
@@ -93,7 +93,7 @@ async function deleteSubcategoryById(request: Request, response: Response) {
 
   await plantsService.deleteSubcategoryById(categoryId, subcategoryId);
 
-  response.sendStatus(httpStatus.OK);
+  response.sendStatus(httpStatus.NO_CONTENT);
 }
 
 export default {

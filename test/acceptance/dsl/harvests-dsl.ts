@@ -29,6 +29,8 @@ export interface HarvestsDsl {
   saveAgainTogether(...args: string[]): Promise<void>,
   /** `as`, `planting`, for its year, `harvests`. Counts its harvests, whatever their days and types. */
   checkHarvestCount(...args: string[]): Promise<void>,
+  /** `as`, `planting`. Asserts a save answers 201 only when it makes a harvest. */
+  checkSaveStatuses(...args: string[]): Promise<void>,
   /** `as`, `planting`, `quantity`, `type`. */
   checkInSummary(...args: string[]): Promise<void>,
   /** `as`, `statsType: Plant | Planting`, `planting`, for its year, `harvests`. */
@@ -166,6 +168,15 @@ export function createHarvestsDsl(world: World, harvests: HarvestsDriver): Harve
           harvestType: params.type,
           ...(params.date === undefined ? {} : { harvestDate: params.date, }),
         }
+      );
+    },
+
+    async checkSaveStatuses(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), planting: alias(), });
+
+      await harvests.saveAnswersCreatedOnlyForANewHarvest(
+        await world.actorFor(params.as),
+        aHarvest(world.plantingNamed(params.planting).plantingId, { quantity: 2, })
       );
     },
 

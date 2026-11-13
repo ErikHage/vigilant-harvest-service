@@ -45,6 +45,12 @@ export interface HarvestUpsertInstruction {
   dateCreated?: string,
 }
 
+/** What a save wrote, and whether it made a harvest that wasn't there before. */
+export interface HarvestSaveResult {
+  harvests: Harvest[],
+  created: boolean,
+}
+
 /** A harvest as it's stored, with what the write path keeps when it writes one again. */
 export interface StoredHarvest extends Harvest {
   plantingYear: number, // int

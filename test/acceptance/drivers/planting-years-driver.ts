@@ -211,7 +211,7 @@ export function createPlantingYearsDriver(client: HttpClient, registry: Resource
     async deleteRemovesYear(caller: Actor, year: CreatedPlantingYear): Promise<void> {
       const what = `deleting planting year ${year.plantingYear}`;
 
-      expectStatus(await as(caller).del(`/planting-years/${year.plantingYear}`), status.OK, what);
+      expectStatus(await as(caller).del(`/planting-years/${year.plantingYear}`), status.NO_CONTENT, what);
       expectStatus(await as(caller).get(`/planting-years/${year.plantingYear}`), status.NOT_FOUND, `${what}: re-reading it`);
     },
   };

@@ -37,7 +37,7 @@ async function deletePlotById(request: Request, response: Response) {
 
   await plotsService.deletePlotById(plotId!);
 
-  response.sendStatus(httpStatus.OK);
+  response.sendStatus(httpStatus.NO_CONTENT);
 }
 
 export default {

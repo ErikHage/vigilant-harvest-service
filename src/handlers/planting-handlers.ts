@@ -70,7 +70,7 @@ async function deletePlantingById(request: Request, response: Response) {
 
   await plantingsService.deletePlantingById(plantingId!);
 
-  response.sendStatus(httpStatus.OK);
+  response.sendStatus(httpStatus.NO_CONTENT);
 }
 
 

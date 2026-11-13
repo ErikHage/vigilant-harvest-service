@@ -222,7 +222,7 @@ export function createPlotsDriver(client: HttpClient, registry: ResourceRegistry
     async deleteRemovesPlot(caller: Actor, plot: CreatedPlot): Promise<void> {
       const what = `deleting plot "${plot.friendlyName}"`;
 
-      expectStatus(await as(caller).del(`/plots/${plot.plotId}`), status.OK, what);
+      expectStatus(await as(caller).del(`/plots/${plot.plotId}`), status.NO_CONTENT, what);
       expectStatus(await as(caller).get(`/plots/${plot.plotId}`), status.NOT_FOUND, `${what}: re-reading it`);
     },
   };

@@ -32,7 +32,7 @@ async function deleteJournalEntry(request: Request, response: Response) {
 
   await journalService.deleteJournalEntryById(entryId!);
 
-  response.sendStatus(httpStatus.OK);
+  response.sendStatus(httpStatus.NO_CONTENT);
 }
 
 export default {

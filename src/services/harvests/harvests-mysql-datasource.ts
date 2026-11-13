@@ -1,7 +1,10 @@
+import { ResultSetHeader } from 'mysql2';
+
 import {
   DefaultHarvestTypeRow,
   Harvest,
   HarvestRow,
+  HarvestSaveResult,
   HarvestSearchRequest,
   HarvestSummary,
   HarvestSummaryRequest,
@@ -16,7 +19,7 @@ import queries from './queries';
 import db from '../../database'
 import rowMapper from './row-mapper';
 
-async function upsertHarvests(harvests: HarvestUpsertInstruction[]): Promise<Harvest[]> {
+async function upsertHarvests(harvests: HarvestUpsertInstruction[]): Promise<HarvestSaveResult> {
   // Every existing harvest's row goes first, then each harvest is written again or added. So two
   // harvests swapping days or types never meet their own old rows, and whatever lands on one day
   // and type is added up there.
@@ -27,7 +30,12 @@ async function upsertHarvests(harvests: HarvestUpsertInstruction[]): Promise<Har
     ...harvests.map(harvest => ({ sql: queries.insertOrAddHarvest, params: rowMapper.insert.toParams(harvest), })),
   ];
 
-  await db.execTransactionQuery(queriesToRun);
+  const results = await db.execTransactionQuery<ResultSetHeader>(queriesToRun);
+  const inserts = results.slice(queriesToRun.length - harvests.length);
+
+  // An insert that made a row answers 1, and one that added to a row on its day and type answers 2.
+  // A stored harvest written again is made anew too, but that's an edit, not a new harvest.
+  const created = harvests.some((harvest, index) => !harvest.replacesStoredHarvest && inserts[index]![0].affectedRows === 1);
 
   // Re-read by planting, day and type rather than by id: a harvest added to another is that one
   // now. Several sent harvests can be one row, which is answered once.
@@ -40,7 +48,7 @@ async function upsertHarvests(harvests: HarvestUpsertInstruction[]): Promise<Har
     }
   });
 
-  return [ ...byId.values(), ];
+  return { harvests: [ ...byId.values(), ], created, };
 }
 
 async function getStoredHarvestById(harvestId: string): Promise<StoredHarvest | null> {

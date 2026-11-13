@@ -33,7 +33,7 @@ async function deleteActivityLogEntry(request: Request, response: Response) {
 
   await activityLogService.deleteActivityLogEntryById(entryId!);
 
-  response.sendStatus(httpStatus.OK);
+  response.sendStatus(httpStatus.NO_CONTENT);
 }
 
 export default {

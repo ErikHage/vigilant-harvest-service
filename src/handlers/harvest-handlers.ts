@@ -3,7 +3,6 @@ import { Request, Response } from 'express';
 import harvestSerializers from '../serializers/harvests';
 import harvestsService from '../services/harvests/harvests-service';
 import {
-  Harvest,
   HarvestRequest,
   HarvestResponse,
   HarvestSearchRequest, HarvestStats, HarvestStatsRequest,
@@ -15,10 +14,11 @@ import httpStatus from '../util/http-status';
 async function upsertHarvests(request: Request, response: Response) {
   const harvestRequests: HarvestRequest[] = harvestSerializers.insert.fromRequest(request);
 
-  const harvests: Harvest[] = await harvestsService.upsertHarvests(harvestRequests);
+  const { harvests, created, } = await harvestsService.upsertHarvests(harvestRequests);
   const harvestsResponse: HarvestResponse[] = harvests.map(harvestSerializers.insert.toResponse);
 
-  response.status(httpStatus.CREATED).send(harvestsResponse);
+  // 201 when the save made a harvest; 200 when it only added to harvests, or edited them
+  response.status(created ? httpStatus.CREATED : httpStatus.OK).send(harvestsResponse);
 }
 
 async function getHarvestSummary(request: Request, response: Response) {
@@ -53,7 +53,7 @@ async function deleteHarvestById(request: Request, response: Response) {
 
   await harvestsService.deleteHarvestById(harvestId!);
 
-  response.sendStatus(httpStatus.OK);
+  response.sendStatus(httpStatus.NO_CONTENT);
 }
 
 export default {

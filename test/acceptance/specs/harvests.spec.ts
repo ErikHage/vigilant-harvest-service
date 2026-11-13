@@ -95,6 +95,10 @@ describe('harvests', () => {
     await harvests.checkHarvest('as: gardener', 'harvest: first', 'planting: row-one', 'quantity: 1.24', 'type: pounds');
   });
 
+  it('answers 201 for a save that makes a harvest, and 200 for one that adds to or edits one', async () => {
+    await harvests.checkSaveStatuses('as: gardener', 'planting: row-one');
+  });
+
   it('accepts a date after 2038', async () => {
     await harvests.recordHarvest('as: gardener', 'harvest: far-off', 'planting: row-one', 'quantity: 2', 'date: 2040-07-01');
 

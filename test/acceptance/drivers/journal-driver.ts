@@ -199,7 +199,7 @@ export function createJournalDriver(client: HttpClient, registry: ResourceRegist
     async deleteRemovesEntry(caller: Actor, entry: CreatedJournalEntry): Promise<void> {
       const what = `deleting journal entry ${entry.entryId}`;
 
-      expectStatus(await as(caller).del(`/journal/entries/${entry.entryId}`), status.OK, what);
+      expectStatus(await as(caller).del(`/journal/entries/${entry.entryId}`), status.NO_CONTENT, what);
 
       const { response, entries, } = await list(caller, entry.plantingYear, `${what}: re-reading the year`);
 

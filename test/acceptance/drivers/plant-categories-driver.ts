@@ -223,7 +223,7 @@ export function createPlantCategoriesDriver(client: HttpClient, registry: Resour
     async deleteRemovesCategory(caller: Actor, category: CreatedCategory): Promise<void> {
       const what = `deleting category "${category.categoryName}"`;
 
-      expectStatus(await as(caller).del(`/plant-categories/${category.categoryId}`), status.OK, what);
+      expectStatus(await as(caller).del(`/plant-categories/${category.categoryId}`), status.NO_CONTENT, what);
 
       const after = await list(caller, `${what}: re-reading the list`);
 
@@ -233,7 +233,7 @@ export function createPlantCategoriesDriver(client: HttpClient, registry: Resour
     async deleteRemovesSubcategory(caller: Actor, subcategory: CreatedSubcategory): Promise<void> {
       const what = `deleting subcategory "${subcategory.subcategoryName}"`;
 
-      expectStatus(await as(caller).del(subcategoryPath(subcategory)), status.OK, what);
+      expectStatus(await as(caller).del(subcategoryPath(subcategory)), status.NO_CONTENT, what);
 
       const after = await list(caller, `${what}: re-reading the list`);
       const entry = after.categories.find(each => each.categoryId === subcategory.categoryId);

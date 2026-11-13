@@ -3,6 +3,7 @@ import { v4 } from 'uuid';
 import {
   Harvest,
   HarvestRequest,
+  HarvestSaveResult,
   HarvestSearchRequest,
   HarvestStats, HarvestStatsRequest,
   HarvestSummary,
@@ -16,7 +17,7 @@ import { UNSPECIFIED_HARVEST_TYPE_ID } from '../harvest-types/types';
 import { BadRequestError } from '../../errors/common';
 import harvestTypesService from '../harvest-types/harvest-types-service';
 
-async function upsertHarvests(harvestRequests: HarvestRequest[]): Promise<Harvest[]> {
+async function upsertHarvests(harvestRequests: HarvestRequest[]): Promise<HarvestSaveResult> {
   // deliberately outside the try below, which would re-wrap the 400 as a 500
   await assertRequestedHarvestTypesExist(harvestRequests);
   const plantingYears = await resolvePlantingYears(harvestRequests);

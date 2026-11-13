@@ -754,7 +754,7 @@ export function createPlantingsDriver(client: HttpClient, registry: ResourceRegi
     async deleteRemovesPlanting(caller: Actor, planting: CreatedPlanting): Promise<void> {
       const what = `deleting planting "${planting.name}"`;
 
-      expectStatus(await as(caller).del(`/plantings/${planting.plantingId}`), status.OK, what);
+      expectStatus(await as(caller).del(`/plantings/${planting.plantingId}`), status.NO_CONTENT, what);
       expectStatus(await as(caller).get(`/plantings/${planting.plantingId}`), status.NOT_FOUND, `${what}: re-reading it`);
     },
   };

@@ -222,7 +222,7 @@ export function createActivityLogDriver(client: HttpClient, registry: ResourceRe
     async deleteRemovesEntry(caller: Actor, entry: CreatedActivityLogEntry): Promise<void> {
       const what = `deleting activity log entry ${entry.entryId}`;
 
-      expectStatus(await as(caller).del(`/activity-log/entries/${entry.entryId}`), status.OK, what);
+      expectStatus(await as(caller).del(`/activity-log/entries/${entry.entryId}`), status.NO_CONTENT, what);
 
       const { response, entries, } = await list(caller, entry.plantingYear, `${what}: re-reading the year`);
 
