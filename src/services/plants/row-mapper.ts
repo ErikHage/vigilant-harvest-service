@@ -21,6 +21,7 @@ function fromRow(row: PlantRow, activityScheduleRows: ActivityScheduleRow[]): Pl
       family: row.family,
       genus: row.genus,
       species: row.species,
+      cultivar: row.cultivar,
     },
     sowing: {
       indoor: row.indoor_sowing,
@@ -64,6 +65,7 @@ const insert = {
     plant.taxonomy.family ?? null,
     plant.taxonomy.genus ?? null,
     plant.taxonomy.species ?? null,
+    plant.taxonomy.cultivar ?? null,
     plant.sowing.indoor ?? null,
     plant.sowing.direct ?? null,
     plant.sowing.germinationDaysRange ?? null,

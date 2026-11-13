@@ -5,6 +5,7 @@ interface Taxonomy {
   family?: string,
   genus?: string,
   species?: string,
+  cultivar?: string,
 }
 
 interface SowingInfo {
@@ -90,6 +91,7 @@ export interface PlantRow extends RowDataPacket {
   family: string,
   genus: string,
   species: string,
+  cultivar: string,
   indoor_sowing: string,
   direct_sowing: string,
   germination_days_range: string,

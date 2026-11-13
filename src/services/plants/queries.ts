@@ -11,6 +11,7 @@ p.lifespan_type,
 p.family,
 p.genus,
 p.species,
+p.cultivar,
 p.indoor_sowing,
 p.direct_sowing,
 p.germination_days_range,
@@ -37,7 +38,7 @@ p.date_modified`;
 // In the order plants' row mapper gives the params.
 const plantColumns: string[] = [
   'plant_id', 'subcategory_id', 'tags', 'plant_description', 'friendly_name', 'lifespan_type', 'family', 'genus',
-  'species', 'indoor_sowing', 'direct_sowing', 'germination_days_range', 'germination_temp_range', 'sowing_notes',
+  'species', 'cultivar', 'indoor_sowing', 'direct_sowing', 'germination_days_range', 'germination_temp_range', 'sowing_notes',
   'planting_depth_inches', 'plant_spacing_inches', 'row_spacing_inches', 'planting_instructions', 'required_sun',
   'days_to_maturity', 'is_climbing', 'climbing_height_feet', 'plant_size', 'growing_notes', 'default_harvest_type_id',
   'fruit_size', 'shelf_stability', 'harvest_instructions',

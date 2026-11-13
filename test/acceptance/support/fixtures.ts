@@ -140,7 +140,7 @@ export function everyPlantDetail(): Partial<NewPlant> {
     lifespanType: 'Perennial',
     tags: [ 'climbing', 'heirloom', ],
     description: 'Written by the acceptance suite',
-    taxonomy: { family: 'Solanaceae', genus: 'Solanum', species: 'lycopersicum', },
+    taxonomy: { family: 'Solanaceae', genus: 'Solanum', species: 'lycopersicum', cultivar: 'Brandywine', },
     sowing: {
       // free text, as the app's boxes take it
       indoor: '6 weeks before last frost',

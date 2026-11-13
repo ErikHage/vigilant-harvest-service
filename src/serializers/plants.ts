@@ -80,6 +80,7 @@ function fromRequest(req: Request): PlantRequest {
       family: optionalString(taxonomy.family, 'taxonomy.family', NAME),
       genus: optionalString(taxonomy.genus, 'taxonomy.genus', NAME),
       species: optionalString(taxonomy.species, 'taxonomy.species', NAME),
+      cultivar: optionalString(taxonomy.cultivar, 'taxonomy.cultivar', NAME),
     },
     sowing: {
       indoor: sowingValue(sowing.indoor, 'sowing.indoor'),

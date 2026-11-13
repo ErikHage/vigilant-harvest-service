@@ -354,7 +354,7 @@ export function createPlantsDriver(client: HttpClient, registry: ResourceRegistr
         seedSource: null,
         tags: [ 'heirloom', ],
         description: 'Saved by the app',
-        taxonomy: { family: null, genus: null, species: null, },
+        taxonomy: { family: null, genus: null, species: null, cultivar: null, },
         sowing: {
           indoor: '6 weeks before last frost',
           direct: 'after last frost',
