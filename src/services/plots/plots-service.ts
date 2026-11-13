@@ -4,20 +4,30 @@ import { Plot, PlotRequest } from './types';
 
 import datasource from './plots-mysql-datasource';
 import { ensureError, FeralError } from '../../errors';
-import { ConflictError } from '../../errors/common';
+import { ConflictError, ValidationError } from '../../errors/common';
 
 async function upsertPlot(plotRequest: PlotRequest): Promise<Plot> {
+  const isUpdate = plotRequest.plotId !== undefined;
+
+  // A new plot, or one saved under an id nothing holds, can't take a name another plot has: it's
+  // refused by name, as the app shows a 400's reason. A rename onto one is the database's to refuse.
+  if ((!isUpdate || !await datasource.plotExists(plotRequest.plotId!))
+      && await datasource.friendlyNameIsTaken(plotRequest.friendlyName)) {
+    throw new ValidationError('Friendly name already in use').withDebugParams({ friendlyName: plotRequest.friendlyName, });
+  }
+
   try {
     const plot: Plot = {
-      plotId: plotRequest.plotId || uuidV4(),
+      plotId: plotRequest.plotId ?? uuidV4(),
       friendlyName: plotRequest.friendlyName,
       lengthInInches: plotRequest.lengthInInches,
       widthInInches: plotRequest.widthInInches,
       plotType: plotRequest.plotType,
-      isActive: plotRequest.isActive || true,
+      isActive: plotRequest.isActive,
     };
 
-    return await datasource.upsertPlot(plot);
+    // an update by an id nothing holds is a 404 from the datasource, and writes nothing
+    return isUpdate ? await datasource.updatePlot(plot) : await datasource.insertPlot(plot);
   } catch (err) {
     throw new FeralError('Error upserting plot', ensureError(err))
       .withDebugParams(plotRequest);

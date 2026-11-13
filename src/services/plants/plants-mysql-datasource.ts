@@ -17,15 +17,26 @@ import rowMapper from './row-mapper';
 import { ResultSetHeader } from 'mysql2';
 import { ActivityScheduleRow } from '../schedules/types';
 
-async function upsertPlant(plant: PlantUpsertInstruction): Promise<Plant> {
-  const query: QueryPayload = {
-    sql: queries.upsertPlant,
-    params: rowMapper.insert.toParams(plant),
-  }
-
-  await db.execQuery(query);
+async function insertPlant(plant: PlantUpsertInstruction): Promise<Plant> {
+  await db.execQuery({ sql: queries.insertPlant, params: rowMapper.insert.toParams(plant), });
 
   return getPlantById(plant.plantId!);
+}
+
+/** An existing plant, by its id. An id nothing holds is a 404, and writes nothing. */
+async function updatePlant(plant: PlantUpsertInstruction): Promise<Plant> {
+  const result = await db.execQuery<ResultSetHeader>({ sql: queries.updatePlant, params: rowMapper.update.toParams(plant), });
+
+  // mysql2 counts the rows matched, so a save that changes nothing still finds its plant
+  if (result.affectedRows === 0) {
+    throw new RowNotFoundError('Plant not found', { plantId: plant.plantId, });
+  }
+
+  return getPlantById(plant.plantId!);
+}
+
+async function plantExists(plantId: string): Promise<boolean> {
+  return await db.execCountQuery({ sql: queries.countById, params: [ plantId, ], }) > 0;
 }
 
 async function updateScheduleAssignment(scheduleAssignmentRequest: PlantScheduleAssignmentRequest): Promise<Plant> {
@@ -204,7 +215,9 @@ async function deleteSubcategoryById(categoryId: number, subcategoryId: number):
 }
 
 export default {
-  upsertPlant,
+  insertPlant,
+  updatePlant,
+  plantExists,
   updateScheduleAssignment,
   getPlantById,
   getPlantByFriendlyName,

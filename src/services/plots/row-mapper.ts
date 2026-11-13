@@ -16,6 +16,14 @@ const plots = {
     },
   },
 
+  update: {
+    toParams: function(plot: Plot): Array<string | number> {
+      const [ plotId, ...columns ] = plots.insert.toParams(plot);
+
+      return [ ...columns, plotId!, ];
+    },
+  },
+
   fromRow: function(row: PlotRow): Plot {
     return {
       plotId: row.plot_id,
@@ -23,7 +31,7 @@ const plots = {
       lengthInInches: row.length_in_inches,
       widthInInches: row.width_in_inches,
       plotType: row.plot_type,
-      isActive: row.is_active,
+      isActive: mysqlUtils.dbIntToBoolean(row.is_active), // a TINYINT
     }
   },
 };

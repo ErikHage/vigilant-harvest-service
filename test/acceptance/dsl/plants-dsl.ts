@@ -51,6 +51,8 @@ export interface PlantsDsl {
   checkRenameToTakenNameIsRejected(...args: string[]): Promise<void>,
   /** `as`, `plant`. Saves under its name with an id nothing holds. */
   checkUnknownIdWithTakenNameIsRejected(...args: string[]): Promise<void>,
+  /** `as`. Saves a new plant under an id nothing holds. */
+  checkSaveUnderUnknownIdIsRejected(...args: string[]): Promise<void>,
   /** `as`. */
   checkUnknownSubcategoryIsRejected(...args: string[]): Promise<void>,
   /** `as`, `plant`. Asserts the delete is rejected while it has plantings. */
@@ -223,7 +225,7 @@ export function createPlantsDsl(world: World, plants: PlantsDriver): PlantsDsl {
     async checkSowingValuesKeepTheirTypes(...args: string[]): Promise<void> {
       const params = parseDslArgs(args, { as: actor(), plant: alias(), });
 
-      await plants.getReturnsSowingValuesAsStrings(await world.actorFor(params.as), world.plantNamed(params.plant));
+      await plants.getReturnsSowingTimesAndDepthAsSent(await world.actorFor(params.as), world.plantNamed(params.plant));
     },
 
     async checkUnknownPlantIsNotFound(...args: string[]): Promise<void> {
@@ -251,10 +253,18 @@ export function createPlantsDsl(world: World, plants: PlantsDriver): PlantsDsl {
     async checkUnknownIdWithTakenNameIsRejected(...args: string[]): Promise<void> {
       const params = parseDslArgs(args, { as: actor(), plant: alias(), });
 
-      await plants.createWithUnknownIdAndTakenNameFailsWithNotFoundAndOverwrites(
+      await plants.createWithUnknownIdAndTakenNameIsRejectedAsBadRequest(
         await world.actorFor(params.as),
         world.plantNamed(params.plant)
       );
+    },
+
+    async checkSaveUnderUnknownIdIsRejected(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), });
+      const caller = await world.actorFor(params.as);
+      const subcategory = await world.subcategoryFor(caller, undefined);
+
+      await plants.saveUnderUnknownIdIsRejectedAsNotFound(caller, aPlant(subcategory.subcategoryId));
     },
 
     async checkUnknownSubcategoryIsRejected(...args: string[]): Promise<void> {

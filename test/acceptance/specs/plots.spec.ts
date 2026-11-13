@@ -34,6 +34,7 @@ describe('plots', () => {
     'a length that is not a whole number',
     'a negative width',
     'no plot type',
+    'an isActive that is not true or false',
   ])('rejects a plot with %s', async problem => {
     await plots.checkInvalidPlotIsRejected('as: gardener', `problem: ${problem}`);
   });
@@ -46,23 +47,38 @@ describe('plots', () => {
     await plots.checkUnknownPlotIsNotFound('as: gardener');
   });
 
-  // DocumentsCurrentBehavior: a write answers isActive as true, because it echoes the input, and a read answers 1. Should agree.
   it('reports isActive the same way on a write and a read', async () => {
     await plots.checkIsActiveIsConsistent('as: gardener');
   });
 
-  // DocumentsCurrentBehavior: isActive is ignored, and a plot stays active. Should be possible to deactivate.
   it('deactivates a plot', async () => {
     await plots.createPlot('as: gardener', 'plot: north-bed');
 
     await plots.checkPlotCanBeDeactivated('as: gardener', 'plot: north-bed');
   });
 
-  // DocumentsCurrentBehavior: replies 201 with an id that doesn't exist, having overwritten the plot holding the name. Should be rejected.
-  it('rejects a second plot with the same name', async () => {
+  // The app's edit sends back the isActive it read, which was 1 or 0 before reads answered a boolean
+  it('accepts isActive as 1 or 0', async () => {
+    await plots.createPlot('as: gardener', 'plot: north-bed');
+
+    await plots.checkIsActiveAsANumberIsAccepted('as: gardener', 'plot: north-bed');
+  });
+
+  it('rejects a second plot with the same name, and changes nothing', async () => {
     await plots.createPlot('as: gardener', 'plot: north-bed');
 
     await plots.checkTakenNameIsRejected('as: gardener', 'plot: north-bed');
+  });
+
+  it('rejects renaming a plot to a name that is taken', async () => {
+    await plots.createPlot('as: gardener', 'plot: north-bed');
+    await plots.createPlot('as: gardener', 'plot: south-bed');
+
+    await plots.checkRenameToTakenNameIsRejected('as: gardener', 'plot: south-bed', 'taken: north-bed');
+  });
+
+  it('rejects saving a plot under an id that does not exist', async () => {
+    await plots.checkSaveUnderUnknownIdIsRejected('as: gardener');
   });
 
   it('rejects deleting a plot that a planting is in', async () => {

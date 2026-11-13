@@ -29,6 +29,7 @@ export const PLANT_PROBLEMS = [
   'climbing that is not true or false',
   'instructions that are too long',
   'a harvest type that is not a number',
+  'a sowing time that is not text',
 ] as const;
 
 export type PlantProblem = (typeof PLANT_PROBLEMS)[number];
@@ -81,6 +82,11 @@ const invalidPlants: Record<PlantProblem, { body: (good: NewPlant) => object, re
     body: good => ({ ...good, harvesting: { defaultHarvestTypeId: 'pounds', }, }),
     reason: 'harvesting.defaultHarvestTypeId must be an integer',
   },
+  // the sowing columns hold the app's free text, so a boolean isn't one of them
+  'a sowing time that is not text': {
+    body: good => ({ ...good, sowing: { indoor: true, }, }),
+    reason: 'sowing.indoor must be a string',
+  },
 };
 
 /** Ways a schedule assignment can be wrong. Each is a test of its own. */
@@ -104,7 +110,8 @@ export interface PlantsDriver {
   createPlant(caller: Actor, input: NewPlant): Promise<CreatedPlant>,
   getReturnsPlant(caller: Actor, plant: CreatedPlant): Promise<void>,
   getReturnsAuditTimesInUtc(caller: Actor, plant: CreatedPlant): Promise<void>,
-  getReturnsSowingValuesAsStrings(caller: Actor, plant: CreatedPlant): Promise<void>,
+  /** Asserts the sowing times come back as the text sent, and the depth as the number sent. */
+  getReturnsSowingTimesAndDepthAsSent(caller: Actor, plant: CreatedPlant): Promise<void>,
   getReportsDefaultHarvestType(caller: Actor, plant: CreatedPlant, harvestType: string): Promise<void>,
   getShowsSchedule(caller: Actor, plant: CreatedPlant, schedule: CreatedSchedule): Promise<void>,
   getShowsNoSchedules(caller: Actor, plant: CreatedPlant): Promise<void>,
@@ -120,7 +127,10 @@ export interface PlantsDriver {
   assignmentOfInvalidListsIsRejectedAsBadRequest(caller: Actor, plant: CreatedPlant, problem: AssignmentProblem): Promise<void>,
   createOfTakenNameIsRejectedAsBadRequest(caller: Actor, plant: CreatedPlant): Promise<void>,
   renameToTakenNameIsRejectedAsConflict(caller: Actor, plant: CreatedPlant, taken: CreatedPlant): Promise<void>,
-  createWithUnknownIdAndTakenNameFailsWithNotFoundAndOverwrites(caller: Actor, plant: CreatedPlant): Promise<void>,
+  /** Rejected, and the plant holding the name is unchanged. */
+  createWithUnknownIdAndTakenNameIsRejectedAsBadRequest(caller: Actor, plant: CreatedPlant): Promise<void>,
+  /** Rejected, and nothing is written under the id. */
+  saveUnderUnknownIdIsRejectedAsNotFound(caller: Actor, input: NewPlant): Promise<void>,
   createWithUnknownSubcategoryIsRejectedAsBadRequest(caller: Actor, input: NewPlant): Promise<void>,
   deleteOfPlantInUseIsRejectedAsConflict(caller: Actor, plant: CreatedPlant): Promise<void>,
   deleteRemovesPlant(caller: Actor, plant: CreatedPlant): Promise<void>,
@@ -189,27 +199,36 @@ export function createPlantsDriver(client: HttpClient, registry: ResourceRegistr
         growing: input.growing,
       }, what);
 
-      const { depthInInches, ...planting } = input.planting ?? {};
-      const { indoor, direct, ...sowing } = input.sowing ?? {};
-
-      // Compared apart from the three values that come back as strings, which
-      // getReturnsSowingValuesAsStrings pins.
-      expectThat(depthInInches !== undefined && indoor !== undefined && direct !== undefined, 'a plant with every detail', response, what);
-
-      for (const [ group, expected, ] of [ [ 'planting', planting, ], [ 'sowing', sowing, ], [ 'harvesting', input.harvesting ?? {}, ], ] as const) {
+      for (const [ group, expected, ] of [
+        [ 'planting', input.planting ?? {}, ],
+        [ 'sowing', input.sowing ?? {}, ],
+        [ 'harvesting', input.harvesting ?? {}, ],
+      ] as const) {
         for (const [ key, value, ] of Object.entries(expected)) {
           expectThat(body[group]?.[key] === value, `${group}.${key} = ${JSON.stringify(value)}`, response, what);
         }
       }
     },
 
-    async getReturnsSowingValuesAsStrings(caller: Actor, plant: CreatedPlant): Promise<void> {
-      const what = `reading the sowing details of plant "${plant.friendlyName}"`;
+    async getReturnsSowingTimesAndDepthAsSent(caller: Actor, plant: CreatedPlant): Promise<void> {
+      const what = `reading the sowing times and depth of plant "${plant.friendlyName}"`;
       const response = await get(caller, plant, what);
       const body = response.body as { sowing: Record<string, unknown>, planting: Record<string, unknown> };
+      const { indoor, direct, } = plant.input.sowing ?? {};
+      const { depthInInches, } = plant.input.planting ?? {};
 
-      expectThat(body.sowing.indoor === '1' && body.sowing.direct === '0', 'sowing flags of "1" and "0"', response, what);
-      expectThat(body.planting.depthInInches === '0.25', 'a depth of "0.25"', response, what);
+      expectThat(
+        typeof indoor === 'string' && body.sowing.indoor === indoor && body.sowing.direct === direct,
+        `sowing times of ${JSON.stringify(indoor)} and ${JSON.stringify(direct)}`,
+        response,
+        what
+      );
+      expectThat(
+        typeof depthInInches === 'number' && body.planting.depthInInches === depthInInches,
+        `a depth of the number ${depthInInches}`,
+        response,
+        what
+      );
     },
 
     async getReportsDefaultHarvestType(caller: Actor, plant: CreatedPlant, harvestType: string): Promise<void> {
@@ -388,13 +407,28 @@ export function createPlantsDriver(client: HttpClient, registry: ResourceRegistr
       expectRejection(response, status.CONFLICT, 'duplicate entry', what);
     },
 
-    async createWithUnknownIdAndTakenNameFailsWithNotFoundAndOverwrites(caller: Actor, plant: CreatedPlant): Promise<void> {
+    async createWithUnknownIdAndTakenNameIsRejectedAsBadRequest(caller: Actor, plant: CreatedPlant): Promise<void> {
       const what = `saving an unknown plant id under the name "${plant.friendlyName}"`;
       const description = 'Overwritten through another plant id';
       const response = await as(caller).put('/plants', { ...plant.input, plantId: 'no-such-plant', description, });
 
+      registerIfCreated(response, plant.friendlyName);
+      expectRejection(response, status.BAD_REQUEST, 'Friendly name already in use', what);
+
+      const reread = await get(caller, plant, `${what}: re-reading the other plant`);
+
+      expectThat((reread.body as { description: unknown }).description !== description, 'the other plant unchanged', reread, what);
+    },
+
+    async saveUnderUnknownIdIsRejectedAsNotFound(caller: Actor, input: NewPlant): Promise<void> {
+      const what = `saving plant "${input.friendlyName}" under an id that does not exist`;
+      const response = await as(caller).put('/plants', { ...input, plantId: 'no-such-plant', });
+
+      if (response.status === status.OK || response.status === status.CREATED) {
+        registry.register({ kind: 'plant', path: '/plants/no-such-plant', label: input.friendlyName, });
+      }
       expectStatus(response, status.NOT_FOUND, what);
-      expectBodyToContain(await get(caller, plant, `${what}: re-reading the other plant`), { description, }, what);
+      expectStatus(await as(caller).get('/plants/no-such-plant'), status.NOT_FOUND, `${what}: reading the id`);
     },
 
     async createWithUnknownSubcategoryIsRejectedAsBadRequest(caller: Actor, input: NewPlant): Promise<void> {

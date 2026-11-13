@@ -20,8 +20,14 @@ export interface PlotsDsl {
   checkIsActiveIsConsistent(...args: string[]): Promise<void>,
   /** `as`, `plot`. */
   checkPlotCanBeDeactivated(...args: string[]): Promise<void>,
+  /** `as`, `plot`. Saves isActive as 0, then 1, as the app sends back what it read. */
+  checkIsActiveAsANumberIsAccepted(...args: string[]): Promise<void>,
   /** `as`, `plot`. Asserts a second plot under its name is rejected. */
   checkTakenNameIsRejected(...args: string[]): Promise<void>,
+  /** `as`, `plot`, `taken`, another plot. */
+  checkRenameToTakenNameIsRejected(...args: string[]): Promise<void>,
+  /** `as`. Saves a new plot under an id nothing holds. */
+  checkSaveUnderUnknownIdIsRejected(...args: string[]): Promise<void>,
   /** `as`, `plot`. Asserts the delete is rejected while a planting is in it. */
   checkDeleteIsRejectedWhileInUse(...args: string[]): Promise<void>,
   /** `as`, `plot`. Asserts it is gone. */
@@ -76,19 +82,41 @@ export function createPlotsDsl(world: World, plots: PlotsDriver): PlotsDsl {
     async checkIsActiveIsConsistent(...args: string[]): Promise<void> {
       const params = parseDslArgs(args, { as: actor(), });
 
-      await plots.writeAnswersIsActiveAsABooleanAndReadAsANumber(await world.actorFor(params.as), aPlot());
+      await plots.writeAndReadAnswerIsActiveAsABoolean(await world.actorFor(params.as), aPlot());
     },
 
     async checkPlotCanBeDeactivated(...args: string[]): Promise<void> {
       const params = parseDslArgs(args, { as: actor(), plot: alias(), });
 
-      await plots.updateIgnoresIsActive(await world.actorFor(params.as), world.plotNamed(params.plot));
+      await plots.updateDeactivatesPlot(await world.actorFor(params.as), world.plotNamed(params.plot));
+    },
+
+    async checkIsActiveAsANumberIsAccepted(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), plot: alias(), });
+
+      await plots.updateWithIsActiveAsANumberSucceeds(await world.actorFor(params.as), world.plotNamed(params.plot));
+    },
+
+    async checkRenameToTakenNameIsRejected(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), plot: alias(), taken: alias(), });
+
+      await plots.renameToTakenNameIsRejectedAsConflict(
+        await world.actorFor(params.as),
+        world.plotNamed(params.plot),
+        world.plotNamed(params.taken)
+      );
+    },
+
+    async checkSaveUnderUnknownIdIsRejected(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), });
+
+      await plots.saveUnderUnknownIdIsRejectedAsNotFound(await world.actorFor(params.as), aPlot());
     },
 
     async checkTakenNameIsRejected(...args: string[]): Promise<void> {
       const params = parseDslArgs(args, { as: actor(), plot: alias(), });
 
-      await plots.createOfTakenNameOverwritesTheOtherPlot(await world.actorFor(params.as), world.plotNamed(params.plot));
+      await plots.createOfTakenNameIsRejectedAsBadRequest(await world.actorFor(params.as), world.plotNamed(params.plot));
     },
 
     async checkDeleteIsRejectedWhileInUse(...args: string[]): Promise<void> {

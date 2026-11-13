@@ -1,3 +1,5 @@
+import { ResultSetHeader } from 'mysql2';
+
 import { QueryPayload } from '../../database/types';
 import { Plot, PlotRow } from './types';
 
@@ -5,14 +7,30 @@ import queries from './queries';
 import db, { RowNotFoundError } from '../../database'
 import rowMapper from './row-mapper';
 
-async function upsertPlot(plot: Plot): Promise<Plot> {
-  const query: QueryPayload = {
-    sql: queries.plots.upsert,
-    params: rowMapper.plots.insert.toParams(plot),
+async function insertPlot(plot: Plot): Promise<Plot> {
+  await db.execQuery({ sql: queries.plots.insert, params: rowMapper.plots.insert.toParams(plot), });
+
+  return await getPlotById(plot.plotId);
+}
+
+/** An existing plot, by its id. An id nothing holds is a 404, and writes nothing. */
+async function updatePlot(plot: Plot): Promise<Plot> {
+  const result = await db.execQuery<ResultSetHeader>({ sql: queries.plots.update, params: rowMapper.plots.update.toParams(plot), });
+
+  // mysql2 counts the rows matched, so a save that changes nothing still finds its plot
+  if (result.affectedRows === 0) {
+    throw new RowNotFoundError('Plot not found', { plotId: plot.plotId, });
   }
 
-  await db.execQuery(query);
-  return plot;
+  return await getPlotById(plot.plotId);
+}
+
+async function plotExists(plotId: string): Promise<boolean> {
+  return await db.execCountQuery({ sql: queries.plots.countById, params: [ plotId, ], }) > 0;
+}
+
+async function friendlyNameIsTaken(friendlyName: string): Promise<boolean> {
+  return await db.execCountQuery({ sql: queries.plots.countByFriendlyName, params: [ friendlyName, ], }) > 0;
 }
 
 async function getPlotById(plotId: string): Promise<Plot> {
@@ -60,7 +78,10 @@ async function deletePlotById(plotId: string): Promise<void> {
 }
 
 export default {
-  upsertPlot,
+  insertPlot,
+  updatePlot,
+  plotExists,
+  friendlyNameIsTaken,
   getPlotById,
   getPlots,
   countPlantingsByPlotId,

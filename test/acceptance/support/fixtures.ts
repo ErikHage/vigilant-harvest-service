@@ -142,8 +142,9 @@ export function everyPlantDetail(): Partial<NewPlant> {
     description: 'Written by the acceptance suite',
     taxonomy: { family: 'Solanaceae', genus: 'Solanum', species: 'lycopersicum', },
     sowing: {
-      indoor: true,
-      direct: false,
+      // free text, as the app's boxes take it
+      indoor: '6 weeks before last frost',
+      direct: 'After last frost',
       germinationDaysRange: '5-10',
       germinationTempRange: '70-80',
       sowingNotes: 'Keep warm',

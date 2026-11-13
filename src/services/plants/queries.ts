@@ -34,41 +34,27 @@ p.harvest_instructions,
 p.date_created,
 p.date_modified`;
 
-const upsertPlant: string = `
-  INSERT into plants (plant_id, subcategory_id, tags, plant_description, friendly_name, lifespan_type, family, genus, species,
-  indoor_sowing, direct_sowing, germination_days_range, germination_temp_range, sowing_notes, planting_depth_inches,
-  plant_spacing_inches, row_spacing_inches, planting_instructions, required_sun, days_to_maturity, is_climbing,
-  climbing_height_feet, plant_size, growing_notes, default_harvest_type_id, fruit_size, shelf_stability, harvest_instructions)
-  VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-  ON DUPLICATE KEY
-  UPDATE subcategory_id =         VALUES(subcategory_id),
-         tags =                   VALUES(tags),
-         plant_description =      VALUES(plant_description),
-         friendly_name =          VALUES(friendly_name),
-         lifespan_type =          VALUES(lifespan_type),
-         family =                 VALUES(family),
-         genus =                  VALUES(genus),
-         species =                VALUES(species),
-         indoor_sowing =          VALUES(indoor_sowing),
-         direct_sowing =          VALUES(direct_sowing),
-         germination_days_range = VALUES(germination_days_range),
-         germination_temp_range = VALUES(germination_temp_range),
-         sowing_notes =           VALUES(sowing_notes),
-         planting_depth_inches =  VALUES(planting_depth_inches),
-         plant_spacing_inches =   VALUES(plant_spacing_inches),
-         row_spacing_inches =     VALUES(row_spacing_inches),
-         planting_instructions =  VALUES(planting_instructions),
-         required_sun =           VALUES(required_sun),
-         days_to_maturity =       VALUES(days_to_maturity),
-         is_climbing =            VALUES(is_climbing),
-         climbing_height_feet =   VALUES(climbing_height_feet),
-         plant_size =             VALUES(plant_size),
-         default_harvest_type_id = VALUES(default_harvest_type_id),
-         fruit_size =             VALUES(fruit_size),
-         growing_notes =          VALUES(growing_notes),
-         shelf_stability =        VALUES(shelf_stability),
-         harvest_instructions =   VALUES(harvest_instructions)
-`;
+// In the order plants' row mapper gives the params.
+const plantColumns: string[] = [
+  'plant_id', 'subcategory_id', 'tags', 'plant_description', 'friendly_name', 'lifespan_type', 'family', 'genus',
+  'species', 'indoor_sowing', 'direct_sowing', 'germination_days_range', 'germination_temp_range', 'sowing_notes',
+  'planting_depth_inches', 'plant_spacing_inches', 'row_spacing_inches', 'planting_instructions', 'required_sun',
+  'days_to_maturity', 'is_climbing', 'climbing_height_feet', 'plant_size', 'growing_notes', 'default_harvest_type_id',
+  'fruit_size', 'shelf_stability', 'harvest_instructions',
+];
+
+// A new plant. A name another plant holds is a duplicate entry, never an overwrite.
+const insertPlant: string =
+  `INSERT INTO plants (${plantColumns.join(', ')})
+   VALUES (${plantColumns.map(() => '?').join(', ')})`;
+
+// An existing plant, by its id: every column but the id, then the id.
+const updatePlant: string =
+  `UPDATE plants
+      SET ${plantColumns.slice(1).map(column => `${column} = ?`).join(',\n          ')}
+    WHERE plant_id = ?`;
+
+const countById: string = 'SELECT COUNT(*) AS count FROM plants WHERE plant_id = ?';
 
 const assignSchedule =
   'INSERT INTO plants_activity_schedules (plant_id, activity_schedule_id) ' +
@@ -149,7 +135,9 @@ const categories = {
 };
 
 export default {
-  upsertPlant,
+  insertPlant,
+  updatePlant,
+  countById,
   assignSchedule,
   unassignSchedule,
 

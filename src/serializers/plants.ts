@@ -47,14 +47,10 @@ const LIFESPAN_TYPES = [ 'annual', 'perennial', 'biennial', 'unknown', ] as cons
 
 /**
  * The sowing columns are VARCHARs that the app fills with free text ("6 weeks
- * before last frost"). A boolean is accepted as well, and stored as "1" or "0",
- * as MySQL did with it before; that it comes back as a string is a pinned
- * behaviour, not this check's to change.
+ * before last frost"), so only text is taken. Rows stored as "1" or "0" before
+ * are text too, and the app shows them as Yes and No (its B22).
  */
 function sowingValue(value: unknown, field: string): string | undefined {
-  if (typeof value === 'boolean') {
-    return value ? '1' : '0';
-  }
   return optionalString(value, field, NAME);
 }
 

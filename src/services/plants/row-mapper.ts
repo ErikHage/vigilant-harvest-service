@@ -30,7 +30,7 @@ function fromRow(row: PlantRow, activityScheduleRows: ActivityScheduleRow[]): Pl
       sowingNotes: row.sowing_notes,
     },
     planting: {
-      depthInInches: row.planting_depth_inches,
+      depthInInches: row.planting_depth_inches === null ? null : Number(row.planting_depth_inches),
       plantSpacingInches: row.plant_spacing_inches,
       rowSpacingInches: row.row_spacing_inches,
       instructions: row.planting_instructions,
@@ -86,6 +86,14 @@ const insert = {
   ]),
 };
 
+const update = {
+  toParams: (plant: PlantUpsertInstruction): Array<string | number | null> => {
+    const [ plantId, ...columns ] = insert.toParams(plant);
+
+    return [ ...columns, plantId!, ];
+  },
+};
+
 const categories = {
   fromCategorySubcategoryRows: function(rows: CategorySubcategoryRow[]){
     const categoryMap = new Map();
@@ -113,6 +121,7 @@ const categories = {
 
 export default {
   insert,
+  update,
   fromRow,
 
   categories,

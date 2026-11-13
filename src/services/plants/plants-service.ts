@@ -14,15 +14,19 @@ import { ensureError, FeralError } from '../../errors';
 import { ConflictError, ValidationError } from '../../errors/common';
 
 async function upsertPlant(plantRequest: PlantRequest): Promise<Plant> {
-  const existingPlant: Plant | undefined = await datasource.getPlantByFriendlyName(plantRequest.friendlyName);
+  const nameHolder: Plant | undefined = await datasource.getPlantByFriendlyName(plantRequest.friendlyName);
+  const isUpdate = plantRequest.plantId !== undefined;
 
-  if (!plantRequest.plantId && existingPlant) {
+  // A new plant, or one saved under an id nothing holds, can't take a name another plant has: it's
+  // refused by name, as the app shows a 400's reason. A rename onto one is the database's to refuse.
+  if (nameHolder !== undefined && nameHolder.plantId !== plantRequest.plantId
+      && (!isUpdate || !await datasource.plantExists(plantRequest.plantId!))) {
     throw new ValidationError('Friendly name already in use').withDebugParams({ friendlyName: plantRequest.friendlyName, });
   }
 
   try {
     const plant: PlantUpsertInstruction = {
-      plantId: plantRequest.plantId || uuidV4(),
+      plantId: plantRequest.plantId ?? uuidV4(),
       subcategoryId: plantRequest.subcategoryId,
       friendlyName: plantRequest.friendlyName,
       lifespanType: plantRequest.lifespanType,
@@ -35,7 +39,8 @@ async function upsertPlant(plantRequest: PlantRequest): Promise<Plant> {
       harvesting: plantRequest.harvesting,
     };
 
-    return await datasource.upsertPlant(plant);
+    // an update by an id nothing holds is a 404 from the datasource, and writes nothing
+    return isUpdate ? await datasource.updatePlant(plant) : await datasource.insertPlant(plant);
   } catch (err) {
     throw new FeralError('Error upserting plant', ensureError(err))
       .withDebugParams(plantRequest);

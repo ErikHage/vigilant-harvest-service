@@ -1,16 +1,22 @@
 const allPlotFields = 'plot_id, friendly_name, length_in_inches, width_in_inches, plot_type, is_active';
 
 const plots = {
-    upsert: `
-      INSERT into plots (plot_id, friendly_name, length_in_inches, width_in_inches, plot_type, is_active)
+    // a name another plot holds is a duplicate entry, never an overwrite
+    insert: `
+      INSERT INTO plots (plot_id, friendly_name, length_in_inches, width_in_inches, plot_type, is_active)
       VALUES (?,?,?,?,?,?)
-      ON DUPLICATE KEY UPDATE
-        friendly_name =    VALUES(friendly_name),
-        length_in_inches = VALUES(length_in_inches),
-        width_in_inches =  VALUES(width_in_inches),
-        plot_type =        VALUES(plot_type),
-        is_active =        VALUES(is_active)
     `,
+    update: `
+      UPDATE plots
+         SET friendly_name = ?,
+             length_in_inches = ?,
+             width_in_inches = ?,
+             plot_type = ?,
+             is_active = ?
+       WHERE plot_id = ?
+    `,
+    countById: 'SELECT COUNT(*) AS count FROM plots WHERE plot_id = ?',
+    countByFriendlyName: 'SELECT COUNT(*) AS count FROM plots WHERE friendly_name = ?',
     getById: `SELECT ${allPlotFields} FROM plots WHERE plot_id = ?`,
     getAll: `SELECT ${allPlotFields} FROM plots`,
     countPlantingsByPlotId: 'SELECT COUNT(*) AS count FROM plantings WHERE plot_id = ?',

@@ -14,14 +14,13 @@ describe('plants', () => {
     await plants.checkListed('as: gardener', 'plant: tomato');
   });
 
-  // DocumentsCurrentBehavior: indoor and direct come back as "1" and "0", and depth as "0.25". Should keep the booleans and the number sent.
   it('returns its audit times in UTC', async () => {
     await plants.createPlant('as: gardener', 'plant: tomato');
 
     await plants.checkAuditTimesInUtc('as: gardener', 'plant: tomato');
   });
 
-  it('keeps the types of sowing values', async () => {
+  it('keeps its sowing times as text, and its depth as a number', async () => {
     await plants.createPlant('as: gardener', 'plant: tomato', 'details: every field');
 
     await plants.checkSowingValuesKeepTheirTypes('as: gardener', 'plant: tomato');
@@ -90,6 +89,7 @@ describe('plants', () => {
     'climbing that is not true or false',
     'instructions that are too long',
     'a harvest type that is not a number',
+    'a sowing time that is not text',
   ])('rejects a plant with %s', async problem => {
     await plants.checkInvalidPlantIsRejected('as: gardener', `problem: ${problem}`);
   });
@@ -121,11 +121,14 @@ describe('plants', () => {
     await plants.checkRenameToTakenNameIsRejected('as: gardener', 'plant: pepper', 'taken: tomato');
   });
 
-  // DocumentsCurrentBehavior: replies 404, having overwritten the plant holding the name. Should be rejected, and change nothing.
-  it('rejects an unknown plant id saved under a name that is taken', async () => {
+  it('rejects an unknown plant id saved under a name that is taken, and changes nothing', async () => {
     await plants.createPlant('as: gardener', 'plant: tomato');
 
     await plants.checkUnknownIdWithTakenNameIsRejected('as: gardener', 'plant: tomato');
+  });
+
+  it('rejects saving a plant under an id that does not exist', async () => {
+    await plants.checkSaveUnderUnknownIdIsRejected('as: gardener');
   });
 
   it('rejects a plant in a subcategory that does not exist, and writes nothing', async () => {

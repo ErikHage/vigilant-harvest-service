@@ -134,11 +134,6 @@ rename the driver method, update the DSL line, delete the marker, and remove its
 
 | Area | Today | Should be |
 | --- | --- | --- |
-| Plants | An unknown `plantId` with a taken name answers 404, having overwritten the plant holding the name | Rejected, changing nothing |
-| Plants | `sowing.indoor` and `.direct` come back as `"1"` and `"0"`, and `planting.depthInInches` as a string | The booleans and number sent |
-| Plots | A taken name answers 201 with an id that doesn't exist, having overwritten the plot holding it | Rejected, changing nothing |
-| Plots | A write answers `isActive: true`, a read answers `1` | The same on both |
-| Plots | `isActive: false` is ignored | Deactivates the plot |
 | Harvests | Plant stats report `statsType: "Planting"` | `"Plant"` |
 | Activity schedules | `PATCH` blanks whatever it wasn't sent | Keeps it |
 | Activity schedules | Updating an item through a schedule that doesn't hold it succeeds | 404 |

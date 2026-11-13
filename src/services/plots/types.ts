@@ -6,7 +6,7 @@ export interface PlotRequest {
   lengthInInches: number, // int
   widthInInches: number, // int
   plotType: string,
-  isActive: boolean | undefined,
+  isActive: boolean, // true when it isn't sent
 }
 
 export interface PlotResponse {
@@ -33,6 +33,6 @@ export interface PlotRow extends RowDataPacket {
   length_in_inches: number, // int
   width_in_inches: number, // int
   plot_type: string,
-  is_active: boolean,
+  is_active: number, // TINYINT: 1 or 0
 }
 

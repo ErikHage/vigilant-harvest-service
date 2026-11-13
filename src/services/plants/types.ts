@@ -16,7 +16,7 @@ interface SowingInfo {
 }
 
 interface PlantingInfo {
-  depthInInches?: number,
+  depthInInches?: number | null,
   plantSpacingInches?: number,
   rowSpacingInches?: number,
   instructions?: string,
@@ -95,7 +95,7 @@ export interface PlantRow extends RowDataPacket {
   germination_days_range: string,
   germination_temp_range: string,
   sowing_notes: string,
-  planting_depth_inches: number,
+  planting_depth_inches: string | null,
   plant_spacing_inches: number,
   row_spacing_inches: number,
   planting_instructions: string,
