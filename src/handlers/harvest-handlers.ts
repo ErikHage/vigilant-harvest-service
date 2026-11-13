@@ -51,10 +51,6 @@ async function getHarvestStats(request: Request, response: Response) {
 async function deleteHarvestById(request: Request, response: Response) {
   const { harvestId, } = request.params;
 
-  if (harvestId === undefined) {
-    response.status(httpStatus.BAD_REQUEST).send('harvestId required');
-  }
-
   await harvestsService.deleteHarvestById(harvestId!);
 
   response.sendStatus(httpStatus.OK);

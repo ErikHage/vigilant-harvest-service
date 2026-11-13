@@ -19,10 +19,6 @@ async function upsertPlot(request: Request, response: Response) {
 async function getPlotById(request: Request, response: Response) {
   const { plotId, } = request.params;
 
-  if (plotId === undefined) {
-    response.status(httpStatus.BAD_REQUEST).send('plotId required');
-  }
-
   const plot = await plotsService.getPlotById(plotId!);
   const plotResponse = plotSerializers.plots.toResponse(plot);
 
@@ -38,10 +34,6 @@ async function getPlots(request: Request, response: Response) {
 
 async function deletePlotById(request: Request, response: Response) {
   const { plotId, } = request.params;
-
-  if (plotId === undefined) {
-    response.sendStatus(httpStatus.BAD_REQUEST);
-  }
 
   await plotsService.deletePlotById(plotId!);
 

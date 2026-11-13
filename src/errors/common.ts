@@ -23,6 +23,13 @@ export class ServiceUnavailableError extends FeralError {
   }
 }
 
+export class NotFoundError extends FeralError {
+  constructor(message: string) {
+    super(message);
+    this.status = 404;
+  }
+}
+
 export class ConflictError extends FeralError {
   constructor(message: string) {
     super(message);

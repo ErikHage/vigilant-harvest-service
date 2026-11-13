@@ -31,10 +31,6 @@ async function performPlantingAction(request: Request, response: Response) {
 async function updatePlanting(request: Request, response: Response) {
   const { plantingId, } = request.params;
 
-  if (plantingId === undefined) {
-    response.status(httpStatus.BAD_REQUEST).send('plantingId required');
-  }
-
   const plantingUpdateRequest: PlantingUpdateRequest = plantingSerializers.update.fromRequest(request);
 
   const planting: Planting = await plantingsService.updatePlanting(plantingId!, plantingUpdateRequest);
@@ -47,10 +43,6 @@ async function updatePlanting(request: Request, response: Response) {
 
 async function getPlantingById(request: Request, response: Response) {
   const { plantingId, } = request.params;
-
-  if (plantingId === undefined) {
-    response.status(httpStatus.BAD_REQUEST).send('plantingId required');
-  }
 
   const planting = await plantingsService.getPlantingById(plantingId!);
   const plantingResponse = plantingSerializers.toResponse(planting);
@@ -75,10 +67,6 @@ async function getPlantings(request: Request, response: Response) {
 
 async function deletePlantingById(request: Request, response: Response) {
   const { plantingId, } = request.params;
-
-  if (plantingId === undefined) {
-    response.sendStatus(httpStatus.BAD_REQUEST);
-  }
 
   await plantingsService.deletePlantingById(plantingId!);
 

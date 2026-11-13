@@ -29,14 +29,10 @@ async function updateScheduleAssignment(request: Request, response: Response) {
 async function getPlantById(request: Request, response: Response) {
   const { plantId, } = request.params;
 
-  if (plantId === undefined) {
-    response.status(httpStatus.BAD_REQUEST).send('plantId required');
-  } else {
-    const plant = await plantsService.getPlantById(plantId!);
-    const plantResponse = plantSerializers.toResponse(plant);
+  const plant = await plantsService.getPlantById(plantId!);
+  const plantResponse = plantSerializers.toResponse(plant);
 
-    response.status(httpStatus.OK).send(plantResponse);
-  }
+  response.status(httpStatus.OK).send(plantResponse);
 }
 
 async function getPlants(request: Request, response: Response) {
@@ -49,13 +45,9 @@ async function getPlants(request: Request, response: Response) {
 async function deletePlantById(request: Request, response: Response) {
   const { plantId, } = request.params;
 
-  if (plantId === undefined) {
-    response.sendStatus(httpStatus.BAD_REQUEST);
-  } else {
-    await plantsService.deletePlantById(plantId!);
+  await plantsService.deletePlantById(plantId!);
 
-    response.sendStatus(httpStatus.OK);
-  }
+  response.sendStatus(httpStatus.OK);
 }
 
 async function insertCategory(request: Request, response: Response) {

@@ -1,4 +1,4 @@
-import Router, { Express } from 'express';
+import Router, { Express, NextFunction, Request, Response } from 'express';
 
 import getHealth from '../handlers/health-handler';
 import getServiceInfo from '../handlers/service-info-handler';
@@ -15,6 +15,7 @@ import activityLogHandlers from '../handlers/activity-log-handlers';
 import logRequests from '../middleware/log-requests';
 import attachActor from '../middleware/attach-actor';
 import errorHandler from '../middleware/error-handler';
+import { NotFoundError } from '../errors/common';
 
 const apiRouter: Express = Router();
 
@@ -89,6 +90,12 @@ const buildRouter = (): Express => {
   apiRouter.put('/activity-log', activityLogHandlers.upsertActivityLogEntry);
   apiRouter.get('/activity-log/:plantingYear', activityLogHandlers.getActivityLogEntries);
   apiRouter.delete('/activity-log/entries/:entryId', activityLogHandlers.deleteActivityLogEntry);
+
+  // After attachActor, so a caller without a good token can't probe which
+  // routes exist: it's told 401, as on every route above.
+  apiRouter.use((request: Request, response: Response, next: NextFunction) => {
+    next(new NotFoundError(`No route for ${request.method} ${request.path}`));
+  });
 
   apiRouter.use(errorHandler);
 

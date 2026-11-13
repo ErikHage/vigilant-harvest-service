@@ -23,9 +23,37 @@ export interface ServiceInfoDriver {
    * the token is checked, so this holds with or without one.
    */
   malformedBodyIsRejectedAsBadRequest(caller: Actor): Promise<void>,
+  /**
+   * Asserts that each call to a route that doesn't exist, or with a method the
+   * route doesn't take, is rejected as not found, in the service's error shape.
+   */
+  unknownRouteIsRejectedAsNotFound(caller: Actor): Promise<void>,
+  /**
+   * Asserts that the same calls, without a good token, are rejected as
+   * unauthorized: the token is checked before the route is looked for.
+   */
+  unknownRouteIsRejectedAsUnauthorized(caller: Actor): Promise<void>,
 }
 
+/** Calls the service has no route for: an unknown path, a deeper one, and a method a route doesn't take. */
+const UNKNOWN_ROUTE_CALLS = [
+  { send: (client: HttpClient) => client.get('/no-such-route'), what: 'reading a route that doesn\'t exist', },
+  { send: (client: HttpClient) => client.get('/plots/no-such-plot/no-such-child'), what: 'reading below a plot', },
+  { send: (client: HttpClient) => client.patch('/plots', {}), what: 'patching the plots collection, which takes no PATCH', },
+];
+
 export function createServiceInfoDriver(client: HttpClient): ServiceInfoDriver {
+  async function unknownRouteIsRejectedAs(caller: Actor, expected: number): Promise<void> {
+    const callerClient = client.withToken(caller.token);
+
+    for (const call of UNKNOWN_ROUTE_CALLS) {
+      const response = await call.send(callerClient);
+
+      expectStatus(response, expected, call.what);
+      expectBodyToHaveKeys(response, [ 'errors', ], call.what);
+    }
+  }
+
   return {
     async getReturnsServiceInfo(caller: Actor): Promise<void> {
       const what = 'reading the service info';
@@ -69,6 +97,14 @@ export function createServiceInfoDriver(client: HttpClient): ServiceInfoDriver {
         response,
         what
       );
+    },
+
+    async unknownRouteIsRejectedAsNotFound(caller: Actor): Promise<void> {
+      await unknownRouteIsRejectedAs(caller, status.NOT_FOUND);
+    },
+
+    async unknownRouteIsRejectedAsUnauthorized(caller: Actor): Promise<void> {
+      await unknownRouteIsRejectedAs(caller, status.UNAUTHORIZED);
     },
   };
 }
