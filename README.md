@@ -20,6 +20,9 @@ and their quantities summed.
 
 
 
+Running locally: copy `.env.example` to `.env` and fill in the blanks. `.env` is gitignored, so real
+values never go in a commit. The acceptance suite has its own, in `test/acceptance/.env.acceptance`.
+
 Example curl:
 
 ``` shell

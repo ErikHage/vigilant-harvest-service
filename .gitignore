@@ -35,3 +35,6 @@ chrome-user-data
 
 # acceptance suite secrets
 test/acceptance/.env.acceptance
+
+# local config; .env.example lists its keys
+.env
