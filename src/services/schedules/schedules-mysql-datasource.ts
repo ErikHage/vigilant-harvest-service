@@ -1,3 +1,4 @@
+import { ResultSetHeader } from 'mysql2';
 import { QueryPayload } from '../../database/types';
 import queries from '../schedules/queries';
 import rowMapper from '../schedules/row-mapper';
@@ -63,13 +64,16 @@ async function getScheduleById(activityScheduleId: string): Promise<ActivitySche
   return rowMapper.schedules.getById.fromRows(scheduleResults[0]!, itemResults);
 }
 
+/** Writes only what the PATCH sent. A schedule that doesn't exist is a 404, from the re-read. */
 async function updateSchedule(scheduleUpdateRequest: ActivityScheduleUpdateRequest): Promise<ActivitySchedule> {
-  const query: QueryPayload = {
-    sql: queries.schedules.update,
-    params: rowMapper.schedules.update.toParams(scheduleUpdateRequest),
-  };
+  const columns = rowMapper.schedules.update.toColumns(scheduleUpdateRequest);
 
-  await db.execQuery(query);
+  if (columns.length > 0) {
+    await db.execQuery({
+      sql: queries.schedules.buildUpdate(columns.map(([ column, ]) => column)),
+      params: [ ...columns.map(([ , value, ]) => value), scheduleUpdateRequest.activityScheduleId, ],
+    });
+  }
 
   return await getScheduleById(scheduleUpdateRequest.activityScheduleId);
 }
@@ -110,13 +114,28 @@ async function insertScheduleItem(entryId: string, scheduleItem: ActivitySchedul
   return await getScheduleItemById(entryId);
 }
 
+/**
+ * Writes only what the PATCH sent, and only to an item on the path's schedule: one that isn't on
+ * it, or doesn't exist, is a 404, and nothing is written.
+ */
 async function updateScheduleItem(scheduleItem: ActivityScheduleItemUpdateRequest): Promise<ActivityScheduleItem> {
-  const query: QueryPayload = {
-    sql: queries.scheduleItems.update,
-    params: rowMapper.scheduleItems.update.toParams(scheduleItem),
-  }
+  const columns = rowMapper.scheduleItems.update.toColumns(scheduleItem);
+  const where = [ scheduleItem.activityScheduleId, scheduleItem.entryId, ];
 
-  await db.execQuery(query);
+  // mysql2 counts the rows matched, so a PATCH that changes nothing still finds its item
+  const found = columns.length > 0
+    ? (await db.execQuery<ResultSetHeader>({
+      sql: queries.scheduleItems.buildUpdate(columns.map(([ column, ]) => column)),
+      params: [ ...columns.map(([ , value, ]) => value), ...where, ],
+    })).affectedRows > 0
+    : await db.execCountQuery({ sql: queries.scheduleItems.countOnSchedule, params: where, }) > 0;
+
+  if (!found) {
+    throw new RowNotFoundError('Activity schedule item not found', {
+      activityScheduleId: scheduleItem.activityScheduleId,
+      entryId: scheduleItem.entryId,
+    });
+  }
 
   return await getScheduleItemById(scheduleItem.entryId);
 }

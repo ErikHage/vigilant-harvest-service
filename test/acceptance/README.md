@@ -132,11 +132,8 @@ it('rejects a harvest list that is missing', async () => {
 `grep -rn DocumentsCurrentBehavior test/acceptance` lists them. When one is fixed, its test goes red:
 rename the driver method, update the DSL line, delete the marker, and remove its row here.
 
-| Area | Today | Should be |
-| --- | --- | --- |
-| Harvests | Plant stats report `statsType: "Planting"` | `"Plant"` |
-| Activity schedules | `PATCH` blanks whatever it wasn't sent | Keeps it |
-| Activity schedules | Updating an item through a schedule that doesn't hold it succeeds | 404 |
+None is pinned now. When one is, list it here, in a table of the area, what it does today, and
+what it should do.
 
 ## The DSL dependency
 

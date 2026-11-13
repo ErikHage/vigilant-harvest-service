@@ -10,6 +10,13 @@ import {
   ActivityScheduleUpdateRequest
 } from './types';
 
+type ColumnValue = string | number | null;
+
+/** The columns whose field was sent: undefined means left out, and keeps what is stored. */
+function sentColumns(columns: Array<[ string, ColumnValue | undefined ]>): Array<[ string, ColumnValue ]> {
+  return columns.filter((column): column is [ string, ColumnValue ] => column[1] !== undefined);
+}
+
 const scheduleItems = {
   insert: {
     toParams: function(entryId: string, createRequest: ActivityScheduleItemCreateRequest): Array<string | number | null> {
@@ -29,18 +36,18 @@ const scheduleItems = {
   },
 
   update: {
-    toParams: function(updateRequest: ActivityScheduleItemUpdateRequest): Array<string | number | null> {
-      return [
-        updateRequest.activityType,
-        updateRequest.subType ?? null,
-        updateRequest.recurrenceRule ?? null,
-        updateRequest.startDate ?? null,
-        updateRequest.startDateYearOffset,
-        updateRequest.endDate ?? null,
-        updateRequest.endDateYearOffset,
-        updateRequest.notes ?? null,
-        updateRequest.entryId,
-      ];
+    /** The columns a PATCH writes, each with its value: every field it sent. A null empties its column. */
+    toColumns: function(updateRequest: ActivityScheduleItemUpdateRequest): Array<[ string, string | number | null ]> {
+      return sentColumns([
+        [ 'activity_type', updateRequest.activityType, ],
+        [ 'sub_type', updateRequest.subType, ],
+        [ 'recurrence_rule', updateRequest.recurrenceRule, ],
+        [ 'start_date', updateRequest.startDate, ],
+        [ 'start_date_year_offset', updateRequest.startDateYearOffset, ],
+        [ 'end_date', updateRequest.endDate, ],
+        [ 'end_date_year_offset', updateRequest.endDateYearOffset, ],
+        [ 'notes', updateRequest.notes, ],
+      ]);
     },
   },
 
@@ -81,12 +88,12 @@ const schedules = {
   },
 
   update: {
-    toParams: function(scheduleUpdateRequest: ActivityScheduleUpdateRequest): Array<string | null> {
-      return [
-        scheduleUpdateRequest.name,
-        scheduleUpdateRequest.description ?? null,
-        scheduleUpdateRequest.activityScheduleId,
-      ];
+    /** As for an item: the columns a PATCH sent, each with its value. */
+    toColumns: function(scheduleUpdateRequest: ActivityScheduleUpdateRequest): Array<[ string, string | number | null ]> {
+      return sentColumns([
+        [ 'name', scheduleUpdateRequest.name, ],
+        [ 'description', scheduleUpdateRequest.description, ],
+      ]);
     },
   },
 

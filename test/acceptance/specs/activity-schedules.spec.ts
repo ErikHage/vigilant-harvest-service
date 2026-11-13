@@ -23,11 +23,23 @@ describe('activity schedules', () => {
     await activitySchedules.checkSchedule('as: gardener', 'schedule: watering');
   });
 
-  // DocumentsCurrentBehavior: PATCH overwrites every field, so an omitted description is blanked. Should keep what wasn't sent.
   it('keeps what a partial update does not mention', async () => {
     await activitySchedules.createSchedule('as: gardener', 'schedule: watering');
 
     await activitySchedules.checkPartialUpdateKeepsTheRest('as: gardener', 'schedule: watering');
+  });
+
+  it('clears a description sent as null', async () => {
+    await activitySchedules.createSchedule('as: gardener', 'schedule: watering');
+
+    await activitySchedules.checkDescriptionCanBeCleared('as: gardener', 'schedule: watering');
+  });
+
+  it('keeps what a partial item update does not mention', async () => {
+    await activitySchedules.createSchedule('as: gardener', 'schedule: watering');
+    await activitySchedules.addItem('as: gardener', 'item: weekly', 'schedule: watering');
+
+    await activitySchedules.checkPartialItemUpdateKeepsTheRest('as: gardener', 'item: weekly');
   });
 
   it.each([
@@ -39,7 +51,7 @@ describe('activity schedules', () => {
     await activitySchedules.checkInvalidScheduleIsRejected('as: gardener', `problem: ${problem}`);
   });
 
-  it.each([ 'no name', 'a name that is not a string', ])('rejects a schedule update with %s', async problem => {
+  it.each([ 'a blank name', 'a name that is not a string', ])('rejects a schedule update with %s', async problem => {
     await activitySchedules.createSchedule('as: gardener', 'schedule: watering');
 
     await activitySchedules.checkInvalidScheduleUpdateIsRejected('as: gardener', 'schedule: watering', `problem: ${problem}`);
@@ -58,7 +70,7 @@ describe('activity schedules', () => {
     await activitySchedules.checkInvalidItemIsRejected('as: gardener', 'schedule: watering', `problem: ${problem}`);
   });
 
-  it.each([ 'no activity type', 'an end date that is not a month and day', ])('rejects an item update with %s', async problem => {
+  it.each([ 'a blank activity type', 'an end date that is not a month and day', ])('rejects an item update with %s', async problem => {
     await activitySchedules.createSchedule('as: gardener', 'schedule: watering');
     await activitySchedules.addItem('as: gardener', 'item: weekly', 'schedule: watering');
 
@@ -86,8 +98,7 @@ describe('activity schedules', () => {
     await activitySchedules.checkItem('as: gardener', 'item: mornings', 'activityType: WEED');
   });
 
-  // DocumentsCurrentBehavior: replies 200 and updates it, because the path's schedule is ignored. Should be 404.
-  it('rejects updating an item through a schedule that does not hold it', async () => {
+  it('rejects updating an item through a schedule that does not hold it, and changes nothing', async () => {
     await activitySchedules.createSchedule('as: gardener', 'schedule: watering');
     await activitySchedules.createSchedule('as: gardener', 'schedule: weeding');
     await activitySchedules.addItem('as: gardener', 'item: mornings', 'schedule: watering');
@@ -98,6 +109,12 @@ describe('activity schedules', () => {
       'schedule: weeding',
       'activityType: PRUNE'
     );
+  });
+
+  it('rejects updating an item that does not exist', async () => {
+    await activitySchedules.createSchedule('as: gardener', 'schedule: watering');
+
+    await activitySchedules.checkUnknownItemUpdateIsRejected('as: gardener', 'schedule: watering');
   });
 
   it('deletes an item', async () => {

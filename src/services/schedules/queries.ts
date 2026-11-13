@@ -16,11 +16,11 @@ const schedules = {
     '  FROM activity_schedules ' +
     ' WHERE activity_schedule_id = ?',
 
-  update:
-    'UPDATE activity_schedules ' +
-    '   SET name = ?, ' +
-    '       description = ? ' +
-    ' WHERE activity_schedule_id = ?',
+  /** Sets each of `columns`, in order, then takes the schedule's id. */
+  buildUpdate: (columns: string[]): string =>
+    `UPDATE activity_schedules
+        SET ${columns.map(column => `${column} = ?`).join(', ')}
+      WHERE activity_schedule_id = ?`,
 
   // activity_schedule_items and plants_activity_schedules cascade on delete
   delete:
@@ -44,17 +44,18 @@ const scheduleItems = {
     '  FROM activity_schedule_items ' +
     ' WHERE activity_schedule_id = ?',
 
-  update:
-    'UPDATE activity_schedule_items ' +
-    '   SET activity_type = ?, ' +
-    '       sub_type = ?, ' +
-    '       recurrence_rule = ?, ' +
-    '       start_date = ?, ' +
-    '       start_date_year_offset = ?, ' +
-    '       end_date = ?, ' +
-    '       end_date_year_offset = ?, ' +
-    '       notes = ? ' +
-    ' WHERE entry_id = ?',
+  /** Sets each of `columns`, in order, then takes the schedule's id and the item's: it must be on that schedule. */
+  buildUpdate: (columns: string[]): string =>
+    `UPDATE activity_schedule_items
+        SET ${columns.map(column => `${column} = ?`).join(', ')}
+      WHERE activity_schedule_id = ?
+        AND entry_id = ?`,
+
+  countOnSchedule:
+    'SELECT COUNT(*) AS count ' +
+    '  FROM activity_schedule_items ' +
+    ' WHERE activity_schedule_id = ? ' +
+    '   AND entry_id = ?',
 
   delete:
     'DELETE ' +

@@ -143,7 +143,7 @@ export interface HarvestsDriver {
   /** The year is the spec's own, so it holds one item: asserts that item's total quantity. */
   statsReportTotal(caller: Actor, statsType: StatsType, year: number, totalQuantity: number): Promise<void>,
   statsReportDays(caller: Actor, statsType: StatsType, year: number, days: StatsDays): Promise<void>,
-  plantStatsCallThemselvesPlantingStats(caller: Actor, year: number): Promise<void>,
+  plantStatsCallThemselvesPlantStats(caller: Actor, year: number): Promise<void>,
   recordForUnknownPlantingIsRejectedAsBadRequest(caller: Actor, input: NewHarvest): Promise<void>,
   saveOfInvalidHarvestsIsRejectedAsBadRequest(caller: Actor, good: NewHarvest, problem: HarvestSaveProblem): Promise<void>,
   saveAsTheAppSendsItSucceeds(caller: Actor, plantingId: string): Promise<void>,
@@ -326,12 +326,12 @@ export function createHarvestsDriver(client: HttpClient, registry: ResourceRegis
       );
     },
 
-    async plantStatsCallThemselvesPlantingStats(caller: Actor, year: number): Promise<void> {
+    async plantStatsCallThemselvesPlantStats(caller: Actor, year: number): Promise<void> {
       const what = `reading the Plant stats of ${year}`;
       const response = await as(caller).get(`/harvests/stats?type=Plant&year=${year}`);
 
       expectStatus(response, status.OK, what);
-      expectBodyToContain(response, { statsType: 'Planting', }, what);
+      expectBodyToContain(response, { statsType: 'Plant', }, what);
     },
 
     async recordForUnknownPlantingIsRejectedAsBadRequest(caller: Actor, input: NewHarvest): Promise<void> {

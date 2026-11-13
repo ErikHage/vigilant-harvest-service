@@ -34,6 +34,12 @@ export interface ActivitySchedulesDsl {
   checkHasNoItems(...args: string[]): Promise<void>,
   /** `as`, `item`, `schedule`, one that doesn't hold it, `activityType`. */
   checkItemUpdateThroughAnotherScheduleIsRejected(...args: string[]): Promise<void>,
+  /** `as`, `schedule`. Updates an item it doesn't have. */
+  checkUnknownItemUpdateIsRejected(...args: string[]): Promise<void>,
+  /** `as`, `schedule`. Sends its description as null. */
+  checkDescriptionCanBeCleared(...args: string[]): Promise<void>,
+  /** `as`, `item`. Updates its notes alone. */
+  checkPartialItemUpdateKeepsTheRest(...args: string[]): Promise<void>,
   /** `as`, `item`. Asserts it is gone from its schedule. */
   deleteItem(...args: string[]): Promise<void>,
   /** `as`, `schedule`. Asserts it is gone. */
@@ -92,7 +98,7 @@ export function createActivitySchedulesDsl(world: World, schedules: ActivitySche
     async checkPartialUpdateKeepsTheRest(...args: string[]): Promise<void> {
       const params = parseDslArgs(args, { as: actor(), schedule: alias(), });
 
-      await schedules.updateOfNameBlanksDescription(
+      await schedules.updateOfNameKeepsDescription(
         await world.actorFor(params.as),
         world.scheduleNamed(params.schedule),
         fixtureName(params.schedule)
@@ -125,10 +131,28 @@ export function createActivitySchedulesDsl(world: World, schedules: ActivitySche
       await schedules.getShowsNoItems(await world.actorFor(params.as), world.scheduleNamed(params.schedule));
     },
 
+    async checkUnknownItemUpdateIsRejected(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), schedule: alias(), });
+
+      await schedules.updateOfUnknownItemIsRejectedAsNotFound(await world.actorFor(params.as), world.scheduleNamed(params.schedule));
+    },
+
+    async checkDescriptionCanBeCleared(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), schedule: alias(), });
+
+      await schedules.updateClearsDescription(await world.actorFor(params.as), world.scheduleNamed(params.schedule));
+    },
+
+    async checkPartialItemUpdateKeepsTheRest(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), item: alias(), });
+
+      await schedules.updateOfItemNotesKeepsTheRest(await world.actorFor(params.as), world.scheduleItemNamed(params.item));
+    },
+
     async checkItemUpdateThroughAnotherScheduleIsRejected(...args: string[]): Promise<void> {
       const params = parseDslArgs(args, { as: actor(), item: alias(), schedule: alias(), activityType: required(), });
 
-      await schedules.updateItemThroughAnotherScheduleStillUpdates(
+      await schedules.updateItemThroughAnotherScheduleIsRejectedAsNotFound(
         await world.actorFor(params.as),
         world.scheduleItemNamed(params.item),
         world.scheduleNamed(params.schedule),

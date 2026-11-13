@@ -33,12 +33,13 @@ const invalidSchedules: Record<NewScheduleProblem, { body: (good: NewSchedule) =
 };
 
 /** Ways a schedule update can be wrong. PATCH writes every field today, so the name is required. */
-export const SCHEDULE_UPDATE_PROBLEMS = [ 'no name', 'a name that is not a string', ] as const;
+export const SCHEDULE_UPDATE_PROBLEMS = [ 'a blank name', 'a name that is not a string', ] as const;
 
 export type ScheduleUpdateProblem = (typeof SCHEDULE_UPDATE_PROBLEMS)[number];
 
 const invalidScheduleUpdates: Record<ScheduleUpdateProblem, { body: object, reason: string }> = {
-  'no name': { body: { description: 'No name', }, reason: 'name is required', },
+  // a PATCH may leave the name out, and it's kept; sent, it can't be blank
+  'a blank name': { body: { name: '', }, reason: 'name is required', },
   'a name that is not a string': { body: { name: 42, }, reason: 'name must be a string', },
 };
 
@@ -80,12 +81,13 @@ const invalidItems: Record<NewItemProblem, { body: (good: NewScheduleItem) => ob
 };
 
 /** Ways an item update can be wrong. PATCH writes every field today, so the type is required. */
-export const ITEM_UPDATE_PROBLEMS = [ 'no activity type', 'an end date that is not a month and day', ] as const;
+export const ITEM_UPDATE_PROBLEMS = [ 'a blank activity type', 'an end date that is not a month and day', ] as const;
 
 export type ItemUpdateProblem = (typeof ITEM_UPDATE_PROBLEMS)[number];
 
 const invalidItemUpdates: Record<ItemUpdateProblem, { body: object, reason: string }> = {
-  'no activity type': { body: { notes: 'No type', }, reason: 'activityType is required', },
+  // a PATCH may leave the type out, and it's kept; sent, it can't be blank
+  'a blank activity type': { body: { activityType: ' ', }, reason: 'activityType is required', },
   'an end date that is not a month and day': {
     body: { activityType: 'WATER', endDate: 'September', },
     reason: 'endDate must be a month and day, as MM-DD',
@@ -98,17 +100,24 @@ export interface ActivitySchedulesDriver {
   getIsNotFoundFor(caller: Actor): Promise<void>,
   listIncludes(caller: Actor, schedule: CreatedSchedule): Promise<void>,
   updateChanges(caller: Actor, schedule: CreatedSchedule, changes: NewSchedule): Promise<CreatedSchedule>,
-  updateOfNameBlanksDescription(caller: Actor, schedule: CreatedSchedule, name: string): Promise<void>,
+  /** A PATCH of the name alone: the description is kept. */
+  updateOfNameKeepsDescription(caller: Actor, schedule: CreatedSchedule, name: string): Promise<void>,
+  /** A PATCH sending the description as null: it's cleared. */
+  updateClearsDescription(caller: Actor, schedule: CreatedSchedule): Promise<void>,
+  /** A PATCH of an item's notes alone: every other field is kept. */
+  updateOfItemNotesKeepsTheRest(caller: Actor, item: CreatedScheduleItem): Promise<void>,
   addItem(caller: Actor, schedule: CreatedSchedule, input: NewScheduleItem): Promise<CreatedScheduleItem>,
   getShowsItem(caller: Actor, item: CreatedScheduleItem, activityType: string): Promise<void>,
   getShowsNoItems(caller: Actor, schedule: CreatedSchedule): Promise<void>,
   updateItemChangesType(caller: Actor, item: CreatedScheduleItem, activityType: string): Promise<void>,
-  updateItemThroughAnotherScheduleStillUpdates(
+  /** Rejected, and the item is unchanged. */
+  updateItemThroughAnotherScheduleIsRejectedAsNotFound(
     caller: Actor,
     item: CreatedScheduleItem,
     other: CreatedSchedule,
     activityType: string
   ): Promise<void>,
+  updateOfUnknownItemIsRejectedAsNotFound(caller: Actor, schedule: CreatedSchedule): Promise<void>,
   deleteRemovesItem(caller: Actor, item: CreatedScheduleItem): Promise<void>,
   deleteRemovesSchedule(caller: Actor, schedule: CreatedSchedule): Promise<void>,
   createOfInvalidScheduleIsRejectedAsBadRequest(caller: Actor, good: NewSchedule, problem: NewScheduleProblem): Promise<void>,
@@ -190,12 +199,50 @@ export function createActivitySchedulesDriver(client: HttpClient, registry: Reso
       return { ...schedule, ...changes, };
     },
 
-    async updateOfNameBlanksDescription(caller: Actor, schedule: CreatedSchedule, name: string): Promise<void> {
+    async updateOfNameKeepsDescription(caller: Actor, schedule: CreatedSchedule, name: string): Promise<void> {
       const what = `updating only the name of schedule "${schedule.name}"`;
       const response = await as(caller).patch(schedulePath(schedule.activityScheduleId), { name, });
 
       expectStatus(response, status.OK, what);
-      expectBodyToContain(response, { name, description: null, }, what);
+      expectBodyToContain(response, { name, description: schedule.description, }, what);
+      expectBodyToContain(
+        await get(caller, schedule.activityScheduleId, `${what}: re-reading it`),
+        { name, description: schedule.description, },
+        what
+      );
+    },
+
+    async updateClearsDescription(caller: Actor, schedule: CreatedSchedule): Promise<void> {
+      const what = `clearing the description of schedule "${schedule.name}"`;
+      const response = await as(caller).patch(schedulePath(schedule.activityScheduleId), { description: null, });
+
+      expectStatus(response, status.OK, what);
+      expectBodyToContain(
+        await get(caller, schedule.activityScheduleId, `${what}: re-reading it`),
+        { name: schedule.name, description: null, },
+        what
+      );
+    },
+
+    async updateOfItemNotesKeepsTheRest(caller: Actor, item: CreatedScheduleItem): Promise<void> {
+      const what = `updating only the notes of item ${item.entryId}`;
+      const itemOf = (response: ApiResponse): Record<string, unknown> | undefined =>
+        itemsIn(response).find(each => each.entryId === item.entryId);
+      const before = itemOf(await get(caller, item.activityScheduleId, `${what}: reading it first`));
+      const notes = 'Changed by a partial update';
+
+      expectStatus(await as(caller).patch(itemPath(item), { notes, }), status.OK, what);
+
+      const response = await get(caller, item.activityScheduleId, `${what}: re-reading it`);
+      const after = itemOf(response);
+
+      expectThat(
+        before !== undefined && after !== undefined && after.notes === notes
+          && Object.keys(before).every(key => key === 'notes' || after[key] === before[key]),
+        `the item as it was, but with notes "${notes}": ${JSON.stringify(before)}`,
+        response,
+        what
+      );
     },
 
     async addItem(caller: Actor, schedule: CreatedSchedule, input: NewScheduleItem): Promise<CreatedScheduleItem> {
@@ -237,7 +284,7 @@ export function createActivitySchedulesDriver(client: HttpClient, registry: Reso
       expectBodyToContain(response, { activityType, }, what);
     },
 
-    async updateItemThroughAnotherScheduleStillUpdates(
+    async updateItemThroughAnotherScheduleIsRejectedAsNotFound(
       caller: Actor,
       item: CreatedScheduleItem,
       other: CreatedSchedule,
@@ -245,10 +292,24 @@ export function createActivitySchedulesDriver(client: HttpClient, registry: Reso
     ): Promise<void> {
       const what = `updating item ${item.entryId} through schedule "${other.name}", which does not hold it`;
       const path = `${schedulePath(other.activityScheduleId)}/schedule-items/${item.entryId}`;
-      const response = await as(caller).patch(path, { activityType, startDateYearOffset: 0, endDateYearOffset: 0, });
 
-      expectStatus(response, status.OK, what);
-      expectBodyToContain(response, { activityType, activityScheduleId: item.activityScheduleId, }, what);
+      expectStatus(await as(caller).patch(path, { activityType, }), status.NOT_FOUND, what);
+
+      const response = await get(caller, item.activityScheduleId, `${what}: re-reading its own schedule`);
+
+      expectThat(
+        itemsIn(response).some(each => each.entryId === item.entryId && each.activityType !== activityType),
+        `the item, not ${activityType}`,
+        response,
+        what
+      );
+    },
+
+    async updateOfUnknownItemIsRejectedAsNotFound(caller: Actor, schedule: CreatedSchedule): Promise<void> {
+      const what = `updating an item that does not exist on schedule "${schedule.name}"`;
+      const path = `${schedulePath(schedule.activityScheduleId)}/schedule-items/no-such-item`;
+
+      expectStatus(await as(caller).patch(path, { activityType: 'WATER', }), status.NOT_FOUND, what);
     },
 
     async deleteRemovesItem(caller: Actor, item: CreatedScheduleItem): Promise<void> {

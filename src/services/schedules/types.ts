@@ -5,10 +5,11 @@ export interface ActivityScheduleCreateRequest {
   description?: string,
 }
 
+/** A field left out is undefined, and keeps what is stored; one that is null is cleared. */
 export interface ActivityScheduleUpdateRequest {
   activityScheduleId: string,
-  name: string,
-  description?: string,
+  name?: string,
+  description?: string | null,
 }
 
 export interface ActivitySchedule {
@@ -43,16 +44,18 @@ export interface ActivityScheduleItemCreateRequest {
   notes?: string,
 }
 
+/** As ActivityScheduleUpdateRequest. The item must be on the path's schedule. */
 export interface ActivityScheduleItemUpdateRequest {
+  activityScheduleId: string,
   entryId: string,
-  activityType: string,
-  subType?: string,
-  recurrenceRule?: string,
-  startDate?: string, // MM-DD
-  startDateYearOffset: number,
-  endDate?: string, // MM-DD
-  endDateYearOffset: number,
-  notes?: string,
+  activityType?: string,
+  subType?: string | null,
+  recurrenceRule?: string | null,
+  startDate?: string | null, // MM-DD
+  startDateYearOffset?: number,
+  endDate?: string | null, // MM-DD
+  endDateYearOffset?: number,
+  notes?: string | null,
 }
 
 export interface ActivityScheduleItemDeleteRequest {

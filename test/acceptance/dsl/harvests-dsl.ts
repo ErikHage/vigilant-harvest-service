@@ -232,7 +232,7 @@ export function createHarvestsDsl(world: World, harvests: HarvestsDriver): Harve
     async checkPlantStatsSayTheyAreForPlants(...args: string[]): Promise<void> {
       const params = parseDslArgs(args, { as: actor(), planting: alias(), });
 
-      await harvests.plantStatsCallThemselvesPlantingStats(
+      await harvests.plantStatsCallThemselvesPlantStats(
         await world.actorFor(params.as),
         world.plantingNamed(params.planting).plantingYear
       );

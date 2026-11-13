@@ -12,6 +12,8 @@ import {
 } from '../services/schedules/types';
 import {
   bodyOf,
+  clearable,
+  ifSent,
   optionalInteger,
   optionalMonthDay,
   optionalString,
@@ -25,9 +27,8 @@ const TEXT = { maxBytes: TEXT_BYTES, };
 const YEAR_OFFSET = { min: -1, max: 1, };
 
 /**
- * The fields an item is created or updated with. PATCH writes every one of them today, a pinned
- * behaviour, so the type is required on both, and a missing offset is written as 0, its column's
- * default, rather than the NULL its NOT NULL column refuses.
+ * The fields an item is created with. A missing offset is written as 0, its column's default,
+ * rather than the NULL its NOT NULL column refuses.
  */
 function itemFields(req: Request) {
   const body = bodyOf(req);
@@ -44,13 +45,45 @@ function itemFields(req: Request) {
   };
 }
 
-/** A schedule's fields. PATCH writes both today, so the name is required on an update too. */
+/**
+ * The fields a PATCH sends. One left out keeps what is stored, and one sent as null, or '', is
+ * cleared. The type can't be empty, so it can't be cleared, and an offset sent as null is 0, as on
+ * create.
+ */
+function itemUpdateFields(req: Request) {
+  const body = bodyOf(req);
+
+  return {
+    activityType: ifSent(body.activityType, value => requiredString(value, 'activityType', NAME)),
+    subType: clearable(body.subType, value => optionalString(value, 'subType', NAME)),
+    recurrenceRule: clearable(body.recurrenceRule, value => optionalString(value, 'recurrenceRule', NAME)),
+    startDate: clearable(body.startDate, value => optionalMonthDay(value, 'startDate')),
+    startDateYearOffset: ifSent(body.startDateYearOffset,
+      value => optionalInteger(value, 'startDateYearOffset', YEAR_OFFSET) ?? 0),
+    endDate: clearable(body.endDate, value => optionalMonthDay(value, 'endDate')),
+    endDateYearOffset: ifSent(body.endDateYearOffset,
+      value => optionalInteger(value, 'endDateYearOffset', YEAR_OFFSET) ?? 0),
+    notes: clearable(body.notes, value => optionalString(value, 'notes', TEXT)),
+  };
+}
+
+/** A new schedule's fields. */
 function scheduleFields(req: Request) {
   const body = bodyOf(req);
 
   return {
     name: requiredString(body.name, 'name', NAME),
     description: optionalString(body.description, 'description', TEXT),
+  };
+}
+
+/** As for an item: left out keeps what is stored, and null or '' clears it, but the name can't be empty. */
+function scheduleUpdateFields(req: Request) {
+  const body = bodyOf(req);
+
+  return {
+    name: ifSent(body.name, value => requiredString(value, 'name', NAME)),
+    description: clearable(body.description, value => optionalString(value, 'description', TEXT)),
   };
 }
 
@@ -64,8 +97,9 @@ const scheduleItems = {
 
   fromUpdateRequest: function(req: Request): ActivityScheduleItemUpdateRequest {
     return {
+      activityScheduleId: req.params.activityScheduleId!,
       entryId: req.params.entryId!,
-      ...itemFields(req),
+      ...itemUpdateFields(req),
     };
   },
 
@@ -100,7 +134,7 @@ const schedules = {
   fromUpdateRequest: function(req: Request): ActivityScheduleUpdateRequest {
     return {
       activityScheduleId: req.params.activityScheduleId!,
-      ...scheduleFields(req),
+      ...scheduleUpdateFields(req),
     };
   },
 

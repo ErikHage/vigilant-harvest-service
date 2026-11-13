@@ -103,7 +103,7 @@ const stats = {
       lastHarvestDate: harvestStats.lastHarvestDate,
       numberOfHarvests: harvestStats.numberOfHarvests,
       numberOfDays: harvestStats.numberOfDays,
-      statsType: StatsType.Planting,
+      statsType: harvestStats.statsType,
       stats: [
         ...harvestStats.stats.values(),
       ],

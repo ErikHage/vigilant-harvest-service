@@ -148,7 +148,6 @@ describe('harvests', () => {
     await harvests.checkStats('as: gardener', 'statsType: Plant', 'planting: row-one', 'harvests: 2');
   });
 
-  // DocumentsCurrentBehavior: statsType is always "Planting". Should be "Plant" when asked for by plant.
   it('says plant stats are for plants', async () => {
     await harvests.recordHarvest('as: gardener', 'harvest: first', 'planting: row-one', 'quantity: 2');
 
