@@ -23,6 +23,7 @@ import {
   requiredInteger,
   requiredList,
   requiredString,
+  routeParam,
   TEXT_BYTES
 } from '../validation';
 
@@ -121,7 +122,7 @@ function fromScheduleAssignmentRequest(req: Request): PlantScheduleAssignmentReq
   const body = bodyOf(req);
 
   return {
-    plantId: req.params.plantId!,
+    plantId: routeParam(req, 'plantId'),
     assign: scheduleIds(body.assign, 'assign'),
     unassign: scheduleIds(body.unassign, 'unassign'),
   };

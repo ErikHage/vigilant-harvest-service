@@ -4,6 +4,7 @@ import plantSerializers from '../serializers/plants';
 import plantsService from '../services/plants/plants-service';
 import tryDecorator from '../middleware/try-decorator';
 import httpStatus from '../util/http-status';
+import { routeParam } from '../validation';
 
 async function upsertPlant(request: Request, response: Response) {
   const plantRequest = plantSerializers.fromRequest(request);
@@ -27,7 +28,7 @@ async function updateScheduleAssignment(request: Request, response: Response) {
 }
 
 async function getPlantById(request: Request, response: Response) {
-  const { plantId, } = request.params;
+  const plantId = routeParam(request, 'plantId');
 
   const plant = await plantsService.getPlantById(plantId!);
   const plantResponse = plantSerializers.toResponse(plant);
@@ -43,7 +44,7 @@ async function getPlants(request: Request, response: Response) {
 }
 
 async function deletePlantById(request: Request, response: Response) {
-  const { plantId, } = request.params;
+  const plantId = routeParam(request, 'plantId');
 
   await plantsService.deletePlantById(plantId!);
 

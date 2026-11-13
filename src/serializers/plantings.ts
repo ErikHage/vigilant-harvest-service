@@ -11,7 +11,6 @@ import {
   SplitData,
   TransplantActionData
 } from '../services/plantings/types';
-import { ValidationError } from '../errors/common';
 import constants from '../util/constants';
 import {
   blankAsMissing,
@@ -29,6 +28,7 @@ import {
   requiredObject,
   requiredString,
   requiredYear,
+  routeParam,
   TEXT_BYTES
 } from '../validation';
 
@@ -69,7 +69,7 @@ const action = {
     const actionType = oneOf(body.actionType, 'actionType', Object.values(actionTypes));
 
     return {
-      plantingId: _parsePlantingId(req.params.plantingId),
+      plantingId: routeParam(req, 'plantingId'),
       actionType,
       sowActionData: actionType === actionTypes.start ? _parseSowActionData(body) : undefined,
       splitActionData: actionType === actionTypes.split ? _parseSplitActionData(body) : undefined,
@@ -103,13 +103,6 @@ const update = {
     };
   },
 };
-
-function _parsePlantingId(plantingIdInput: string | undefined): string {
-  if (!plantingIdInput) {
-    throw new ValidationError('Planting Id must be present');
-  }
-  return plantingIdInput;
-}
 
 /** Every action but DELETE takes one; the app sends null when it's left empty. */
 function _comment(body: Record<string, unknown>): string {

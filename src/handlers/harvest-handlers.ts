@@ -10,6 +10,7 @@ import {
 } from '../services/harvests/types';
 import tryDecorator from '../middleware/try-decorator';
 import httpStatus from '../util/http-status';
+import { routeParam } from '../validation';
 
 async function upsertHarvests(request: Request, response: Response) {
   const harvestRequests: HarvestRequest[] = harvestSerializers.insert.fromRequest(request);
@@ -49,7 +50,7 @@ async function getHarvestStats(request: Request, response: Response) {
 }
 
 async function deleteHarvestById(request: Request, response: Response) {
-  const { harvestId, } = request.params;
+  const harvestId = routeParam(request, 'harvestId');
 
   await harvestsService.deleteHarvestById(harvestId!);
 

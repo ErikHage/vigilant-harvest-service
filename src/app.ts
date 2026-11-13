@@ -1,5 +1,4 @@
 import express, { Express } from 'express';
-import bodyParser from 'body-parser';
 import cors from 'cors';
 
 import buildApiRouter from './routes/api-router';
@@ -27,7 +26,7 @@ const getApp = (appRoot: string, port: string): Express => {
   app.disable('x-powered-by');
 
   app.use(express.urlencoded({ extended: false, }));
-  app.use(bodyParser.json());
+  app.use(express.json());
 
   app.use(cors({ origin: corsOrigins(), }));
 

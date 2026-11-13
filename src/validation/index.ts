@@ -329,6 +329,19 @@ export function optionalMonthDay(value: unknown, field: string): string | undefi
  * sent, so that reads as a body with no fields, and each required one is
  * reported missing.
  */
+/**
+ * A route param, as a string. Express sets every param its route names, so this always finds one;
+ * Express 5's types also allow a wildcard's list of segments, which no route here has.
+ */
+export function routeParam(req: Request, name: string): string {
+  const value: unknown = req.params[name];
+
+  if (typeof value !== 'string' || value === '') {
+    throw new BadRequestError(`${name} is required`);
+  }
+  return value;
+}
+
 export function bodyOf(req: Request): Record<string, unknown> {
   const body: unknown = req.body;
   return typeof body === 'object' && body !== null ? body as Record<string, unknown> : {};

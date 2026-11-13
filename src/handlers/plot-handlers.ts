@@ -4,6 +4,7 @@ import plotsService from '../services/plots/plots-service';
 import plotSerializers from '../serializers/plots';
 import tryDecorator from '../middleware/try-decorator';
 import httpStatus from '../util/http-status';
+import { routeParam } from '../validation';
 
 async function upsertPlot(request: Request, response: Response) {
   const plotRequest = plotSerializers.plots.fromRequest(request);
@@ -17,7 +18,7 @@ async function upsertPlot(request: Request, response: Response) {
 }
 
 async function getPlotById(request: Request, response: Response) {
-  const { plotId, } = request.params;
+  const plotId = routeParam(request, 'plotId');
 
   const plot = await plotsService.getPlotById(plotId!);
   const plotResponse = plotSerializers.plots.toResponse(plot);
@@ -33,7 +34,7 @@ async function getPlots(request: Request, response: Response) {
 }
 
 async function deletePlotById(request: Request, response: Response) {
-  const { plotId, } = request.params;
+  const plotId = routeParam(request, 'plotId');
 
   await plotsService.deletePlotById(plotId!);
 

@@ -4,6 +4,7 @@ import activityLogService from '../services/activity-log/activity-log-service';
 import activityLogSerializers from '../serializers/activity-log';
 import tryDecorator from '../middleware/try-decorator';
 import httpStatus from '../util/http-status';
+import { routeParam } from '../validation';
 
 async function upsertActivityLogEntry(request: Request, response: Response) {
   const activityLogEntryRequest = activityLogSerializers.activityLogEntries.upsert.fromRequest(request);
@@ -29,7 +30,7 @@ async function getActivityLogEntries(request: Request, response: Response) {
 }
 
 async function deleteActivityLogEntry(request: Request, response: Response) {
-  const { entryId, } = request.params;
+  const entryId = routeParam(request, 'entryId');
 
   await activityLogService.deleteActivityLogEntryById(entryId!);
 

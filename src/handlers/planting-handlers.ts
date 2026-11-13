@@ -5,6 +5,7 @@ import plantingsService from '../services/plantings/plantings-service';
 import { PerformActionRequest, Planting, PlantingResponse, PlantingUpdateRequest } from '../services/plantings/types';
 import tryDecorator from '../middleware/try-decorator';
 import httpStatus from '../util/http-status';
+import { routeParam } from '../validation';
 
 async function createPlanting(request: Request, response: Response) {
   const plantingRequest = plantingSerializers.insert.fromRequest(request);
@@ -29,7 +30,7 @@ async function performPlantingAction(request: Request, response: Response) {
 }
 
 async function updatePlanting(request: Request, response: Response) {
-  const { plantingId, } = request.params;
+  const plantingId = routeParam(request, 'plantingId');
 
   const plantingUpdateRequest: PlantingUpdateRequest = plantingSerializers.update.fromRequest(request);
 
@@ -42,7 +43,7 @@ async function updatePlanting(request: Request, response: Response) {
 }
 
 async function getPlantingById(request: Request, response: Response) {
-  const { plantingId, } = request.params;
+  const plantingId = routeParam(request, 'plantingId');
 
   const planting = await plantingsService.getPlantingById(plantingId!);
   const plantingResponse = plantingSerializers.toResponse(planting);
@@ -66,7 +67,7 @@ async function getPlantings(request: Request, response: Response) {
 }
 
 async function deletePlantingById(request: Request, response: Response) {
-  const { plantingId, } = request.params;
+  const plantingId = routeParam(request, 'plantingId');
 
   await plantingsService.deletePlantingById(plantingId!);
 

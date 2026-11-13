@@ -4,6 +4,7 @@ import journalService from '../services/journal/journal-service';
 import journalSerializers from '../serializers/journal';
 import tryDecorator from '../middleware/try-decorator';
 import httpStatus from '../util/http-status';
+import { routeParam } from '../validation';
 
 async function upsertJournalEntry(request: Request, response: Response) {
   const journalEntryRequest = journalSerializers.journalEntries.upsert.fromRequest(request);
@@ -28,7 +29,7 @@ async function getJournalEntries(request: Request, response: Response) {
 }
 
 async function deleteJournalEntry(request: Request, response: Response) {
-  const { entryId, } = request.params;
+  const entryId = routeParam(request, 'entryId');
 
   await journalService.deleteJournalEntryById(entryId!);
 

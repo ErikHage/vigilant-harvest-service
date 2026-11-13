@@ -18,6 +18,7 @@ import {
   optionalMonthDay,
   optionalString,
   requiredString,
+  routeParam,
   TEXT_BYTES
 } from '../validation';
 
@@ -90,23 +91,23 @@ function scheduleUpdateFields(req: Request) {
 const scheduleItems = {
   fromCreateRequest: function(req: Request): ActivityScheduleItemCreateRequest {
     return {
-      activityScheduleId: req.params.activityScheduleId!,
+      activityScheduleId: routeParam(req, 'activityScheduleId'),
       ...itemFields(req),
     };
   },
 
   fromUpdateRequest: function(req: Request): ActivityScheduleItemUpdateRequest {
     return {
-      activityScheduleId: req.params.activityScheduleId!,
-      entryId: req.params.entryId!,
+      activityScheduleId: routeParam(req, 'activityScheduleId'),
+      entryId: routeParam(req, 'entryId'),
       ...itemUpdateFields(req),
     };
   },
 
   fromDeleteRequest: function(req: Request): ActivityScheduleItemDeleteRequest {
     return {
-      activityScheduleId: req.params.activityScheduleId!,
-      entryId: req.params.entryId!,
+      activityScheduleId: routeParam(req, 'activityScheduleId'),
+      entryId: routeParam(req, 'entryId'),
     };
   },
 
@@ -133,7 +134,7 @@ const schedules = {
 
   fromUpdateRequest: function(req: Request): ActivityScheduleUpdateRequest {
     return {
-      activityScheduleId: req.params.activityScheduleId!,
+      activityScheduleId: routeParam(req, 'activityScheduleId'),
       ...scheduleUpdateFields(req),
     };
   },

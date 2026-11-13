@@ -3,6 +3,7 @@ import schedulesSerializer from '../serializers/schedules';
 import schedulesService from '../services/schedules/schedules-service';
 import tryDecorator from '../middleware/try-decorator';
 import httpStatus from '../util/http-status';
+import { routeParam } from '../validation';
 
 async function createSchedule(request: Request, response: Response): Promise<void> {
   const activityScheduleCreateRequest = schedulesSerializer.schedules.fromCreateRequest(request);
@@ -24,7 +25,7 @@ async function listSchedules(request: Request, response: Response): Promise<void
 }
 
 async function getScheduleById(request: Request, response: Response): Promise<void> {
-  const activityScheduleId = request.params.activityScheduleId!;
+  const activityScheduleId = routeParam(request, 'activityScheduleId');
   const activitySchedule = await schedulesService.getScheduleById(activityScheduleId);
 
   response.status(httpStatus.OK)
@@ -42,7 +43,7 @@ async function updateSchedule(request: Request, response: Response): Promise<voi
 }
 
 async function deleteSchedule(request: Request, response: Response): Promise<void> {
-  const activityScheduleId = request.params.activityScheduleId!;
+  const activityScheduleId = routeParam(request, 'activityScheduleId');
   await schedulesService.deleteSchedule(activityScheduleId);
 
   response
