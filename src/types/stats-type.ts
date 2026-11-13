@@ -11,8 +11,4 @@ export class StatsTypeUtils {
     }
     return null;
   }
-
-  static isValid(value: string): value is StatsType {
-    return Object.values(StatsType).includes(value as StatsType);
-  }
 }

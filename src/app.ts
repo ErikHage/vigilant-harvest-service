@@ -19,7 +19,7 @@ function corsOrigins(): string[] {
     .filter(origin => origin !== '');
 }
 
-const getApp = (appRoot: string, port: string): Express => {
+const getApp = (port: string): Express => {
   const app: Express = express();
 
   app.set('port', port);

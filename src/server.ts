@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
 import http from 'http';
-import path from "path";
 import dotenv from 'dotenv';
 
 import getApp from './app';
@@ -22,11 +21,11 @@ const onError = (port: string) => (error: any) => {
   // handle specific listen errors with friendly messages
   switch (error.code) {
     case 'EACCES':
-      console.error(`Port ${port} requires elevated privileges`);
+      logger.fatal(`Port ${port} requires elevated privileges`);
       process.exit(1);
       break;
     case 'EADDRINUSE':
-      console.error(`Port ${port} is already in use`);
+      logger.fatal(`Port ${port} is already in use`);
       process.exit(1);
       break;
     default:
@@ -35,34 +34,31 @@ const onError = (port: string) => (error: any) => {
 };
 
 const onListening = (port: string) => () => {
-    console.log('Listening on port ' + port);
+  logger.info(`Listening on port ${port}`);
 };
 
 const initApp = async () => {
   dotenv.config();
 
-  const appRoot = path.resolve(__dirname);
   const port = process.env.PORT || '8002';
 
-  console.log(`trying to start app on port ${port}`);
-  console.log(`app root is ${appRoot}`);
+  logger.info(`Starting on port ${port}`);
 
-  const app = getApp(appRoot, port);
+  const app = getApp(port);
 
   try {
     const deploymentEnvironment = process.env.DEPLOYMENT_ENVIRONMENT;
-    console.log(`trying to migrate database in ${deploymentEnvironment}`);
+    logger.info(`Migrating the database in ${deploymentEnvironment}`);
     const sleepTime = 20;
 
     if (deploymentEnvironment !== 'dev') {
-      console.log(`Sleeping ${sleepTime} seconds for database to start`);
+      logger.info(`Waiting ${sleepTime} seconds for the database to start`);
       await utils.sleep(sleepTime * 1000);
     }
 
     await schemaUtils.performMigration();
   } catch (err) {
-    // @ts-ignore
-    console.log(`Error performing database migration: ${err.message}`);
+    logger.fatal(ensureError(err), 'Error migrating the database; exiting');
     process.exit(1);
   }
 
