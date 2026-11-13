@@ -4,14 +4,16 @@ import {
   HarvestSearchRequest,
   HarvestSummary,
   HarvestSummaryRequest,
-  HarvestSummaryRow, HarvestUpsertInstruction, HydratedHarvest, HydratedHarvestRow
+  HarvestSummaryRow, HarvestUpsertInstruction, HydratedHarvest, HydratedHarvestRow,
+  StoredHarvest,
+  StoredHarvestRow
 } from './types';
 
 function fromRow(row: HarvestRow): Harvest {
   return {
     harvestId: row.harvest_id,
     plantingId: row.planting_id,
-    quantity: row.quantity,
+    quantity: Number(row.quantity), // a DECIMAL, which mysql2 reads as a string
     harvestDate: row.harvest_date, // a DATE column: YYYY-MM-DD, as it was sent
     harvestTypeId: row.harvest_type_id,
     harvestType: row.harvest_type_name,
@@ -26,21 +28,30 @@ function fromHydratedRow(row: HydratedHarvestRow): HydratedHarvest {
     plantId: row.plant_id,
     plantName: row.plant_name,
     plotName: row.plot_name,
-    quantity: row.quantity,
+    quantity: Number(row.quantity), // a DECIMAL, which mysql2 reads as a string
     harvestDate: row.harvest_date, // a DATE column: YYYY-MM-DD, as it was sent
     harvestTypeId: row.harvest_type_id,
     harvestType: row.harvest_type_name,
   }
 }
 
+function fromStoredRow(row: StoredHarvestRow): StoredHarvest {
+  return {
+    ...fromRow(row),
+    plantingYear: row.planting_year,
+    dateCreated: row.date_created,
+  };
+}
+
 const insert = {
-  toParams: (harvest: HarvestUpsertInstruction): Array<string | number> => ([
+  toParams: (harvest: HarvestUpsertInstruction): Array<string | number | null> => ([
     harvest.harvestId,
     harvest.plantingId,
     harvest.plantingYear,
     harvest.quantity,
     harvest.harvestDate,
     harvest.harvestTypeId,
+    harvest.dateCreated ?? null,
   ]),
 };
 
@@ -52,7 +63,7 @@ const summary = {
   fromRow: (row: HarvestSummaryRow): HarvestSummary => ({
     plantingYear: row.planting_year,
     plantingId: row.planting_id,
-    quantity: parseInt(row.quantity),
+    quantity: Number(row.quantity), // SUM of a DECIMAL, which mysql2 reads as a string
     harvestTypeId: row.harvest_type_id,
     harvestType: row.harvest_type_name,
   }),
@@ -78,5 +89,6 @@ export default {
   summary,
   search,
   fromRow,
+  fromStoredRow,
   fromHydratedRow,
 }

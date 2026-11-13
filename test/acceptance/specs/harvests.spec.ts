@@ -41,6 +41,60 @@ describe('harvests', () => {
     await harvests.checkStats('as: gardener', 'statsType: Planting', 'planting: row-one', 'harvests: 1');
   });
 
+  it('folds harvests of one planting, day and type sent in one save into one', async () => {
+    await harvests.recordHarvests('as: gardener', 'harvest: picked', 'planting: row-one', 'quantities: 2, 3', 'sent: in one save');
+
+    await harvests.checkHarvest('as: gardener', 'harvest: picked', 'planting: row-one', 'quantity: 5', 'type: pounds');
+    await harvests.checkHarvestCount('as: gardener', 'planting: row-one', 'harvests: 1');
+  });
+
+  it('folds harvests of one planting, day and type sent in saves at once into one', async () => {
+    await harvests.recordHarvests('as: gardener', 'harvest: picked', 'planting: row-one', 'quantities: 2, 3, 4', 'sent: in saves at once');
+
+    await harvests.checkHarvest('as: gardener', 'harvest: picked', 'planting: row-one', 'quantity: 9', 'type: pounds');
+    await harvests.checkHarvestCount('as: gardener', 'planting: row-one', 'harvests: 1');
+  });
+
+  it('folds a harvest retyped onto the day and type of another into it', async () => {
+    await harvests.recordHarvest('as: gardener', 'harvest: weighed', 'planting: row-one', 'quantity: 2');
+    await harvests.recordHarvest('as: gardener', 'harvest: counted', 'planting: row-one', 'quantity: 3', 'type: fruit');
+
+    await harvests.saveAgain('as: gardener', 'harvest: counted', 'planting: row-one', 'quantity: 3', 'type: pounds');
+
+    await harvests.checkHarvest('as: gardener', 'harvest: weighed', 'planting: row-one', 'quantity: 5', 'type: pounds');
+    await harvests.checkHarvestCount('as: gardener', 'planting: row-one', 'harvests: 1');
+  });
+
+  it('swaps the types of two harvests of one day in one save', async () => {
+    await harvests.recordHarvest('as: gardener', 'harvest: weighed', 'planting: row-one', 'quantity: 2');
+    await harvests.recordHarvest('as: gardener', 'harvest: counted', 'planting: row-one', 'quantity: 3', 'type: fruit');
+
+    await harvests.saveAgainTogether(
+      'as: gardener', 'harvests: weighed, counted', 'planting: row-one', 'quantities: 2, 3', 'types: fruit, pounds'
+    );
+
+    await harvests.checkHarvest('as: gardener', 'harvest: weighed', 'planting: row-one', 'quantity: 2', 'type: fruit');
+    await harvests.checkHarvest('as: gardener', 'harvest: counted', 'planting: row-one', 'quantity: 3', 'type: pounds');
+    await harvests.checkHarvestCount('as: gardener', 'planting: row-one', 'harvests: 2');
+  });
+
+  it('keeps the fraction of a quantity, in the harvest, the summary and the stats', async () => {
+    await harvests.recordHarvest('as: gardener', 'harvest: first', 'planting: row-one', 'quantity: 1.1', 'date: 2026-07-01');
+    await harvests.recordHarvest('as: gardener', 'harvest: second', 'planting: row-one', 'quantity: 2.2', 'date: 2026-07-02');
+
+    await harvests.checkHarvest('as: gardener', 'harvest: first', 'planting: row-one', 'quantity: 1.1', 'type: pounds', 'date: 2026-07-01');
+    await harvests.checkInSummary('as: gardener', 'planting: row-one', 'quantity: 3.3', 'type: pounds');
+    await harvests.checkStatsTotal('as: gardener', 'statsType: Planting', 'planting: row-one', 'total: 3.3');
+    await harvests.checkStatsTotal('as: gardener', 'statsType: Plant', 'planting: row-one', 'total: 3.3');
+  });
+
+  // a third decimal place is rounded, as MySQL rounds it, rather than rejected: the app can send one
+  it('rounds a quantity to hundredths', async () => {
+    await harvests.recordHarvest('as: gardener', 'harvest: first', 'planting: row-one', 'quantity: 1.235');
+
+    await harvests.checkHarvest('as: gardener', 'harvest: first', 'planting: row-one', 'quantity: 1.24', 'type: pounds');
+  });
+
   it('accepts a date after 2038', async () => {
     await harvests.recordHarvest('as: gardener', 'harvest: far-off', 'planting: row-one', 'quantity: 2', 'date: 2040-07-01');
 
@@ -144,5 +198,15 @@ describe('harvests', () => {
     await harvests.recordHarvest('as: gardener', 'harvest: first', 'planting: row-one', 'quantity: 2');
 
     await harvests.deleteHarvest('as: gardener', 'harvest: first', 'planting: row-one');
+  });
+
+  it('records a harvest on the day and type of one that was deleted', async () => {
+    await harvests.recordHarvest('as: gardener', 'harvest: first', 'planting: row-one', 'quantity: 2');
+    await harvests.deleteHarvest('as: gardener', 'harvest: first', 'planting: row-one');
+
+    await harvests.recordHarvest('as: gardener', 'harvest: again', 'planting: row-one', 'quantity: 3');
+
+    await harvests.checkHarvest('as: gardener', 'harvest: again', 'planting: row-one', 'quantity: 3', 'type: pounds');
+    await harvests.checkHarvestCount('as: gardener', 'planting: row-one', 'harvests: 1');
   });
 });

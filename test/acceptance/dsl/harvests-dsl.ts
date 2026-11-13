@@ -8,7 +8,13 @@ import { World } from './world';
 export interface HarvestsDsl {
   /** `as`, `harvest`, the alias, `planting`, `quantity`, optional `type`, by name, and optional `date`. */
   recordHarvest(...args: string[]): Promise<void>,
-  /** `as`, `harvest`, `planting`, `quantity`. Saves it again under its own id. */
+  /**
+   * `as`, `harvest`, the alias, `planting`, `quantities`, separated by commas, and
+   * `sent: in one save | in saves at once`. Records a harvest of each quantity, all on one day and of
+   * the plant's default type, and names the harvest the first was written to.
+   */
+  recordHarvests(...args: string[]): Promise<void>,
+  /** `as`, `harvest`, `planting`, `quantity`, and optional `type`, by name. Saves it again under its own id. */
   saveAgain(...args: string[]): Promise<void>,
   /**
    * `as`, `harvest`, `planting`, `quantity`, `type`, optional `date`, the day it was sent with,
@@ -16,10 +22,19 @@ export interface HarvestsDsl {
    * year the planting was created in.
    */
   checkHarvest(...args: string[]): Promise<void>,
+  /**
+   * `as`, `harvests`, aliases separated by commas, `planting`, `quantities` and `types`, by name, one
+   * for each harvest. Saves them all again under their own ids, in one save.
+   */
+  saveAgainTogether(...args: string[]): Promise<void>,
+  /** `as`, `planting`, for its year, `harvests`. Counts its harvests, whatever their days and types. */
+  checkHarvestCount(...args: string[]): Promise<void>,
   /** `as`, `planting`, `quantity`, `type`. */
   checkInSummary(...args: string[]): Promise<void>,
   /** `as`, `statsType: Plant | Planting`, `planting`, for its year, `harvests`. */
   checkStats(...args: string[]): Promise<void>,
+  /** `as`, `statsType: Plant | Planting`, `planting`, for its year, `total`. */
+  checkStatsTotal(...args: string[]): Promise<void>,
   /** `as`, `statsType: Plant | Planting`, `planting`, for its year, `first`, `last`, and `days`, counted inclusively. */
   checkStatsDays(...args: string[]): Promise<void>,
   /** `as`, `planting`, for its year. */
@@ -47,7 +62,7 @@ export function createHarvestsDsl(world: World, harvests: HarvestsDriver): Harve
         as: actor(),
         harvest: alias(),
         planting: alias(),
-        quantity: required().asInteger(),
+        quantity: required().asNumber(),
         type: optional(),
         date: optional(),
       });
@@ -61,13 +76,73 @@ export function createHarvestsDsl(world: World, harvests: HarvestsDriver): Harve
       world.nameHarvest(params.harvest, await harvests.recordHarvest(caller, input));
     },
 
+    async recordHarvests(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, {
+        as: actor(),
+        harvest: alias(),
+        planting: alias(),
+        quantities: required().asNumber().multiple({ separator: ',', }),
+        sent: required().allowedValues('in one save', 'in saves at once'),
+      });
+      const caller = await world.actorFor(params.as);
+      const plantingId = world.plantingNamed(params.planting).plantingId;
+      const inputs = params.quantities.map(quantity => aHarvest(plantingId, { quantity, }));
+
+      world.nameHarvest(
+        params.harvest,
+        params.sent === 'in one save'
+          ? await harvests.recordHarvestsInOneSave(caller, inputs)
+          : await harvests.recordHarvestsInSavesAtOnce(caller, inputs)
+      );
+    },
+
     async saveAgain(...args: string[]): Promise<void> {
-      const params = parseDslArgs(args, { as: actor(), harvest: alias(), planting: alias(), quantity: required().asInteger(), });
+      const params = parseDslArgs(args, {
+        as: actor(),
+        harvest: alias(),
+        planting: alias(),
+        quantity: required().asNumber(),
+        type: optional(),
+      });
+      const caller = await world.actorFor(params.as);
 
       await harvests.resaveChangesQuantity(
-        await world.actorFor(params.as),
+        caller,
         world.harvestNamed(params.harvest),
-        aHarvest(world.plantingNamed(params.planting).plantingId, { quantity: params.quantity, })
+        aHarvest(world.plantingNamed(params.planting).plantingId, {
+          quantity: params.quantity,
+          ...(params.type === undefined ? {} : { harvestTypeId: await harvestTypes.idOfTypeNamed(caller, params.type), }),
+        })
+      );
+    },
+
+    async saveAgainTogether(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, {
+        as: actor(),
+        harvests: alias().multiple({ separator: ',', }),
+        planting: alias(),
+        quantities: required().asNumber().multiple({ separator: ',', }),
+        types: required().multiple({ separator: ',', }),
+      });
+      const caller = await world.actorFor(params.as);
+      const plantingId = world.plantingNamed(params.planting).plantingId;
+      const inputs = await Promise.all(params.quantities.map(async (quantity, index) => aHarvest(plantingId, {
+        quantity,
+        harvestTypeId: await harvestTypes.idOfTypeNamed(caller, params.types[index]!),
+      })));
+
+      await harvests.resaveInOneSave(caller, params.harvests.map(name => world.harvestNamed(name)), inputs);
+    },
+
+    async checkHarvestCount(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), planting: alias(), harvests: required().asInteger(), });
+      const planting = world.plantingNamed(params.planting);
+
+      await harvests.searchCountsHarvestsOfPlanting(
+        await world.actorFor(params.as),
+        planting.plantingId,
+        planting.plantingYear,
+        params.harvests
       );
     },
 
@@ -76,7 +151,7 @@ export function createHarvestsDsl(world: World, harvests: HarvestsDriver): Harve
         as: actor(),
         harvest: alias(),
         planting: alias(),
-        quantity: required().asInteger(),
+        quantity: required().asNumber(),
         type: required(),
         date: optional(),
         year: optional(),
@@ -95,7 +170,7 @@ export function createHarvestsDsl(world: World, harvests: HarvestsDriver): Harve
     },
 
     async checkInSummary(...args: string[]): Promise<void> {
-      const params = parseDslArgs(args, { as: actor(), planting: alias(), quantity: required().asInteger(), type: required(), });
+      const params = parseDslArgs(args, { as: actor(), planting: alias(), quantity: required().asNumber(), type: required(), });
       const planting = world.plantingNamed(params.planting);
 
       await harvests.summaryIncludes(await world.actorFor(params.as), planting.plantingId, planting.plantingYear, {
@@ -117,6 +192,22 @@ export function createHarvestsDsl(world: World, harvests: HarvestsDriver): Harve
         params.statsType,
         world.plantingNamed(params.planting).plantingYear,
         params.harvests
+      );
+    },
+
+    async checkStatsTotal(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, {
+        as: actor(),
+        statsType: required().allowedValues('Plant', 'Planting'),
+        planting: alias(),
+        total: required().asNumber(),
+      });
+
+      await harvests.statsReportTotal(
+        await world.actorFor(params.as),
+        params.statsType,
+        world.plantingNamed(params.planting).plantingYear,
+        params.total
       );
     },
 

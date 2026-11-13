@@ -12,7 +12,6 @@ import { BadRequestError } from '../errors/common';
 import { StatsType, StatsTypeUtils } from '../types/stats-type';
 import {
   bodyOf,
-  INT_MAX,
   optionalInteger,
   optionalString,
   requiredList,
@@ -22,6 +21,9 @@ import {
   requiredString,
   requiredYear
 } from '../validation';
+
+/** The most a DECIMAL(8,2) column holds. */
+const QUANTITY_MAX = 999999.99;
 
 const insert = {
   fromRequest: (req: Request): HarvestRequest[] =>
@@ -33,8 +35,9 @@ const insert = {
         harvestId: optionalString(harvest.harvestId, `${field}.harvestId`, { maxLength: 36, }),
         // only checked for shape here; the service confirms the planting and the type exist
         plantingId: requiredString(harvest.plantingId, `${field}.plantingId`, { maxLength: 36, }),
-        // the column is an INT, so a fraction is rounded when it's stored; harvests by weight have them
-        quantity: requiredNumber(harvest.quantity, `${field}.quantity`, { greaterThan: 0, max: INT_MAX, }),
+        // the column is a DECIMAL(8,2): a third decimal place is rounded when it's stored, as MySQL
+        // rounds it, and the most it holds is 999999.99
+        quantity: requiredNumber(harvest.quantity, `${field}.quantity`, { greaterThan: 0, max: QUANTITY_MAX, }),
         // a harvest is filed by day
         harvestDate: requiredLocalDate(harvest.harvestDate, `${field}.harvestDate`),
         harvestTypeId: optionalInteger(harvest.harvestTypeId, `${field}.harvestTypeId`, { min: 1, }),

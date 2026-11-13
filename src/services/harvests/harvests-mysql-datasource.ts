@@ -6,7 +6,9 @@ import {
   HarvestSummary,
   HarvestSummaryRequest,
   HarvestSummaryRow, HarvestUpsertInstruction, HydratedHarvest, HydratedHarvestRow,
-  PlantingYearRow
+  PlantingYearRow,
+  StoredHarvest,
+  StoredHarvestRow
 } from './types';
 import { QueryPayload } from '../../database/types';
 
@@ -15,45 +17,45 @@ import db from '../../database'
 import rowMapper from './row-mapper';
 
 async function upsertHarvests(harvests: HarvestUpsertInstruction[]): Promise<Harvest[]> {
-  const queriesToRun: QueryPayload[] = [];
-
-  harvests.forEach(harvest => {
-    queriesToRun.push({
-      sql: queries.upsertHarvest,
-      params: rowMapper.insert.toParams(harvest),
-    });
-
-    // the retyped harvest's quantity has moved to the row above, so its own row goes away with it
-    if (harvest.absorbedHarvestId != null) {
-      queriesToRun.push({
-        sql: queries.deleteById,
-        params: [ harvest.absorbedHarvestId, ],
-      });
-    }
-  });
+  // Every existing harvest's row goes first, then each harvest is written again or added. So two
+  // harvests swapping days or types never meet their own old rows, and whatever lands on one day
+  // and type is added up there.
+  const queriesToRun: QueryPayload[] = [
+    ...harvests
+      .filter(harvest => harvest.replacesStoredHarvest)
+      .map(harvest => ({ sql: queries.deleteById, params: [ harvest.harvestId, ], })),
+    ...harvests.map(harvest => ({ sql: queries.insertOrAddHarvest, params: rowMapper.insert.toParams(harvest), })),
+  ];
 
   await db.execTransactionQuery(queriesToRun);
 
-  // re-read rather than echoing the input: the upsert preserves an existing row's harvest_type_id,
-  // so the stored type is the authoritative one, and only the DB has the type name
-  const writtenHarvests = await Promise.all(harvests.map(harvest => getHarvestById(harvest.harvestId)));
+  // Re-read by planting, day and type rather than by id: a harvest added to another is that one
+  // now. Several sent harvests can be one row, which is answered once.
+  const written = await Promise.all(harvests.map(harvest =>
+    getHarvestByPlantingIdDateAndType(harvest.plantingId, harvest.harvestDate, harvest.harvestTypeId)));
+  const byId = new Map<string, Harvest>();
+  written.forEach(harvest => {
+    if (harvest !== null && !byId.has(harvest.harvestId)) {
+      byId.set(harvest.harvestId, harvest);
+    }
+  });
 
-  return writtenHarvests.filter((harvest): harvest is Harvest => harvest !== null);
+  return [ ...byId.values(), ];
 }
 
-async function getHarvestById(harvestId: string): Promise<Harvest | null> {
+async function getStoredHarvestById(harvestId: string): Promise<StoredHarvest | null> {
   const query = {
-    sql: queries.getHarvestById,
+    sql: queries.getStoredHarvestById,
     params: [ harvestId, ],
   };
 
-  const results = await db.execQuery<HarvestRow[]>(query);
+  const results = await db.execQuery<StoredHarvestRow[]>(query);
 
   if (results.length === 0) {
     return null;
   }
 
-  return rowMapper.fromRow(results[0]!);
+  return rowMapper.fromStoredRow(results[0]!);
 }
 
 async function getPlantingYearByPlantingId(plantingId: string): Promise<number | null> {
@@ -149,10 +151,9 @@ async function deleteHarvestById(harvestId: string): Promise<void> {
 
 export default {
   upsertHarvests,
-  getHarvestById,
+  getStoredHarvestById,
   getPlantingYearByPlantingId,
   getDefaultHarvestTypeIdByPlantingId,
-  getHarvestByPlantingIdDateAndType,
   getHarvestSummary,
   deleteHarvestById,
   searchHarvests,

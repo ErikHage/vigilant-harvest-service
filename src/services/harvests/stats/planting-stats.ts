@@ -1,5 +1,5 @@
 import { ItemStats, HydratedHarvest } from '../types';
-import { mapHarvestsToDates, findFirstAndLast, calculateNumberOfDays } from './shared';
+import { mapHarvestsToDates, findFirstAndLast, calculateNumberOfDays, totalQuantity } from './shared';
 import { UNSPECIFIED_HARVEST_TYPE_ID } from '../../harvest-types/types';
 
 function calculate(harvests: HydratedHarvest[]): ItemStats[] {
@@ -34,11 +34,8 @@ function calculatePlantingStat(harvests: HydratedHarvest[]): ItemStats {
   const harvestsByDate = mapHarvestsToDates(harvests);
   const harvestDates = findFirstAndLast(harvestsByDate);
   const numberOfDays = calculateNumberOfDays(harvestDates.firstHarvestDate, harvestDates.lastHarvestDate);
+  const total = totalQuantity(harvests);
 
-  let totalQuantity = 0;
-  harvests.forEach(harvest => {
-    totalQuantity += harvest.quantity;
-  });
 
   const plantingId = harvests.length > 0 ? harvests[0]!.plantingId : 'Unknown';
   const plantId = harvests.length > 0 ? harvests[0]!.plantId : 'Unknown';
@@ -56,8 +53,8 @@ function calculatePlantingStat(harvests: HydratedHarvest[]): ItemStats {
     plotName,
     harvestTypeId,
     harvestType,
-    totalQuantity,
-    averageHarvestPerDay: totalQuantity / numberOfDays,
+    totalQuantity: total,
+    averageHarvestPerDay: total / numberOfDays,
     firstHarvest: harvestDates.firstHarvestDate,
     lastHarvest: harvestDates.lastHarvestDate,
   };

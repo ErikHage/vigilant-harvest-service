@@ -1,6 +1,7 @@
 import { Actor } from '../support/actors';
 import {
   expectBodyToContain,
+  expectCount,
   expectListEntries,
   expectRejection,
   expectStatus,
@@ -80,10 +81,10 @@ const invalidSaves: Record<HarvestSaveProblem, { body: (good: NewHarvest) => obj
     body: good => ({ harvests: [ { ...good, quantity: -2, }, ], }),
     reason: 'harvests[0].quantity must be greater than 0',
   },
-  // quantity is an INT column
+  // quantity is a DECIMAL(8,2) column
   'a quantity too large to store': {
-    body: good => ({ harvests: [ { ...good, quantity: 3000000000, }, ], }),
-    reason: 'harvests[0].quantity must be at most 2147483647',
+    body: good => ({ harvests: [ { ...good, quantity: 1000000, }, ], }),
+    reason: 'harvests[0].quantity must be at most 999999.99',
   },
   'no date': {
     body: good => ({ harvests: [ withoutField(good, 'harvestDate'), ], }),
@@ -123,14 +124,24 @@ const invalidSaves: Record<HarvestSaveProblem, { body: (good: NewHarvest) => obj
 
 export interface HarvestsDriver {
   recordHarvest(caller: Actor, input: NewHarvest): Promise<CreatedHarvest>,
+  /** Sends every harvest in one save. Answers with the harvest the first was written to. */
+  recordHarvestsInOneSave(caller: Actor, inputs: NewHarvest[]): Promise<CreatedHarvest>,
+  /** Sends each harvest in a save of its own, all at once. Answers with the harvest the first was written to. */
+  recordHarvestsInSavesAtOnce(caller: Actor, inputs: NewHarvest[]): Promise<CreatedHarvest>,
   resaveChangesQuantity(caller: Actor, harvest: CreatedHarvest, input: NewHarvest): Promise<void>,
+  /** Saves each harvest again under its own id, all in one save: the nth harvest with the nth input. */
+  resaveInOneSave(caller: Actor, harvests: CreatedHarvest[], inputs: NewHarvest[]): Promise<void>,
   searchIncludes(caller: Actor, harvest: CreatedHarvest, year: number, details: HarvestDetails): Promise<void>,
   searchExcludes(caller: Actor, harvest: CreatedHarvest, year: number): Promise<void>,
   searchWithoutYearIsRejectedAsBadRequest(caller: Actor): Promise<void>,
+  /** Asserts how many harvests the planting has under the year, whatever their days and types. */
+  searchCountsHarvestsOfPlanting(caller: Actor, plantingId: string, year: number, harvests: number): Promise<void>,
   /** Search, summary and stats each reject a year that isn't a number, naming the parameter. */
   queriesOfNonNumericYearAreRejectedAsBadRequest(caller: Actor): Promise<void>,
   summaryIncludes(caller: Actor, plantingId: string, year: number, details: HarvestDetails): Promise<void>,
   statsCountHarvests(caller: Actor, statsType: StatsType, year: number, harvests: number): Promise<void>,
+  /** The year is the spec's own, so it holds one item: asserts that item's total quantity. */
+  statsReportTotal(caller: Actor, statsType: StatsType, year: number, totalQuantity: number): Promise<void>,
   statsReportDays(caller: Actor, statsType: StatsType, year: number, days: StatsDays): Promise<void>,
   plantStatsCallThemselvesPlantingStats(caller: Actor, year: number): Promise<void>,
   recordForUnknownPlantingIsRejectedAsBadRequest(caller: Actor, input: NewHarvest): Promise<void>,
@@ -174,6 +185,47 @@ export function createHarvestsDriver(client: HttpClient, registry: ResourceRegis
       registry.register({ kind: 'harvest', path: `/harvests/${harvestId}`, label: harvestId, });
 
       return { harvestId, plantingId: input.plantingId, };
+    },
+
+    async recordHarvestsInOneSave(caller: Actor, inputs: NewHarvest[]): Promise<CreatedHarvest> {
+      const what = `recording ${inputs.map(input => input.quantity).join(' and ')} from planting ${inputs[0]!.plantingId} in one save`;
+      const response = await as(caller).put('/harvests', { harvests: inputs, });
+
+      registerIfCreated(response);
+      expectStatus(response, status.CREATED, what);
+
+      const [ written, ] = expectListEntries(response, what);
+
+      return { harvestId: written?.harvestId as string, plantingId: inputs[0]!.plantingId, };
+    },
+
+    async recordHarvestsInSavesAtOnce(caller: Actor, inputs: NewHarvest[]): Promise<CreatedHarvest> {
+      const what = `recording ${inputs.map(input => input.quantity).join(' and ')} from planting ${inputs[0]!.plantingId} in saves at once`;
+      const responses = await Promise.all(inputs.map(input => as(caller).put('/harvests', { harvests: [ input, ], })));
+
+      responses.forEach(registerIfCreated);
+      responses.forEach((response, index) => expectStatus(response, status.CREATED, `${what}: save ${index + 1}`));
+
+      const [ written, ] = expectListEntries(responses[0]!, what);
+
+      return { harvestId: written?.harvestId as string, plantingId: inputs[0]!.plantingId, };
+    },
+
+    async searchCountsHarvestsOfPlanting(caller: Actor, plantingId: string, year: number, count: number): Promise<void> {
+      const what = `counting the harvests of planting ${plantingId} under ${year}`;
+      const { response, harvests, } = await search(caller, year, what);
+
+      expectCount(harvests.filter(each => each.plantingId === plantingId).length, count, response, what);
+    },
+
+    async resaveInOneSave(caller: Actor, harvests: CreatedHarvest[], inputs: NewHarvest[]): Promise<void> {
+      const what = `saving harvests ${harvests.map(harvest => harvest.harvestId).join(' and ')} again in one save`;
+      const response = await as(caller).put('/harvests', {
+        harvests: inputs.map((input, index) => ({ ...input, harvestId: harvests[index]!.harvestId, })),
+      });
+
+      registerIfCreated(response);
+      expectStatus(response, status.CREATED, what);
     },
 
     async resaveChangesQuantity(caller: Actor, harvest: CreatedHarvest, input: NewHarvest): Promise<void> {
@@ -242,6 +294,18 @@ export function createHarvestsDriver(client: HttpClient, registry: ResourceRegis
 
       expectStatus(response, status.OK, what);
       expectBodyToContain(response, { numberOfHarvests: harvests, }, what);
+    },
+
+    async statsReportTotal(caller: Actor, statsType: StatsType, year: number, totalQuantity: number): Promise<void> {
+      const what = `reading the total in the ${statsType} stats of ${year}`;
+      const response = await as(caller).get(`/harvests/stats?type=${statsType}&year=${year}`);
+
+      expectStatus(response, status.OK, what);
+
+      const { stats, } = response.body as { stats: { totalQuantity: unknown }[] };
+
+      expectCount(stats.length, 1, response, what);
+      expectThat(stats[0]!.totalQuantity === totalQuantity, `a total of ${totalQuantity}`, response, what);
     },
 
     async statsReportDays(caller: Actor, statsType: StatsType, year: number, days: StatsDays): Promise<void> {

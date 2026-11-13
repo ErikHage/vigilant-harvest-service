@@ -5,21 +5,19 @@ const harvestTypeJoin: string =
   `JOIN harvest_types ht
        ON ht.harvest_type_id = h.harvest_type_id`;
 
-// the service resolves the authoritative harvest_type_id before this runs -- the requested one, or
-// the type already stored, or the plant's default -- so the UPDATE clause writes it back as given
-// planting_year is set only on insert: an existing harvest keeps the year it was filed under
-// date_created is the database's own: a harvest's day is harvest_date
-const upsertHarvest: string =
-  `INSERT INTO harvests (harvest_id, planting_id, planting_year, quantity, harvest_date, harvest_type_id)
-   VALUES (?, ?, ?, ?, ?, ?)
+// A harvest inserted, or its quantity added to the one already on its planting, day and type: the
+// uq_harvests_planting_date_type key folds them, however many saves arrive at once. The harvest
+// folded into keeps its own id, year and date_created.
+// date_created is the database's own for a new harvest, and an existing one's when it's written
+// again. A harvest's day is harvest_date.
+const insertOrAddHarvest: string =
+  `INSERT INTO harvests (harvest_id, planting_id, planting_year, quantity, harvest_date, harvest_type_id, date_created)
+   VALUES (?, ?, ?, ?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP))
        ON DUPLICATE KEY
-       UPDATE planting_id = VALUES(planting_id),
-              quantity = VALUES(quantity),
-              harvest_date = VALUES(harvest_date),
-              harvest_type_id = VALUES(harvest_type_id)`;
+       UPDATE quantity = quantity + VALUES(quantity)`;
 
-const getHarvestById: string =
-  `SELECT ${allHarvestFields}
+const getStoredHarvestById: string =
+  `SELECT ${allHarvestFields}, h.planting_year, h.date_created
      FROM harvests h
      ${harvestTypeJoin}
     WHERE h.harvest_id = ?`;
@@ -76,8 +74,8 @@ const getHydratedHarvestsByYear: string =
 const deleteById: string = 'DELETE FROM harvests WHERE harvest_id = ?';
 
 export default {
-  upsertHarvest,
-  getHarvestById,
+  insertOrAddHarvest,
+  getStoredHarvestById,
   getHarvestByPlantingIdDateAndType,
   getPlantingYearByPlantingId,
   getDefaultHarvestTypeIdByPlantingId,
