@@ -1,8 +1,39 @@
 function fromError(err: Error): FeralError {
+  const message = messageOf(err);
+
   if (err.cause) {
-    return new FeralError(err.message, ensureError(err.cause));
+    return new FeralError(message, ensureError(err.cause));
   }
-  return new FeralError(err.message);
+  return new FeralError(message);
+}
+
+/**
+ * What went wrong, in words. Most errors say it in their message, but not all of them:
+ * - an AggregateError's is often empty, and its inner errors say it;
+ * - mysql2's promise API, failing to connect, throws an Error of its own with that empty message
+ *   and only a code, such as ECONNREFUSED.
+ */
+function messageOf(err: Error): string {
+  if (err instanceof AggregateError) {
+    return aggregateMessage(err);
+  }
+  if (err.message !== '') {
+    return err.message;
+  }
+
+  const code: unknown = (err as { code?: unknown }).code;
+
+  return typeof code === 'string' && code !== '' ? `${err.name}: ${code}` : err.name;
+}
+
+/**
+ * An AggregateError's own message, or its name when that's empty, then each inner error's message.
+ * Node's net module throws one, with an empty message, when a host refuses on both IPv6 and IPv4.
+ */
+function aggregateMessage(err: AggregateError): string {
+  const inner = (err.errors as unknown[]).map(each => ensureError(each).message).join('; ');
+
+  return [ err.message || err.name, inner, ].filter(part => part !== '').join(': ');
 }
 
 export function ensureError(value: unknown): FeralError {
