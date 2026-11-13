@@ -77,6 +77,24 @@ async function plantPlanting(
   }
 }
 
+/**
+ * START or RETIRE, in one transaction: the planting moved to its new status, and
+ * the history row. If either fails, neither is written.
+ */
+async function changePlantingStatus(plantingId: string, plantingUpdate: PlantingUpdate, comment: string): Promise<void> {
+  const transaction: QueryPayload[] = [
+    _getUpdateQueryAndParams(plantingId, plantingUpdate),
+    _getInsertStatusHistoryQueryAndParams(plantingId, plantingUpdate.status, comment),
+  ];
+
+  try {
+    await db.execTransactionQuery(transaction);
+  } catch (err) {
+    throw new FeralError('Error changing planting status', ensureError(err))
+      .withDebugParams({ transaction, });
+  }
+}
+
 async function plotExists(plotId: string): Promise<boolean> {
   return await db.execCountQuery({ sql: queries.plantings.countPlotsById, params: [ plotId, ], }) > 0;
 }
@@ -307,6 +325,7 @@ export default {
   insertPlanting,
   splitPlanting,
   plantPlanting,
+  changePlantingStatus,
   plotExists,
   updatePlanting,
   getPlantingById,

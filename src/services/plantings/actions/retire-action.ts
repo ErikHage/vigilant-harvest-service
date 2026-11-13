@@ -7,15 +7,11 @@ import constants from '../../../util/constants';
 export class RetireAction implements PlantingAction {
   async performAction(currentPlanting: Planting, plantingActionRequest: PerformActionRequest): Promise<Planting> {
     try {
-      // TODO do in a transaction
-      await datasource.updatePlanting(plantingActionRequest.plantingId, {
-        status: constants.plantings.statuses.retired,
-        ...plantingActionRequest.retireActionData,
-      });
-      await datasource.insertStatusHistory(
+      // the move to RETIRED and its history row are one transaction
+      await datasource.changePlantingStatus(
         plantingActionRequest.plantingId,
-        constants.plantings.statuses.retired,
-        plantingActionRequest.retireActionData?.comment ?? '---');
+        { status: constants.plantings.statuses.retired, },
+        plantingActionRequest.retireActionData!.comment);
     } catch (err) {
       throw new RetireActionError(ensureError(err)).withDebugParams({ plantingActionRequest, });
     }
