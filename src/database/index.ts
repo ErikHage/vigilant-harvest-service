@@ -1,4 +1,4 @@
-import { Connection, FieldPacket, QueryResult } from 'mysql2/promise';
+import { FieldPacket, PoolConnection, QueryResult } from 'mysql2/promise';
 
 import { CountRow, QueryPayload } from './types';
 
@@ -27,7 +27,7 @@ function toMysqlError(message: string, debugParams: object, err: unknown): Mysql
 }
 
 async function execQuery<T extends QueryResult>(queryPayload: QueryPayload): Promise<T> {
-  const conn: Connection = await mysqlClient.getConnection();
+  const conn: PoolConnection = await mysqlClient.getConnection();
 
   try {
     const result = await conn.query<T>(queryPayload.sql, queryPayload.params);
@@ -36,7 +36,7 @@ async function execQuery<T extends QueryResult>(queryPayload: QueryPayload): Pro
     // logged once, by the error handler, with the driver's message as the cause
     throw toMysqlError('Error performing query', { queryPayload, }, err);
   } finally {
-    await mysqlClient.closeConnection(conn);
+    mysqlClient.closeConnection(conn);
   }
 }
 
@@ -68,7 +68,7 @@ async function execTransactionQuery<T extends QueryResult>(queriesArray: Array<Q
     const sql: string[] = queriesArray.map(q => q.sql);
     throw toMysqlError('Error performing transaction query', { sql, }, err);
   } finally {
-    await mysqlClient.closeConnection(conn);
+    mysqlClient.closeConnection(conn);
   }
 }
 

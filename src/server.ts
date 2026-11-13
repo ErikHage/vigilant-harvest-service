@@ -8,6 +8,7 @@ import getApp from './app';
 // @ts-ignore
 import schemaUtils from './util/schema-utils';
 import utils from './util/utilities';
+import mysqlConnection from './database/mysql-connection';
 
 const onError = (port: string) => (error: any) => {
   if (error.syscall !== 'listen') {
@@ -68,8 +69,10 @@ const initApp = async () => {
 
   // As PID 1 in Docker, node ignores these signals unless it handles them
   // itself, and `docker stop` waits 10s, then kills it. close() lets requests
-  // in flight finish; each closes its own database connection.
-  const shutDown = () => server.close(() => process.exit(0));
+  // in flight finish, and then the database pool closes its connections.
+  const shutDown = () => server.close(() => {
+    mysqlConnection.endPool().finally(() => process.exit(0));
+  });
   process.on('SIGTERM', shutDown);
   process.on('SIGINT', shutDown);
 };

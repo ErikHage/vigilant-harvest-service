@@ -25,7 +25,7 @@ const waitForConnection = async () => {
     currentDelay += CONNECTION_POLL_DELAY;
   }
 
-  conn.destroy();
+  mysql.closeConnection(conn);
 
   return currentDelay < CONNECTION_POLL_DELAY_MAX;
 };
