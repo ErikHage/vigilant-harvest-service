@@ -16,6 +16,8 @@ import constants from '../util/constants';
 import {
   blankAsMissing,
   bodyOf,
+  clearable,
+  ifSent,
   INT_MAX,
   oneOf,
   optionalInteger,
@@ -81,24 +83,23 @@ const action = {
 const update = {
   fromRequest: (req: Request): PlantingUpdateRequest => {
     const body = bodyOf(req);
-    // An update skips an empty value and keeps the old one (a pinned behaviour, not this check's to
-    // change), so '' counts as not sent, as it did for the dates before.
-    const sent = (field: string): unknown => blankAsMissing(body[field]);
 
+    // A field left out keeps what is stored, and one sent empty is cleared. A planting can't be
+    // without its name or its plant, so those two can't be sent empty.
     return {
-      name: optionalString(sent('name'), 'name', NAME),
-      plantId: optionalString(sent('plantId'), 'plantId', ID),
-      seedSource: optionalString(sent('seedSource'), 'seedSource', NAME),
-      lotNumber: optionalString(sent('lotNumber'), 'lotNumber', NAME),
-      plotId: optionalString(sent('plotId'), 'plotId', ID),
-      numberTransplanted: optionalInteger(sent('numberTransplanted'), 'numberTransplanted', COUNT),
-      targetPlantingDate: optionalLocalDate(sent('targetPlantingDate'), 'targetPlantingDate'),
-      leadTimeWeeks: optionalInteger(sent('leadTimeWeeks'), 'leadTimeWeeks', COUNT),
-      sowDate: optionalLocalDate(sent('sowDate'), 'sowDate'),
-      sowType: optionalString(sent('sowType'), 'sowType', NAME),
-      numberSown: optionalInteger(sent('numberSown'), 'numberSown', COUNT),
-      transplantDate: optionalLocalDate(sent('transplantDate'), 'transplantDate'),
-      notes: optionalString(sent('notes'), 'notes', TEXT),
+      name: ifSent(body.name, value => requiredString(value, 'name', NAME)),
+      plantId: ifSent(body.plantId, value => requiredString(value, 'plantId', ID)),
+      seedSource: clearable(body.seedSource, value => optionalString(value, 'seedSource', NAME)),
+      lotNumber: clearable(body.lotNumber, value => optionalString(value, 'lotNumber', NAME)),
+      plotId: clearable(body.plotId, value => optionalString(value, 'plotId', ID)),
+      numberTransplanted: clearable(body.numberTransplanted, value => optionalInteger(value, 'numberTransplanted', COUNT)),
+      targetPlantingDate: clearable(body.targetPlantingDate, value => optionalLocalDate(value, 'targetPlantingDate')),
+      leadTimeWeeks: clearable(body.leadTimeWeeks, value => optionalInteger(value, 'leadTimeWeeks', COUNT)),
+      sowDate: clearable(body.sowDate, value => optionalLocalDate(value, 'sowDate')),
+      sowType: clearable(body.sowType, value => optionalString(value, 'sowType', NAME)),
+      numberSown: clearable(body.numberSown, value => optionalInteger(value, 'numberSown', COUNT)),
+      transplantDate: clearable(body.transplantDate, value => optionalLocalDate(value, 'transplantDate')),
+      notes: clearable(body.notes, value => optionalString(value, 'notes', TEXT)),
     };
   },
 };

@@ -65,10 +65,7 @@ async function plantPlanting(
 ): Promise<void> {
   const transaction: QueryPayload[] = [
     ...(remainder ? _buildSplitQueries(planting, [ remainder, ]) : []),
-    {
-      sql: queries.plantings.buildUpdateQuery(plantingUpdate),
-      params: rowMapper.plantings.update.toParams(planting.plantingId, plantingUpdate),
-    },
+    _getUpdateQueryAndParams(planting.plantingId, plantingUpdate),
     _getInsertStatusHistoryQueryAndParams(planting.plantingId, plantingUpdate.status, comment),
   ];
 
@@ -110,10 +107,7 @@ function _buildSplitQueries(sourcePlanting: Planting, splits: SplitData[]): Quer
     });
 
     // update existing record's count
-    const updateQuery = queries.plantings.buildUpdateQuery({
-      status: sourcePlanting.currentStatus,
-      numberSown: sourceCount,
-    });
+    const updateQuery = queries.plantings.buildUpdateQuery([ 'current_status', 'number_sown', ]);
     transaction.push({
       sql: updateQuery,
       params: [ sourcePlanting.currentStatus, sourceCount - split.count, sourcePlantingId, ],
@@ -156,12 +150,7 @@ function _buildInsertComment(planting: Planting): string {
 }
 
 async function updatePlanting(plantingId: string, plantingUpdate: PlantingUpdate, updateComment?: string): Promise<void> {
-  const transaction: QueryPayload[] = [
-    {
-      sql: queries.plantings.buildUpdateQuery(plantingUpdate),
-      params: rowMapper.plantings.update.toParams(plantingId, plantingUpdate),
-    },
-  ];
+  const transaction: QueryPayload[] = [ _getUpdateQueryAndParams(plantingId, plantingUpdate), ];
 
   if (updateComment) {
     transaction.push(_getInsertStatusHistoryQueryAndParams(plantingId, 'COMMENT', updateComment));
@@ -173,6 +162,15 @@ async function updatePlanting(plantingId: string, plantingUpdate: PlantingUpdate
     throw new FeralError('Error updating planting', ensureError(err))
       .withDebugParams({ transaction, });
   }
+}
+
+function _getUpdateQueryAndParams(plantingId: string, plantingUpdate: PlantingUpdate): QueryPayload {
+  const columns = rowMapper.plantings.update.toColumns(plantingUpdate);
+
+  return {
+    sql: queries.plantings.buildUpdateQuery(columns.map(([ column, ]) => column)),
+    params: [ ...columns.map(([ , value, ]) => value), plantingId, ],
+  };
 }
 
 function _getInsertStatusHistoryQueryAndParams(plantingId: string, status: string, comment: string): QueryPayload {

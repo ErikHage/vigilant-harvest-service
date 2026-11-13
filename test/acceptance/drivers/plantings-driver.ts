@@ -107,6 +107,9 @@ export const PLANTING_UPDATE_PROBLEMS = [
   'a transplant date with a time',
   'a sow date that does not exist',
   'a target date out of range',
+  'a blank name',
+  'no plant',
+  'an empty field its status does not allow',
 ] as const;
 
 export type PlantingUpdateProblem = (typeof PLANTING_UPDATE_PROBLEMS)[number];
@@ -130,6 +133,24 @@ const invalidUpdates: Record<PlantingUpdateProblem, { body: object, reason: stri
     body: { targetPlantingDate: '0999-05-01', },
     reason: 'targetPlantingDate must be between 1000 and 9999',
   },
+  // a planting can't be without its name or its plant, so neither can be cleared
+  'a blank name': { body: { name: '', }, reason: 'name is required', },
+  'no plant': { body: { plantId: null, }, reason: 'plantId is required', },
+  // an empty value would clear the field, so it is checked against the status like any other
+  'an empty field its status does not allow': { body: { numberSown: null, }, reason: 'not allowed to be updated', },
+};
+
+/** Fields a CREATED planting may clear: text, a day and a count. Each is a test of its own. */
+export const CLEARABLE_PLANTING_FIELDS = [ 'seedSource', 'lotNumber', 'targetPlantingDate', 'leadTimeWeeks', ] as const;
+
+export type ClearablePlantingField = (typeof CLEARABLE_PLANTING_FIELDS)[number];
+
+/** What each clearable field is set to before it is cleared. */
+const clearableFieldValues: Record<ClearablePlantingField, string | number> = {
+  seedSource: 'Saved from last year',
+  lotNumber: 'LOT-7',
+  targetPlantingDate: '2026-05-15',
+  leadTimeWeeks: 3,
 };
 
 /** Ways an action can be wrong, sent to a CREATED planting. Each is a test of its own. */
@@ -240,7 +261,19 @@ export interface PlantingsDriver {
    */
   plantInUnknownPlotIsRejectedAsBadRequest(caller: Actor, planting: CreatedPlanting, numberTransplanted: number): Promise<void>,
   updateChangesSeedSource(caller: Actor, planting: CreatedPlanting, seedSource: string): Promise<void>,
-  updateToEmptyValueKeepsTheOldOne(caller: Actor, planting: CreatedPlanting, seedSource: string): Promise<void>,
+  /**
+   * Sets the field, then sends it empty: it reads null after, and the history
+   * records the update as the app's History tab reads it, `Updated: ` and the
+   * JSON of what was sent.
+   */
+  updateToEmptyValueClearsField(
+    caller: Actor,
+    planting: CreatedPlanting,
+    field: ClearablePlantingField,
+    empty: null | ''
+  ): Promise<void>,
+  /** Sets the lead time, then sets it to 0, which is written like any other count. */
+  updateToZeroChangesLeadTime(caller: Actor, planting: CreatedPlanting): Promise<void>,
   updateOfFieldNotAllowedIsRejectedAsBadRequest(caller: Actor, planting: CreatedPlanting): Promise<void>,
   createForUnknownPlantIsRejectedAsBadRequest(caller: Actor, input: NewPlanting): Promise<void>,
   createInUnknownYearIsRejectedAsBadRequest(caller: Actor, input: NewPlanting): Promise<void>,
@@ -531,11 +564,33 @@ export function createPlantingsDriver(client: HttpClient, registry: ResourceRegi
       expectBodyToContain(await get(caller, planting, `${what}: re-reading it`), { seedSource, }, what);
     },
 
-    async updateToEmptyValueKeepsTheOldOne(caller: Actor, planting: CreatedPlanting, seedSource: string): Promise<void> {
-      const what = `clearing the seed source of planting "${planting.name}"`;
+    async updateToEmptyValueClearsField(
+      caller: Actor,
+      planting: CreatedPlanting,
+      field: ClearablePlantingField,
+      empty: null | ''
+    ): Promise<void> {
+      const what = `clearing the ${field} of planting "${planting.name}" with ${JSON.stringify(empty)}`;
+      const path = `/plantings/${planting.plantingId}`;
 
-      expectStatus(await as(caller).put(`/plantings/${planting.plantingId}`, { seedSource: '', }), status.OK, what);
-      expectBodyToContain(await get(caller, planting, `${what}: re-reading it`), { seedSource, }, what);
+      expectStatus(await as(caller).put(path, { [field]: clearableFieldValues[field], }), status.OK, `${what}: setting it first`);
+      expectStatus(await as(caller).put(path, { [field]: empty, }), status.OK, what);
+
+      const response = await get(caller, planting, `${what}: re-reading it`);
+      const { statusHistory, } = response.body as { statusHistory: { comment: unknown }[] };
+      const comment = `Updated: ${JSON.stringify({ [field]: null, })}`;
+
+      expectBodyToContain(response, { [field]: null, }, what);
+      expectThat(statusHistory.some(entry => entry.comment === comment), `a history entry "${comment}"`, response, what);
+    },
+
+    async updateToZeroChangesLeadTime(caller: Actor, planting: CreatedPlanting): Promise<void> {
+      const what = `setting the lead time of planting "${planting.name}" to 0`;
+      const path = `/plantings/${planting.plantingId}`;
+
+      expectStatus(await as(caller).put(path, { leadTimeWeeks: 3, }), status.OK, `${what}: setting it first`);
+      expectStatus(await as(caller).put(path, { leadTimeWeeks: 0, }), status.OK, what);
+      expectBodyToContain(await get(caller, planting, `${what}: re-reading it`), { leadTimeWeeks: 0, }, what);
     },
 
     async updateOfFieldNotAllowedIsRejectedAsBadRequest(caller: Actor, planting: CreatedPlanting): Promise<void> {

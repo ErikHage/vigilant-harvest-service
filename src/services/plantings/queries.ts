@@ -1,5 +1,3 @@
-import { PlantingUpdate } from './types';
-
 const allPlantingFields: string =
   `p.planting_id,
 p.plot_id,
@@ -81,27 +79,10 @@ const plantings = {
     WHERE planting_id = ? -- existing planting_id to copy
   `,
 
-  buildUpdateQuery(plantingUpdate: PlantingUpdate): string {
-    const queryParts: string[] = [
-      'current_status = ?',
-    ];
-
-    if (plantingUpdate.name) queryParts.push('planting_name = ?');
-    if (plantingUpdate.plantId) queryParts.push('plant_id = ?');
-    if (plantingUpdate.seedSource) queryParts.push('seed_source = ?');
-    if (plantingUpdate.lotNumber) queryParts.push('lot_number = ?');
-    if (plantingUpdate.plotId) queryParts.push('plot_id = ?');
-    if (plantingUpdate.targetPlantingDate) queryParts.push('target_planting_date = ?');
-    if (plantingUpdate.leadTimeWeeks) queryParts.push('lead_time_weeks = ?');
-    if (plantingUpdate.numberSown) queryParts.push('number_sown = ?');
-    if (plantingUpdate.sowDate) queryParts.push('sow_date = ?');
-    if (plantingUpdate.sowType) queryParts.push('sow_type = ?');
-    if (plantingUpdate.transplantDate) queryParts.push('transplant_date = ?');
-    if (plantingUpdate.numberTransplanted) queryParts.push('number_transplanted = ?');
-    if (plantingUpdate.notes) queryParts.push('notes = ?');
-
+  /** Sets each of `columns`, in order, then takes the planting's id. */
+  buildUpdateQuery(columns: string[]): string {
     return `UPDATE plantings
-            SET ${queryParts.join(', ')}
+            SET ${columns.map(column => `${column} = ?`).join(', ')}
             WHERE planting_id = ?`;
   },
 

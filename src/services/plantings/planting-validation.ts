@@ -23,7 +23,8 @@ function validateUpdateInput(currentStatus: string, updateRequest: PlantingUpdat
   const allowedFields = allowedUpdateFields[currentStatus];
 
   const notAllowedFields = Object.entries(updateRequest)
-    .filter(([ , value, ]) => value != undefined)
+    // null clears a field, so it counts as a change like any other value
+    .filter(([ , value, ]) => value !== undefined)
     .filter(([ field, , ]) => {
       if (allowedFields!.includes(field)) {
         return;

@@ -30,6 +30,23 @@ export function blankAsMissing(value: unknown): unknown {
   return value === '' ? undefined : value;
 }
 
+/**
+ * For an update, where a field left out keeps what is stored: null, or the ''
+ * of a cleared box, is null, to empty the column. Anything else goes through
+ * `check`.
+ */
+export function clearable<T>(value: unknown, check: (value: unknown) => T | undefined): T | null | undefined {
+  return value === null || value === '' ? null : check(value);
+}
+
+/**
+ * For an update's field whose column can't be empty: left out is undefined, to
+ * keep what is stored, and anything sent goes through `check`.
+ */
+export function ifSent<T>(value: unknown, check: (value: unknown) => T): T | undefined {
+  return value === undefined ? undefined : check(value);
+}
+
 /** One of a fixed set of strings, such as an action type. */
 export function oneOf<T extends string>(value: unknown, field: string, allowed: readonly T[]): T {
   if (isMissing(value) || value === '') {

@@ -98,37 +98,39 @@ export interface Planting {
   statusHistory?: PlantingStatusHistoryRecord[],
 }
 
+/** A field left out is undefined, and keeps what is stored; one that is null is cleared. */
 export interface PlantingUpdateRequest {
   plantId?: string,
   name?: string,
-  seedSource?: string,
-  lotNumber?: string,
-  targetPlantingDate?: string, // YYYY-MM-DD
-  plotId?: string,
-  numberTransplanted?: number, // int
-  leadTimeWeeks?: number, // int
-  sowDate?: string, // YYYY-MM-DD
-  sowType?: string,
-  numberSown?: number, //int
-  transplantDate?: string, // YYYY-MM-DD
-  notes?: string,
+  seedSource?: string | null,
+  lotNumber?: string | null,
+  targetPlantingDate?: string | null, // YYYY-MM-DD
+  plotId?: string | null,
+  numberTransplanted?: number | null, // int
+  leadTimeWeeks?: number | null, // int
+  sowDate?: string | null, // YYYY-MM-DD
+  sowType?: string | null,
+  numberSown?: number | null, //int
+  transplantDate?: string | null, // YYYY-MM-DD
+  notes?: string | null,
 }
 
+/** As PlantingUpdateRequest: undefined keeps what is stored, and null clears it. */
 export interface PlantingUpdate {
   status: string,
   name?: string,
   plantId?: string,
-  seedSource?: string,
-  lotNumber?: string,
-  plotId?: string,
-  numberTransplanted?: number, // int
-  targetPlantingDate?: string, // YYYY-MM-DD
-  leadTimeWeeks?: number, // int
-  sowDate?: string, // YYYY-MM-DD
-  sowType?: string,
-  numberSown?: number, //int
-  transplantDate?: string, // YYYY-MM-DD
-  notes?: string,
+  seedSource?: string | null,
+  lotNumber?: string | null,
+  plotId?: string | null,
+  numberTransplanted?: number | null, // int
+  targetPlantingDate?: string | null, // YYYY-MM-DD
+  leadTimeWeeks?: number | null, // int
+  sowDate?: string | null, // YYYY-MM-DD
+  sowType?: string | null,
+  numberSown?: number | null, //int
+  transplantDate?: string | null, // YYYY-MM-DD
+  notes?: string | null,
 }
 
 export interface PlantingIdRow extends RowDataPacket {

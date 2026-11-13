@@ -31,28 +31,29 @@ const plantings = {
   },
 
   update: {
-    toParams: function (plantingId: string, plantingUpdate: PlantingUpdate): Array<string | number> {
-      const params: Array<string | number> = [];
+    /**
+     * The columns an update writes, each with its value: every field that was
+     * given, 0 included. A null empties its column.
+     */
+    toColumns: function (plantingUpdate: PlantingUpdate): Array<[ string, string | number | null ]> {
+      const columns: Array<[ string, string | number | null | undefined ]> = [
+        [ 'current_status', plantingUpdate.status, ],
+        [ 'planting_name', plantingUpdate.name, ],
+        [ 'plant_id', plantingUpdate.plantId, ],
+        [ 'seed_source', plantingUpdate.seedSource, ],
+        [ 'lot_number', plantingUpdate.lotNumber, ],
+        [ 'plot_id', plantingUpdate.plotId, ],
+        [ 'target_planting_date', plantingUpdate.targetPlantingDate, ],
+        [ 'lead_time_weeks', plantingUpdate.leadTimeWeeks, ],
+        [ 'number_sown', plantingUpdate.numberSown, ],
+        [ 'sow_date', plantingUpdate.sowDate, ],
+        [ 'sow_type', plantingUpdate.sowType, ],
+        [ 'transplant_date', plantingUpdate.transplantDate, ],
+        [ 'number_transplanted', plantingUpdate.numberTransplanted, ],
+        [ 'notes', plantingUpdate.notes, ],
+      ];
 
-      params.push(plantingUpdate.status);
-
-      if (plantingUpdate.name) params.push(plantingUpdate.name);
-      if (plantingUpdate.plantId) params.push(plantingUpdate.plantId);
-      if (plantingUpdate.seedSource) params.push(plantingUpdate.seedSource);
-      if (plantingUpdate.lotNumber) params.push(plantingUpdate.lotNumber);
-      if (plantingUpdate.plotId) params.push(plantingUpdate.plotId);
-      if (plantingUpdate.targetPlantingDate) params.push(plantingUpdate.targetPlantingDate);
-      if (plantingUpdate.leadTimeWeeks) params.push(plantingUpdate.leadTimeWeeks);
-      if (plantingUpdate.numberSown) params.push(plantingUpdate.numberSown);
-      if (plantingUpdate.sowDate) params.push(plantingUpdate.sowDate);
-      if (plantingUpdate.sowType) params.push(plantingUpdate.sowType);
-      if (plantingUpdate.transplantDate) params.push(plantingUpdate.transplantDate);
-      if (plantingUpdate.numberTransplanted) params.push(plantingUpdate.numberTransplanted);
-      if (plantingUpdate.notes) params.push(plantingUpdate.notes);
-
-      params.push(plantingId);
-
-      return params;
+      return columns.filter((column): column is [ string, string | number | null ] => column[1] !== undefined);
     },
   },
 

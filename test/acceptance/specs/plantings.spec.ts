@@ -111,12 +111,25 @@ describe('plantings', () => {
     await plantings.update('as: gardener', 'planting: row-one', 'seedSource: Saved from last year');
   });
 
-  // DocumentsCurrentBehavior: an empty value is skipped, and the old one stays. Should clear the field.
-  it('clears a field', async () => {
+  it.each([
+    [ 'seedSource', 'null', ],
+    [ 'seedSource', 'an empty string', ],
+    [ 'lotNumber', 'null', ],
+    [ 'lotNumber', 'an empty string', ],
+    [ 'targetPlantingDate', 'null', ],
+    [ 'targetPlantingDate', 'an empty string', ],
+    [ 'leadTimeWeeks', 'null', ],
+    [ 'leadTimeWeeks', 'an empty string', ],
+  ])('clears the %s when it is sent as %s', async (field, sentAs) => {
     await plantings.createPlanting('as: gardener', 'planting: row-one', 'plant: tomato');
-    await plantings.update('as: gardener', 'planting: row-one', 'seedSource: Saved from last year');
 
-    await plantings.checkFieldCanBeCleared('as: gardener', 'planting: row-one', 'seedSource: Saved from last year');
+    await plantings.checkFieldCanBeCleared('as: gardener', 'planting: row-one', `field: ${field}`, `sentAs: ${sentAs}`);
+  });
+
+  it('sets a lead time of 0', async () => {
+    await plantings.createPlanting('as: gardener', 'planting: row-one', 'plant: tomato');
+
+    await plantings.checkLeadTimeCanBeSetToZero('as: gardener', 'planting: row-one');
   });
 
   it('rejects updating a field the status does not allow', async () => {
@@ -165,6 +178,9 @@ describe('plantings', () => {
     'a transplant date with a time',
     'a sow date that does not exist',
     'a target date out of range',
+    'a blank name',
+    'no plant',
+    'an empty field its status does not allow',
   ])('rejects an update with %s', async problem => {
     await plantings.createPlanting('as: gardener', 'planting: row-one', 'plant: tomato');
 

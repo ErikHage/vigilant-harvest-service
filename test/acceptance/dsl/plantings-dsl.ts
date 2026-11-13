@@ -3,6 +3,7 @@ import { optional, parseDslArgs, required } from '@feral-auth/ts-simple-dsl';
 import { actor, alias } from './params';
 import { aPlanting, fixtureName } from '../support/fixtures';
 import {
+  CLEARABLE_PLANTING_FIELDS,
   NEW_PLANTING_PROBLEMS,
   PLANTING_ACTION_PROBLEMS,
   PLANTING_UPDATE_PROBLEMS,
@@ -55,8 +56,13 @@ export interface PlantingsDsl {
   checkPlantInUnknownPlotIsRejected(...args: string[]): Promise<void>,
   /** `as`, `planting`, `seedSource`. */
   update(...args: string[]): Promise<void>,
-  /** `as`, `planting`, `seedSource`, what it holds now. */
+  /**
+   * `as`, `planting`, a CREATED one, `field`, one of the driver's CLEARABLE_PLANTING_FIELDS, and
+   * `sentAs: null | an empty string`. Asserts sending the field empty clears it.
+   */
   checkFieldCanBeCleared(...args: string[]): Promise<void>,
+  /** `as`, `planting`, a CREATED one. Asserts a lead time of 0 is written. */
+  checkLeadTimeCanBeSetToZero(...args: string[]): Promise<void>,
   /** `as`, `planting`. Asserts a field its status doesn't allow is rejected. */
   checkUpdateOfFieldIsRejected(...args: string[]): Promise<void>,
   /** `as`, `plant`. */
@@ -285,13 +291,25 @@ export function createPlantingsDsl(world: World, plantings: PlantingsDriver): Pl
     },
 
     async checkFieldCanBeCleared(...args: string[]): Promise<void> {
-      const params = parseDslArgs(args, { as: actor(), planting: alias(), seedSource: required(), });
+      const params = parseDslArgs(args, {
+        as: actor(),
+        planting: alias(),
+        field: required().allowedValues(...CLEARABLE_PLANTING_FIELDS),
+        sentAs: required().allowedValues('null', 'an empty string'),
+      });
 
-      await plantings.updateToEmptyValueKeepsTheOldOne(
+      await plantings.updateToEmptyValueClearsField(
         await world.actorFor(params.as),
         world.plantingNamed(params.planting),
-        params.seedSource
+        params.field,
+        params.sentAs === 'null' ? null : ''
       );
+    },
+
+    async checkLeadTimeCanBeSetToZero(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), planting: alias(), });
+
+      await plantings.updateToZeroChangesLeadTime(await world.actorFor(params.as), world.plantingNamed(params.planting));
     },
 
     async checkUpdateOfFieldIsRejected(...args: string[]): Promise<void> {
