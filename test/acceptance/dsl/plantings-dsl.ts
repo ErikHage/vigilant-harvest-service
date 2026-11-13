@@ -25,6 +25,11 @@ export interface PlantingsDsl {
   checkNumberSown(...args: string[]): Promise<void>,
   /** `as`, `planting`, `year`. Asserts the year is among the planting's years. */
   checkInYear(...args: string[]): Promise<void>,
+  /**
+   * `as`, `planting`. Asserts both lists, by its year and with no year, give its history and years
+   * as reading it does.
+   */
+  checkListsAgreeWithTheRead(...args: string[]): Promise<void>,
   /** `as`, `planting`. Asserts it is listed among the plantings of its year. */
   checkListedInYear(...args: string[]): Promise<void>,
   /** `as`. */
@@ -145,6 +150,12 @@ export function createPlantingsDsl(world: World, plantings: PlantingsDriver): Pl
         world.plantingNamed(params.planting),
         world.yearNamed(params.year).plantingYear
       );
+    },
+
+    async checkListsAgreeWithTheRead(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), planting: alias(), });
+
+      await plantings.listsAgreeWithTheReadOf(await world.actorFor(params.as), world.plantingNamed(params.planting));
     },
 
     async checkListedInYear(...args: string[]): Promise<void> {

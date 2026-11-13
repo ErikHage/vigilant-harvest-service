@@ -134,6 +134,9 @@ const plantings = {
   deleteById: 'DELETE FROM plantings WHERE planting_id = ?',
 };
 
+/** `count` parameters, for an IN list. */
+const placeholders = (count: number): string => Array(count).fill('?').join(', ');
+
 const yearMapping = {
   insert: 'INSERT INTO planting_planting_years (planting_id, planting_year) ' +
     'VALUES (?, ?)',
@@ -152,7 +155,15 @@ const yearMapping = {
   getById: `
     SELECT planting_id, planting_year
       FROM planting_planting_years
-     WHERE planting_id = (?)`,
+     WHERE planting_id = (?)
+     ORDER BY planting_year`,
+
+  // for a list: every listed planting's years at once, in the order a single read gives them
+  getByPlantingIds: (count: number): string => `
+    SELECT planting_id, planting_year
+      FROM planting_planting_years
+     WHERE planting_id IN (${placeholders(count)})
+     ORDER BY planting_year`,
 };
 
 const plantingStatusHistory = {
@@ -174,7 +185,14 @@ const plantingStatusHistory = {
 
   getByPlantingId: `SELECT ${allPlantingHistoryFields}
                     FROM planting_status_history
-                    WHERE planting_id = ?`,
+                    WHERE planting_id = ?
+                    ORDER BY planting_history_id`,
+
+  // for a list: every listed planting's history at once, in the order a single read gives it
+  getByPlantingIds: (count: number): string => `SELECT ${allPlantingHistoryFields}
+                     FROM planting_status_history
+                     WHERE planting_id IN (${placeholders(count)})
+                     ORDER BY planting_history_id`,
 };
 
 export default {

@@ -253,7 +253,7 @@ async function getPlantingsByYear(plantingYear: number): Promise<Planting[]> {
 
   const results: PlantingRow[] = await db.execQuery<PlantingRow[]>(query);
 
-  return results.map(plantingRow => rowMapper.plantings.fromRow(plantingRow, [], []));
+  return await _withHistoryAndYears(results);
 }
 
 async function getPlantingIdsToCarryForward(plantingYear: number): Promise<string[]> {
@@ -277,7 +277,42 @@ async function getPlantings(): Promise<Planting[]> {
 
   const results: PlantingRow[] = await db.execQuery<PlantingRow[]>(query);
 
-  return results.map(plantingRow => rowMapper.plantings.fromRow(plantingRow, [], []));
+  return await _withHistoryAndYears(results);
+}
+
+/**
+ * The listed plantings, each with its history and its years, as a single read gives them: two
+ * queries for the whole list, rather than two for each planting.
+ */
+async function _withHistoryAndYears(rows: PlantingRow[]): Promise<Planting[]> {
+  if (rows.length === 0) {
+    return [];
+  }
+
+  const plantingIds = rows.map(row => row.planting_id);
+  const historyRows = await db.execQuery<PlantingStatusHistoryRow[]>({
+    sql: queries.plantingStatusHistory.getByPlantingIds(plantingIds.length),
+    params: plantingIds,
+  });
+  const yearRows = await db.execQuery<PlantingPlantingYearRow[]>({
+    sql: queries.yearMapping.getByPlantingIds(plantingIds.length),
+    params: plantingIds,
+  });
+  const historyById = _byPlantingId(historyRows);
+  const yearsById = _byPlantingId(yearRows);
+
+  return rows.map(row => rowMapper.plantings.fromRow(
+    row,
+    historyById.get(row.planting_id) ?? [],
+    yearsById.get(row.planting_id) ?? []));
+}
+
+function _byPlantingId<T extends { planting_id: string }>(rows: T[]): Map<string, T[]> {
+  const byId = new Map<string, T[]>();
+
+  rows.forEach(row => byId.set(row.planting_id, [ ...(byId.get(row.planting_id) ?? []), row, ]));
+
+  return byId;
 }
 
 async function getPlanningPlantings(year: number, status: string): Promise<PlanningPlanting[]> {

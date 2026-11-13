@@ -238,6 +238,11 @@ export interface PlantingsDriver {
   getReportsYear(caller: Actor, planting: CreatedPlanting, plantingYear: number): Promise<void>,
   getIsNotFoundFor(caller: Actor): Promise<void>,
   listForYearIncludes(caller: Actor, planting: CreatedPlanting): Promise<void>,
+  /**
+   * The planting as both lists give it, by its year and with no year, has the
+   * same history and years as reading it on its own.
+   */
+  listsAgreeWithTheReadOf(caller: Actor, planting: CreatedPlanting): Promise<void>,
   listForNonNumericYearIsRejectedAsBadRequest(caller: Actor): Promise<void>,
   /** Finds a planting the service made itself, by name, among the ones in that year. */
   plantingNamedInYear(caller: Actor, name: string, plantingYear: number): Promise<CreatedPlanting>,
@@ -423,6 +428,23 @@ export function createPlantingsDriver(client: HttpClient, registry: ResourceRegi
         status.NOT_FOUND,
         'updating a planting that does not exist'
       );
+    },
+
+    async listsAgreeWithTheReadOf(caller: Actor, planting: CreatedPlanting): Promise<void> {
+      const what = `comparing planting "${planting.name}" in the lists with reading it`;
+      const read = (await get(caller, planting, `${what}: reading it`)).body as Record<string, unknown>;
+      const expected = JSON.stringify({ statusHistory: read.statusHistory, plantingYears: read.plantingYears, });
+
+      for (const path of [ `/plantings?plantingYear=${planting.plantingYear}`, '/plantings', ]) {
+        const response = await as(caller).get(path);
+
+        expectStatus(response, status.OK, `${what}: ${path}`);
+
+        const entry = expectListEntries(response, what).find(each => each.plantingId === planting.plantingId);
+        const listed = JSON.stringify({ statusHistory: entry?.statusHistory, plantingYears: entry?.plantingYears, });
+
+        expectThat(entry !== undefined && listed === expected, `in ${path}, ${expected}`, response, what);
+      }
     },
 
     async listForYearIncludes(caller: Actor, planting: CreatedPlanting): Promise<void> {

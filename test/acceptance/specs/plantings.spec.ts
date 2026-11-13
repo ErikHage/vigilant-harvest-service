@@ -16,6 +16,16 @@ describe('plantings', () => {
     await plantings.checkListedInYear('as: gardener', 'planting: row-one');
   });
 
+  // Two plantings, so the lists must keep each one's history and years apart
+  it('lists a planting with its history and years, by year and with no year', async () => {
+    await plantings.createPlanting('as: gardener', 'planting: row-one', 'plant: tomato');
+    await plantings.createPlanting('as: gardener', 'planting: row-two', 'plant: tomato');
+    await plantings.start('as: gardener', 'planting: row-one', 'numberSown: 4');
+
+    await plantings.checkListsAgreeWithTheRead('as: gardener', 'planting: row-one');
+    await plantings.checkListsAgreeWithTheRead('as: gardener', 'planting: row-two');
+  });
+
   it('moves through its lifecycle, recording each step', async () => {
     await plots.createPlot('as: gardener', 'plot: north-bed');
     await plantings.createPlanting('as: gardener', 'planting: row-one', 'plant: tomato');
