@@ -9,6 +9,10 @@ import getApp from './app';
 import schemaUtils from './util/schema-utils';
 import utils from './util/utilities';
 import mysqlConnection from './database/mysql-connection';
+import { getLogger } from './logging';
+import { ensureError } from './errors';
+
+const logger = getLogger('server');
 
 const onError = (port: string) => (error: any) => {
   if (error.syscall !== 'listen') {
@@ -77,4 +81,14 @@ const initApp = async () => {
   process.on('SIGINT', shutDown);
 };
 
-initApp();
+// A promise nothing waits on, rejected: logged with its stack, then the process ends, as node's own
+// default would, but through the service's logger rather than a bare stack on stderr
+process.on('unhandledRejection', reason => {
+  logger.fatal(ensureError(reason), 'Unhandled promise rejection; exiting');
+  process.exit(1);
+});
+
+initApp().catch(err => {
+  logger.fatal(ensureError(err), 'Error starting the service; exiting');
+  process.exit(1);
+});
