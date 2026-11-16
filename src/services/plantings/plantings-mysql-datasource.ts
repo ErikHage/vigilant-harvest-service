@@ -256,10 +256,15 @@ async function getPlantingsByYear(plantingYear: number): Promise<Planting[]> {
   return await _withHistoryAndYears(results);
 }
 
-async function getPlantingIdsToCarryForward(plantingYear: number): Promise<string[]> {
+/** Which of `plantingIds` are planted plantings of `plantingYear`, so may be carried forward from it. */
+async function getCarryForwardablePlantingIds(plantingYear: number, plantingIds: string[]): Promise<string[]> {
+  if (plantingIds.length === 0) {
+    return [];
+  }
+
   const query: QueryPayload = {
-    sql: queries.plantings.getCarryForward,
-    params: [ plantingYear, ],
+    sql: queries.plantings.getCarryForwardable(plantingIds.length),
+    params: [ plantingYear, ...plantingIds, ],
   };
 
   const results: PlantingIdRow[] = await db.execQuery<PlantingIdRow[]>(query);
@@ -366,7 +371,7 @@ export default {
   getPlantingById,
   getPlantingsBreakdown,
   getPlantingsByYear,
-  getPlantingIdsToCarryForward,
+  getCarryForwardablePlantingIds,
   getPlantings,
   getPlanningPlantings,
   countHarvestsByPlantingId,

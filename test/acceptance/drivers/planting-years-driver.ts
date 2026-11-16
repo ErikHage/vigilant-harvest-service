@@ -24,6 +24,9 @@ export const NEW_YEAR_PROBLEMS = [
   'a last frost date with a time',
   'a target date that does not exist',
   'a last frost date out of range',
+  'a previous year but no carry-forward list',
+  'a carry-forward list without a previous year',
+  'a planting carried forward twice',
 ] as const;
 
 export type NewYearProblem = (typeof NEW_YEAR_PROBLEMS)[number];
@@ -65,6 +68,19 @@ const invalidYears: Record<NewYearProblem, { body: (good: NewPlantingYear) => ob
     body: good => ({ ...good, lastFrostDate: '0999-05-01', }),
     reason: 'lastFrostDate must be between 1000 and 9999',
   },
+  // the client says what it carries, even if that is nothing, so an old one can't carry by default
+  'a previous year but no carry-forward list': {
+    body: good => withoutField(good, 'carryForwardPlantingIds'),
+    reason: 'carryForwardPlantingIds is required',
+  },
+  'a carry-forward list without a previous year': {
+    body: good => ({ ...withoutField(good, 'previousPlantingYear'), carryForwardPlantingIds: [ 'some-planting', ], }),
+    reason: 'carryForwardPlantingIds must be empty without a previousPlantingYear',
+  },
+  'a planting carried forward twice': {
+    body: good => ({ ...good, carryForwardPlantingIds: [ 'some-planting', 'some-planting', ], }),
+    reason: 'carryForwardPlantingIds lists a planting more than once',
+  },
 };
 
 export interface PlantingYearsDriver {
@@ -80,6 +96,8 @@ export interface PlantingYearsDriver {
   deleteRemovesYear(caller: Actor, year: CreatedPlantingYear): Promise<void>,
   createOfInvalidYearIsRejectedAsBadRequest(caller: Actor, good: NewPlantingYear, problem: NewYearProblem): Promise<void>,
   createAsTheAppSendsItSucceeds(caller: Actor, good: NewPlantingYear): Promise<void>,
+  /** Carrying forward plantings that aren't planted plantings of the previous year; the year isn't made. */
+  createCarryingForwardIsRejectedAsBadRequest(caller: Actor, input: NewPlantingYear, plantingNames: string[]): Promise<void>,
 }
 
 export function createPlantingYearsDriver(client: HttpClient, registry: ResourceRegistry): PlantingYearsDriver {
@@ -125,6 +143,23 @@ export function createPlantingYearsDriver(client: HttpClient, registry: Resource
 
       registerIfCreated(response, good.plantingYear);
       expectStatus(response, status.CREATED, what);
+    },
+
+    async createCarryingForwardIsRejectedAsBadRequest(
+      caller: Actor,
+      input: NewPlantingYear,
+      plantingNames: string[]
+    ): Promise<void> {
+      const what = `creating planting year ${input.plantingYear}, carrying forward ${plantingNames.join(', ')}`;
+      const response = await as(caller).put('/planting-years', input);
+
+      registerIfCreated(response, input.plantingYear);
+      expectRejection(response, status.BAD_REQUEST, "can't be carried forward", what);
+      expectStatus(
+        await as(caller).get(`/planting-years/${input.plantingYear}`),
+        status.NOT_FOUND,
+        `${what}: re-reading the year`
+      );
     },
 
     async listYears(caller: Actor): Promise<number[]> {
@@ -194,6 +229,7 @@ export function createPlantingYearsDriver(client: HttpClient, registry: Resource
       const response = await as(caller).put('/planting-years', {
         plantingYear: year.plantingYear,
         previousPlantingYear: year.plantingYear - 1,
+        carryForwardPlantingIds: [],
         lastFrostDate: `${year.plantingYear}-05-01`,
         targetPlantingDate: `${year.plantingYear}-05-15`,
       });

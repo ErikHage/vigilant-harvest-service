@@ -2,6 +2,7 @@ import { RowDataPacket } from 'mysql2';
 
 export interface PlantingYearRequest {
   previousPlantingYear?: number, // int; none carries nothing forward
+  carryForwardPlantingIds: string[], // planted plantings of previousPlantingYear; empty without one
   plantingYear: number, // int
   lastFrostDate: string, // YYYY-MM-DD
   targetPlantingDate: string, // YYYY-MM-DD

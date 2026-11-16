@@ -236,6 +236,7 @@ export interface PlantingsDriver {
   getReportsHistoryCount(caller: Actor, planting: CreatedPlanting, entries: number): Promise<void>,
   getReportsNumberSown(caller: Actor, planting: CreatedPlanting, numberSown: number): Promise<void>,
   getReportsYear(caller: Actor, planting: CreatedPlanting, plantingYear: number): Promise<void>,
+  getOmitsYear(caller: Actor, planting: CreatedPlanting, plantingYear: number): Promise<void>,
   getIsNotFoundFor(caller: Actor): Promise<void>,
   listForYearIncludes(caller: Actor, planting: CreatedPlanting): Promise<void>,
   /**
@@ -414,6 +415,14 @@ export function createPlantingsDriver(client: HttpClient, registry: ResourceRegi
       const { plantingYears, } = response.body as { plantingYears: number[] };
 
       expectThat(plantingYears.includes(plantingYear), `${plantingYear} among its years`, response, what);
+    },
+
+    async getOmitsYear(caller: Actor, planting: CreatedPlanting, plantingYear: number): Promise<void> {
+      const what = `reading the years of planting "${planting.name}"`;
+      const response = await get(caller, planting, what);
+      const { plantingYears, } = response.body as { plantingYears: number[] };
+
+      expectThat(!plantingYears.includes(plantingYear), `${plantingYear} not among its years`, response, what);
     },
 
     async getIsNotFoundFor(caller: Actor): Promise<void> {

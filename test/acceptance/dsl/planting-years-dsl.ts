@@ -6,8 +6,13 @@ import { NEW_YEAR_PROBLEMS, PlantingYearsDriver } from '../drivers/planting-year
 import { World } from './world';
 
 export interface PlantingYearsDsl {
-  /** `as`, `year`, the alias; the real year is chosen from the test range. Optional `previous`, a year to carry from. */
+  /**
+   * `as`, `year`, the alias; the real year is chosen from the test range. Optional `previous`, a year
+   * to carry from, and `carry`, the plantings carried forward from it, separated by commas.
+   */
   createYear(...args: string[]): Promise<void>,
+  /** `as`, `previous`, `carry`: plantings that can't be carried forward from that year. */
+  checkCarryForwardIsRejected(...args: string[]): Promise<void>,
   /** `as`, `year`. */
   checkYear(...args: string[]): Promise<void>,
   /** `as`, `year`. */
@@ -33,14 +38,42 @@ export interface PlantingYearsDsl {
 export function createPlantingYearsDsl(world: World, plantingYears: PlantingYearsDriver): PlantingYearsDsl {
   return {
     async createYear(...args: string[]): Promise<void> {
-      const params = parseDslArgs(args, { as: actor(), year: alias(), previous: optional(), });
+      const params = parseDslArgs(args, {
+        as: actor(),
+        year: alias(),
+        previous: optional(),
+        carry: optional().multiple({ separator: ',', }),
+      });
+      if (params.previous === undefined && params.carry.length > 0) {
+        throw new Error(`createYear: 'carry: ${params.carry.join(', ')}' needs a 'previous:' year to carry from`);
+      }
       const caller = await world.actorFor(params.as);
       const previous = params.previous === undefined ? {} : {
         previousPlantingYear: world.yearNamed(params.previous).plantingYear,
+        carryForwardPlantingIds: params.carry.map(name => world.plantingNamed(name).plantingId),
       };
       const input = aPlantingYear(await world.unusedYear(caller), previous);
 
       world.nameYear(params.year, await plantingYears.createYear(caller, input));
+    },
+
+    async checkCarryForwardIsRejected(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, {
+        as: actor(),
+        previous: alias(),
+        carry: required().multiple({ separator: ',', }),
+      });
+      const caller = await world.actorFor(params.as);
+      const input = aPlantingYear(await world.unusedYear(caller), {
+        previousPlantingYear: world.yearNamed(params.previous).plantingYear,
+        carryForwardPlantingIds: params.carry.map(name => world.plantingNamed(name).plantingId),
+      });
+
+      await plantingYears.createCarryingForwardIsRejectedAsBadRequest(
+        caller,
+        input,
+        params.carry.map(name => world.plantingNamed(name).name)
+      );
     },
 
     async checkInvalidYearIsRejected(...args: string[]): Promise<void> {

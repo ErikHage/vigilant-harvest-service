@@ -41,16 +41,55 @@ describe('planting years', () => {
     await plantingYears.checkYearMustBeANumber('as: gardener');
   });
 
-  it('carries the planted plantings of the previous year into a new one', async () => {
+  it('carries forward only the planted plantings it is given', async () => {
     await plantingYears.createYear('as: gardener', 'year: last-season');
-    await plants.createPlant('as: gardener', 'plant: tomato');
+    await plants.createPlant('as: gardener', 'plant: asparagus');
     await plots.createPlot('as: gardener', 'plot: north-bed');
-    await plantings.createPlanting('as: gardener', 'planting: row-one', 'plant: tomato', 'year: last-season');
-    await plantings.plant('as: gardener', 'planting: row-one', 'plot: north-bed', 'numberTransplanted: 4');
+    await plantings.createPlanting('as: gardener', 'planting: perennial', 'plant: asparagus', 'year: last-season');
+    await plantings.createPlanting('as: gardener', 'planting: annual', 'plant: asparagus', 'year: last-season');
+    await plantings.plant('as: gardener', 'planting: perennial', 'plot: north-bed', 'numberTransplanted: 4');
+    await plantings.plant('as: gardener', 'planting: annual', 'plot: north-bed', 'numberTransplanted: 4');
+
+    await plantingYears.createYear('as: gardener', 'year: this-season', 'previous: last-season', 'carry: perennial');
+
+    await plantings.checkInYear('as: gardener', 'planting: perennial', 'year: this-season');
+    await plantings.checkNotInYear('as: gardener', 'planting: annual', 'year: this-season');
+  });
+
+  it('carries nothing forward when given an empty list', async () => {
+    await plantingYears.createYear('as: gardener', 'year: last-season');
+    await plants.createPlant('as: gardener', 'plant: asparagus');
+    await plots.createPlot('as: gardener', 'plot: north-bed');
+    await plantings.createPlanting('as: gardener', 'planting: perennial', 'plant: asparagus', 'year: last-season');
+    await plantings.plant('as: gardener', 'planting: perennial', 'plot: north-bed', 'numberTransplanted: 4');
 
     await plantingYears.createYear('as: gardener', 'year: this-season', 'previous: last-season');
 
-    await plantings.checkInYear('as: gardener', 'planting: row-one', 'year: this-season');
+    await plantings.checkNotInYear('as: gardener', 'planting: perennial', 'year: this-season');
+    await plantingYears.checkDetails('as: gardener', 'year: last-season', 'planted: 1');
+  });
+
+  it('rejects carrying forward a planting of another year', async () => {
+    await plantingYears.createYear('as: gardener', 'year: last-season');
+    await plantingYears.createYear('as: gardener', 'year: long-ago');
+    await plants.createPlant('as: gardener', 'plant: asparagus');
+    await plots.createPlot('as: gardener', 'plot: north-bed');
+    await plantings.createPlanting('as: gardener', 'planting: elsewhere', 'plant: asparagus', 'year: long-ago');
+    await plantings.plant('as: gardener', 'planting: elsewhere', 'plot: north-bed', 'numberTransplanted: 4');
+
+    await plantingYears.checkCarryForwardIsRejected('as: gardener', 'previous: last-season', 'carry: elsewhere');
+  });
+
+  it('rejects carrying forward a planting that was never planted', async () => {
+    await plantingYears.createYear('as: gardener', 'year: last-season');
+    await plants.createPlant('as: gardener', 'plant: asparagus');
+    await plots.createPlot('as: gardener', 'plot: north-bed');
+    await plantings.createPlanting('as: gardener', 'planting: perennial', 'plant: asparagus', 'year: last-season');
+    await plantings.createPlanting('as: gardener', 'planting: indoors', 'plant: asparagus', 'year: last-season');
+    await plantings.plant('as: gardener', 'planting: perennial', 'plot: north-bed', 'numberTransplanted: 4');
+    await plantings.start('as: gardener', 'planting: indoors', 'numberSown: 4');
+
+    await plantingYears.checkCarryForwardIsRejected('as: gardener', 'previous: last-season', 'carry: perennial, indoors');
   });
 
   // A new harvest is filed under its planting's current year, which carrying
@@ -61,7 +100,8 @@ describe('planting years', () => {
     await plots.createPlot('as: gardener', 'plot: north-bed');
     await plantings.createPlanting('as: gardener', 'planting: row-one', 'plant: tomato', 'year: last-season');
     await plantings.plant('as: gardener', 'planting: row-one', 'plot: north-bed', 'numberTransplanted: 4');
-    await plantingYears.createYear('as: gardener', 'year: this-season', 'previous: last-season');
+    await plantingYears.createYear('as: gardener', 'year: this-season', 'previous: last-season',
+      'carry: row-one');
 
     await harvests.recordHarvest('as: gardener', 'harvest: first', 'planting: row-one', 'quantity: 2');
 
@@ -78,7 +118,8 @@ describe('planting years', () => {
     await plantings.createPlanting('as: gardener', 'planting: row-one', 'plant: tomato', 'year: last-season');
     await plantings.plant('as: gardener', 'planting: row-one', 'plot: north-bed', 'numberTransplanted: 4');
 
-    await plantingYears.createYear('as: gardener', 'year: this-season', 'previous: last-season');
+    await plantingYears.createYear('as: gardener', 'year: this-season', 'previous: last-season',
+      'carry: row-one');
 
     await plantingYears.checkDetails('as: gardener', 'year: this-season', 'planted: 1');
     await plantingYears.checkDetails('as: gardener', 'year: last-season');

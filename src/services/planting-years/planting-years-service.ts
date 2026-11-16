@@ -3,14 +3,32 @@ import { NewPlantingYear, PlantingYear, PlantingYearRequest, PlantingYearUsage }
 import datasource from './planting-years-mysql-datasource';
 import plantingsDatasource from '../plantings/plantings-mysql-datasource';
 import { ensureError, FeralError } from '../../errors';
-import { ConflictError } from '../../errors/common';
+import { BadRequestError, ConflictError } from '../../errors/common';
+
+// the client chooses what to carry forward, from the previous year's planted plantings; anything
+// else it names is its mistake, reported by id rather than carried
+async function checkCarryForward({ previousPlantingYear, carryForwardPlantingIds, }: PlantingYearRequest): Promise<void> {
+  if (previousPlantingYear === undefined || carryForwardPlantingIds.length === 0) {
+    return;
+  }
+
+  const carryable = new Set(
+    await plantingsDatasource.getCarryForwardablePlantingIds(previousPlantingYear, carryForwardPlantingIds));
+  const notCarryable = carryForwardPlantingIds.filter(id => !carryable.has(id));
+
+  if (notCarryable.length > 0) {
+    throw new BadRequestError(
+      `Not planted plantings of ${previousPlantingYear}, so can't be carried forward: ${notCarryable.join(', ')}`)
+      .withDebugParams({ previousPlantingYear, carryForwardPlantingIds, });
+  }
+}
 
 async function insertPlantingYear(plantingYearRequest: PlantingYearRequest): Promise<PlantingYear> {
+  // outside the try, which would turn the client's mistake into a 500
+  await checkCarryForward(plantingYearRequest);
+
   try {
-    const { previousPlantingYear, } = plantingYearRequest;
-    const carryForwardPlantingIds: string[] = previousPlantingYear === undefined
-      ? []
-      : await plantingsDatasource.getPlantingIdsToCarryForward(previousPlantingYear);
+    const { carryForwardPlantingIds, } = plantingYearRequest;
 
     const plantingYear: NewPlantingYear = {
       plantingYear: plantingYearRequest.plantingYear,

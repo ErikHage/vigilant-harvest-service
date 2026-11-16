@@ -63,6 +63,7 @@ export interface NewPlot {
 export interface NewPlantingYear {
   plantingYear: number,
   previousPlantingYear: number,
+  carryForwardPlantingIds: string[],
   lastFrostDate: string,
   targetPlantingDate: string,
 }
@@ -171,6 +172,7 @@ export function aPlantingYear(plantingYear: number, overrides: Partial<NewPlanti
     plantingYear,
     // A year with nothing in it, so that nothing carries forward by accident.
     previousPlantingYear: plantingYear - 1,
+    carryForwardPlantingIds: [],
     lastFrostDate: `${plantingYear}-05-01`,
     targetPlantingDate: `${plantingYear}-05-15`,
     ...overrides,

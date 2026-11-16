@@ -96,14 +96,16 @@ const plantings = {
                 ON ppy.planting_id = p.planting_id
               WHERE ppy.planting_year = ?`,
 
-  getCarryForward: `SELECT p.planting_id
-                      FROM plantings p
-                      JOIN planting_planting_years ppy
-                        ON ppy.planting_id = p.planting_id
-                      JOIN plants pl
-                        ON pl.plant_id = p.plant_id
-                     WHERE ppy.planting_year = ?
-                       AND p.current_status = 'planted'`,
+  // of the listed plantings, the ones that may be carried forward from a year:
+  // planted, and in that year
+  getCarryForwardable: (count: number): string => `
+    SELECT p.planting_id
+      FROM plantings p
+      JOIN planting_planting_years ppy
+        ON ppy.planting_id = p.planting_id
+     WHERE ppy.planting_year = ?
+       AND p.current_status = 'planted'
+       AND p.planting_id IN (${placeholders(count)})`,
 
   getAll: `SELECT ${allPlantingFields}
            FROM plantings p`,
