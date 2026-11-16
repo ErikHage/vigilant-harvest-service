@@ -28,8 +28,9 @@ env:
   IMAGE: ehage/vigilant-harvest-service
 
 jobs:
-  # Lint and the unit suite, on the Node the image runs (node:24-alpine). The
-  # acceptance suite needs a running service and database, so it isn't run here
+  # Lint, and the unit suite type-checked and run, on the Node the image runs
+  # (node:24-alpine). The acceptance suite needs a running service and
+  # database, so it isn't run here
   checks:
     runs-on: ubuntu-latest
     steps:
@@ -47,6 +48,9 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - run: npm run lint
+
+      # vitest doesn't type-check, so a type error in a spec needs this
+      - run: npm run tsc:unit
 
       - run: npm run test:unit
 
