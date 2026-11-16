@@ -1,12 +1,14 @@
 name: Docker image
 
-# Builds the image on every push and pull request, and pushes it to Docker Hub
-# from master only, as ehage/vigilant-harvest-service:latest and :sha-<commit>.
+# Runs lint and the unit tests on every push and pull request, then, if they
+# pass, builds the image, and pushes it to Docker Hub from master only, as
+# ehage/vigilant-harvest-service:latest and :sha-<commit>.
 #
 # Repository secrets:
 #   NPM_TOKEN        npm granular token, read-only, for the private
-#                    @feral-auth packages. It reaches the build only as a
-#                    BuildKit secret, so it's in no layer of the image.
+#                    @feral-auth packages. The checks job's npm ci reads it
+#                    from the environment; it reaches the image build only
+#                    as a BuildKit secret, so it's in no layer of the image.
 #   DOCKERHUB_TOKEN  Docker Hub access token for ehage, Read & Write.
 
 on:
@@ -26,7 +28,31 @@ env:
   IMAGE: ehage/vigilant-harvest-service
 
 jobs:
+  # Lint and the unit suite, on the Node the image runs (node:24-alpine). The
+  # acceptance suite needs a running service and database, so it isn't run here
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # registry-url writes an .npmrc that reads the token from NODE_AUTH_TOKEN
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          cache: npm
+
+      - run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - run: npm run lint
+
+      - run: npm run test:unit
+
+  # Only once lint and the unit tests have passed
   image:
+    needs: checks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
