@@ -2,7 +2,13 @@ import { optional, parseDslArgs, required } from '@feral-auth/ts-simple-dsl';
 
 import { actor, alias } from './params';
 import { aHarvest } from '../support/fixtures';
-import { HARVEST_SAVE_PROBLEMS, HarvestsDriver } from '../drivers/harvests-driver';
+import {
+  HARVEST_SAVE_PROBLEMS,
+  HARVEST_SEARCH_PROBLEMS,
+  HarvestsDriver,
+  ID_LIST_FORMS,
+  SearchFilters
+} from '../drivers/harvests-driver';
 import { World } from './world';
 
 export interface HarvestsDsl {
@@ -43,6 +49,17 @@ export interface HarvestsDsl {
   checkPlantStatsSayTheyAreForPlants(...args: string[]): Promise<void>,
   /** `as`. */
   checkSearchNeedsAYear(...args: string[]): Promise<void>,
+  /**
+   * `as`, `yearOf`, a planting, for its year, optional `plants` or `plantings`, aliases separated
+   * by commas, optional `sent: separated by commas | as repeated keys` for how those go, optional
+   * `from` and `to`, and `finds`, harvest aliases. Narrowed by plant or planting, asserts it finds
+   * exactly those; by day alone, that it keeps to the days, finds those and not optional `misses`.
+   */
+  checkSearchFinds(...args: string[]): Promise<void>,
+  /** `as`, `yearOf`, a planting, for its year. Asserts a search for a plant that doesn't exist finds nothing. */
+  checkSearchOfUnknownPlantFindsNothing(...args: string[]): Promise<void>,
+  /** `as`, `yearOf`, a planting, for its year, `problem`, one of the driver's HARVEST_SEARCH_PROBLEMS. */
+  checkInvalidSearchIsRejected(...args: string[]): Promise<void>,
   /** `as`. Search, summary and stats each reject a year that isn't a number. */
   checkYearMustBeANumber(...args: string[]): Promise<void>,
   /** `as`. */
@@ -253,6 +270,62 @@ export function createHarvestsDsl(world: World, harvests: HarvestsDriver): Harve
       const params = parseDslArgs(args, { as: actor(), });
 
       await harvests.searchWithoutYearIsRejectedAsBadRequest(await world.actorFor(params.as));
+    },
+
+    async checkSearchFinds(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, {
+        as: actor(),
+        yearOf: alias(),
+        plants: optional().multiple({ separator: ',', }),
+        plantings: optional().multiple({ separator: ',', }),
+        sent: optional().allowedValues(...ID_LIST_FORMS),
+        from: optional(),
+        to: optional(),
+        finds: alias().multiple({ separator: ',', }),
+        misses: optional().multiple({ separator: ',', }),
+      });
+      const caller = await world.actorFor(params.as);
+      const filters: SearchFilters = {
+        year: world.plantingNamed(params.yearOf).plantingYear,
+        ...(params.plants.length === 0 ? {} : { plantIds: params.plants.map(name => world.plantNamed(name).plantId), }),
+        ...(params.plantings.length === 0
+          ? {}
+          : { plantingIds: params.plantings.map(name => world.plantingNamed(name).plantingId), }),
+        ...(params.from === undefined ? {} : { from: params.from, }),
+        ...(params.to === undefined ? {} : { to: params.to, }),
+        ...(params.sent === undefined ? {} : { idsSent: params.sent, }),
+      };
+      const found = params.finds.map(name => world.harvestNamed(name));
+
+      if (filters.plantIds !== undefined || filters.plantingIds !== undefined) {
+        await harvests.searchFindsOnly(caller, filters, found);
+      } else {
+        await harvests.searchKeepsToTheDays(caller, filters, found, params.misses.map(name => world.harvestNamed(name)));
+      }
+    },
+
+    async checkSearchOfUnknownPlantFindsNothing(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, { as: actor(), yearOf: alias(), });
+
+      await harvests.searchFindsOnly(
+        await world.actorFor(params.as),
+        { year: world.plantingNamed(params.yearOf).plantingYear, plantIds: [ 'no-such-plant', ], },
+        []
+      );
+    },
+
+    async checkInvalidSearchIsRejected(...args: string[]): Promise<void> {
+      const params = parseDslArgs(args, {
+        as: actor(),
+        yearOf: alias(),
+        problem: required().allowedValues(...HARVEST_SEARCH_PROBLEMS),
+      });
+
+      await harvests.searchWithInvalidFiltersIsRejectedAsBadRequest(
+        await world.actorFor(params.as),
+        world.plantingNamed(params.yearOf).plantingYear,
+        params.problem
+      );
     },
 
     async checkYearMustBeANumber(...args: string[]): Promise<void> {

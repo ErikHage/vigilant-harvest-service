@@ -1,3 +1,6 @@
+import { HarvestSearchRequest } from './types';
+import { QueryPayload } from '../../database/types';
+
 const allHarvestFields: string =
   'h.harvest_id, h.planting_id, h.quantity, h.harvest_date, h.harvest_type_id, ht.harvest_type_name';
 
@@ -49,12 +52,46 @@ const getHarvestSummary: string =
     WHERE h.planting_year = ?
     GROUP BY h.planting_year, h.planting_id, h.harvest_type_id, ht.harvest_type_name`;
 
-const searchHarvests: string =
-  `SELECT ${allHarvestFields}
+function placeholders(values: unknown[]): string {
+  return values.map(() => '?').join(', ');
+}
+
+function searchHarvests(request: HarvestSearchRequest): QueryPayload {
+  const conditions: string[] = [ 'h.planting_year = ?', ];
+  const params: Array<string | number> = [ request.year, ];
+
+  if (request.plantIds !== undefined) {
+    conditions.push(`p.plant_id IN (${placeholders(request.plantIds)})`);
+    params.push(...request.plantIds);
+  }
+  if (request.plantingIds !== undefined) {
+    conditions.push(`h.planting_id IN (${placeholders(request.plantingIds)})`);
+    params.push(...request.plantingIds);
+  }
+  if (request.from !== undefined) {
+    conditions.push('h.harvest_date >= ?');
+    params.push(request.from);
+  }
+  if (request.to !== undefined) {
+    conditions.push('h.harvest_date <= ?');
+    params.push(request.to);
+  }
+
+  const plantingJoin = request.plantIds === undefined
+    ? ''
+    : `JOIN plantings p
+       ON p.planting_id = h.planting_id`;
+
+  return {
+    sql: `SELECT ${allHarvestFields}
      FROM harvests h
      ${harvestTypeJoin}
-    WHERE h.planting_year = ?
-   ORDER BY h.harvest_date DESC, h.date_created DESC`;
+     ${plantingJoin}
+    WHERE ${conditions.join('\n      AND ')}
+   ORDER BY h.harvest_date DESC, h.date_created DESC`,
+    params,
+  };
+}
 
 const getHydratedHarvestsByYear: string =
   `SELECT h.harvest_id, h.planting_id, p.planting_name, pl.plant_id, pt.friendly_name as plot_name,

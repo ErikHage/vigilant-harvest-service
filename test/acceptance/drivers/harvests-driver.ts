@@ -122,6 +122,96 @@ const invalidSaves: Record<HarvestSaveProblem, { body: (good: NewHarvest) => obj
   },
 };
 
+/** How a list of ids goes in a search's query: in one value, or with a key for each. */
+export const ID_LIST_FORMS = [ 'separated by commas', 'as repeated keys', ] as const;
+
+export type IdListForm = (typeof ID_LIST_FORMS)[number];
+
+/** A year's search, narrowed by any of the rest. */
+export interface SearchFilters {
+  year: number,
+  plantIds?: string[],
+  plantingIds?: string[],
+  from?: string,
+  to?: string,
+  idsSent?: IdListForm,
+}
+
+function searchPath(filters: SearchFilters): string {
+  const pairs: [string, string][] = [ [ 'year', String(filters.year), ], ];
+  const addIds = (key: string, ids: string[] | undefined): void => {
+    if (ids === undefined) {
+      return;
+    }
+    if (filters.idsSent === 'as repeated keys') {
+      ids.forEach(id => pairs.push([ key, id, ]));
+    } else {
+      pairs.push([ key, ids.join(','), ]);
+    }
+  };
+
+  addIds('plantId', filters.plantIds);
+  addIds('plantingId', filters.plantingIds);
+  if (filters.from !== undefined) {
+    pairs.push([ 'from', filters.from, ]);
+  }
+  if (filters.to !== undefined) {
+    pairs.push([ 'to', filters.to, ]);
+  }
+
+  return `/harvests/search?${new URLSearchParams(pairs).toString()}`;
+}
+
+function describeSearch(filters: SearchFilters): string {
+  return [
+    `searching ${filters.year}`,
+    filters.plantIds && `for plants ${filters.plantIds.join(', ')}`,
+    filters.plantingIds && `for plantings ${filters.plantingIds.join(', ')}`,
+    filters.from && `from ${filters.from}`,
+    filters.to && `to ${filters.to}`,
+    filters.idsSent,
+  ].filter(Boolean).join(' ');
+}
+
+/** Ways a search can be wrong. Each is a test of its own. */
+export const HARVEST_SEARCH_PROBLEMS = [
+  'a blank plant',
+  'a blank planting in a list',
+  'a plant id that is too long',
+  'an unparseable from',
+  'a from with a time',
+  'a to with an offset',
+  'a to out of range',
+  'a from after its to',
+  'both plants and plantings',
+] as const;
+
+export type HarvestSearchProblem = (typeof HARVEST_SEARCH_PROBLEMS)[number];
+
+/** For each problem: the query after the year, and the reason the service gives. */
+const invalidSearches: Record<HarvestSearchProblem, { query: string, reason: string }> = {
+  'a blank plant': { query: 'plantId=', reason: 'plantId[0] is required', },
+  // a stray comma could otherwise quietly widen the search
+  'a blank planting in a list': { query: 'plantingId=a,,b', reason: 'plantingId[1] is required', },
+  // ids are VARCHAR(36)
+  'a plant id that is too long': {
+    query: `plantId=${tooLong(36)}`,
+    reason: 'plantId[0] must be at most 36 characters',
+  },
+  'an unparseable from': { query: 'from=not-a-date', reason: 'from must be a date, as YYYY-MM-DD', },
+  'a from with a time': { query: 'from=2026-07-01T12:00:00', reason: 'from must be a date, as YYYY-MM-DD', },
+  'a to with an offset': {
+    query: `to=${encodeURIComponent('2026-07-01T00:00:00-04:00')}`,
+    reason: 'to must be a local time, with no Z or offset',
+  },
+  'a to out of range': { query: 'to=0999-07-01', reason: 'to must be between 1000 and 9999', },
+  'a from after its to': { query: 'from=2026-07-02&to=2026-07-01', reason: 'from must be on or before to', },
+  'both plants and plantings': {
+    query: 'plantId=a&plantingId=b',
+    reason: 'plantId and plantingId can\'t be used together',
+  },
+};
+
 export interface HarvestsDriver {
   recordHarvest(caller: Actor, input: NewHarvest): Promise<CreatedHarvest>,
   /** Sends every harvest in one save. Answers with the harvest the first was written to. */
@@ -136,6 +226,17 @@ export interface HarvestsDriver {
   searchIncludes(caller: Actor, harvest: CreatedHarvest, year: number, details: HarvestDetails): Promise<void>,
   searchExcludes(caller: Actor, harvest: CreatedHarvest, year: number): Promise<void>,
   searchWithoutYearIsRejectedAsBadRequest(caller: Actor): Promise<void>,
+  /**
+   * Narrowed to plants or plantings the spec made, so nothing else can match: asserts the search
+   * answers exactly these harvests.
+   */
+  searchFindsOnly(caller: Actor, filters: SearchFilters, harvests: CreatedHarvest[]): Promise<void>,
+  /**
+   * Narrowed by day alone, so other harvests of the year may match: asserts every harvest answered
+   * is within the days, and that it finds the one and leaves out the other.
+   */
+  searchKeepsToTheDays(caller: Actor, filters: SearchFilters, found: CreatedHarvest[], missed: CreatedHarvest[]): Promise<void>,
+  searchWithInvalidFiltersIsRejectedAsBadRequest(caller: Actor, year: number, problem: HarvestSearchProblem): Promise<void>,
   /** Asserts how many harvests the planting has under the year, whatever their days and types. */
   searchCountsHarvestsOfPlanting(caller: Actor, plantingId: string, year: number, harvests: number): Promise<void>,
   /** Search, summary and stats each reject a year that isn't a number, naming the parameter. */
@@ -297,6 +398,66 @@ export function createHarvestsDriver(client: HttpClient, registry: ResourceRegis
 
     async searchWithoutYearIsRejectedAsBadRequest(caller: Actor): Promise<void> {
       expectRejection(await as(caller).get('/harvests/search'), status.BAD_REQUEST, 'year is required', 'searching harvests with no year');
+    },
+
+    async searchFindsOnly(caller: Actor, filters: SearchFilters, expected: CreatedHarvest[]): Promise<void> {
+      const what = describeSearch(filters);
+      const response = await as(caller).get(searchPath(filters));
+
+      expectStatus(response, status.OK, what);
+
+      const answered = expectListEntries(response, what).map(each => each.harvestId as string).sort();
+      const wanted = expected.map(harvest => harvest.harvestId).sort();
+
+      expectThat(
+        answered.length === wanted.length && answered.every((id, index) => id === wanted[index]),
+        wanted.length === 0 ? 'no harvests' : `exactly harvests ${wanted.join(', ')}`,
+        response,
+        what
+      );
+    },
+
+    async searchKeepsToTheDays(
+      caller: Actor,
+      filters: SearchFilters,
+      found: CreatedHarvest[],
+      missed: CreatedHarvest[]
+    ): Promise<void> {
+      const what = describeSearch(filters);
+      const response = await as(caller).get(searchPath(filters));
+
+      expectStatus(response, status.OK, what);
+
+      const harvests = expectListEntries(response, what);
+      const ids = new Set(harvests.map(each => each.harvestId as string));
+      // YYYY-MM-DD strings sort as the days do
+      const withinTheDays = (day: string): boolean =>
+        (filters.from === undefined || day >= filters.from) && (filters.to === undefined || day <= filters.to);
+
+      expectThat(
+        harvests.every(each => withinTheDays(each.harvestDate as string)),
+        `only harvests from ${filters.from ?? 'any day'} to ${filters.to ?? 'any day'}`,
+        response,
+        what
+      );
+      expectThat(
+        found.every(harvest => ids.has(harvest.harvestId)) && !missed.some(harvest => ids.has(harvest.harvestId)),
+        `harvests ${found.map(harvest => harvest.harvestId).join(', ')}, `
+          + `and not ${missed.map(harvest => harvest.harvestId).join(', ') || 'any other'}`,
+        response,
+        what
+      );
+    },
+
+    async searchWithInvalidFiltersIsRejectedAsBadRequest(
+      caller: Actor,
+      year: number,
+      problem: HarvestSearchProblem
+    ): Promise<void> {
+      const { query, reason, } = invalidSearches[problem];
+      const response = await as(caller).get(`/harvests/search?year=${year}&${query}`);
+
+      expectRejection(response, status.BAD_REQUEST, reason, `searching harvests with ${problem}`);
     },
 
     async queriesOfNonNumericYearAreRejectedAsBadRequest(caller: Actor): Promise<void> {

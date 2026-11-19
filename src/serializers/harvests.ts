@@ -12,7 +12,9 @@ import { BadRequestError } from '../errors/common';
 import { StatsType, StatsTypeUtils } from '../types/stats-type';
 import {
   bodyOf,
+  optionalIdList,
   optionalInteger,
+  optionalLocalDate,
   optionalString,
   requiredList,
   requiredNumber,
@@ -72,9 +74,22 @@ const summary = {
 
 const search = {
   fromRequest: (req: Request): HarvestSearchRequest => {
-    return {
-      year: requiredYear(req.query.year, 'year'),
-    };
+    const year = requiredYear(req.query.year, 'year');
+    const plantIds = optionalIdList(req.query.plantId, 'plantId', { maxLength: 36, });
+    const plantingIds = optionalIdList(req.query.plantingId, 'plantingId', { maxLength: 36, });
+    const from = optionalLocalDate(req.query.from, 'from');
+    const to = optionalLocalDate(req.query.to, 'to');
+
+    // a search is by plant or by planting: a planting already names its plant
+    if (plantIds !== undefined && plantingIds !== undefined) {
+      throw new BadRequestError('plantId and plantingId can\'t be used together');
+    }
+    // YYYY-MM-DD strings sort as the days do
+    if (from !== undefined && to !== undefined && from > to) {
+      throw new BadRequestError('from must be on or before to');
+    }
+
+    return { year, plantIds, plantingIds, from, to, };
   },
 
   toResponse: (harvest: Harvest): HarvestResponse => {

@@ -197,6 +197,87 @@ describe('harvests', () => {
     await harvests.checkYearMustBeANumber('as: gardener');
   });
 
+  describe('a search narrowed', () => {
+    beforeEach(async () => {
+      await plants.createPlant('as: gardener', 'plant: pepper', 'defaultHarvestType: pounds');
+      await plants.createPlant('as: gardener', 'plant: bean', 'defaultHarvestType: pounds');
+      await plantings.createPlanting('as: gardener', 'planting: row-two', 'plant: pepper');
+      await plantings.createPlanting('as: gardener', 'planting: row-three', 'plant: bean');
+
+      await harvests.recordHarvest('as: gardener', 'harvest: early', 'planting: row-one', 'quantity: 1', 'date: 2026-07-01');
+      await harvests.recordHarvest('as: gardener', 'harvest: middle', 'planting: row-two', 'quantity: 2', 'date: 2026-07-10');
+      await harvests.recordHarvest('as: gardener', 'harvest: late', 'planting: row-three', 'quantity: 3', 'date: 2026-07-20');
+    });
+
+    it('to a plant', async () => {
+      await harvests.checkSearchFinds('as: gardener', 'yearOf: row-one', 'plants: pepper', 'finds: middle');
+    });
+
+    it.each([
+      'separated by commas',
+      'as repeated keys',
+    ])('to several plants, %s', async sent => {
+      await harvests.checkSearchFinds('as: gardener', 'yearOf: row-one', 'plants: tomato, pepper', `sent: ${sent}`, 'finds: early, middle');
+    });
+
+    it('to a planting', async () => {
+      await harvests.checkSearchFinds('as: gardener', 'yearOf: row-one', 'plantings: row-three', 'finds: late');
+    });
+
+    it.each([
+      'separated by commas',
+      'as repeated keys',
+    ])('to several plantings, %s', async sent => {
+      await harvests.checkSearchFinds(
+        'as: gardener', 'yearOf: row-one', 'plantings: row-two, row-three', `sent: ${sent}`, 'finds: middle, late'
+      );
+    });
+
+    it('from a day, inclusive', async () => {
+      await harvests.checkSearchFinds('as: gardener', 'yearOf: row-one', 'from: 2026-07-10', 'finds: middle, late', 'misses: early');
+    });
+
+    it('to a day, inclusive', async () => {
+      await harvests.checkSearchFinds('as: gardener', 'yearOf: row-one', 'to: 2026-07-10', 'finds: early, middle', 'misses: late');
+    });
+
+    it('to the days between two, inclusive', async () => {
+      await harvests.checkSearchFinds(
+        'as: gardener', 'yearOf: row-one', 'from: 2026-07-10', 'to: 2026-07-10', 'finds: middle', 'misses: early, late'
+      );
+    });
+
+    it('by plant and day', async () => {
+      await harvests.checkSearchFinds(
+        'as: gardener', 'yearOf: row-one', 'plants: tomato, pepper, bean', 'from: 2026-07-05', 'finds: middle, late'
+      );
+    });
+
+    it('by planting and day', async () => {
+      await harvests.checkSearchFinds(
+        'as: gardener', 'yearOf: row-one', 'plantings: row-one, row-two', 'to: 2026-07-05', 'finds: early'
+      );
+    });
+  });
+
+  it('finds nothing for a plant that does not exist', async () => {
+    await harvests.checkSearchOfUnknownPlantFindsNothing('as: gardener', 'yearOf: row-one');
+  });
+
+  it.each([
+    'a blank plant',
+    'a blank planting in a list',
+    'a plant id that is too long',
+    'an unparseable from',
+    'a from with a time',
+    'a to with an offset',
+    'a to out of range',
+    'a from after its to',
+    'both plants and plantings',
+  ])('rejects a search with %s', async problem => {
+    await harvests.checkInvalidSearchIsRejected('as: gardener', 'yearOf: row-one', `problem: ${problem}`);
+  });
+
   it('deletes a harvest', async () => {
     await harvests.recordHarvest('as: gardener', 'harvest: first', 'planting: row-one', 'quantity: 2');
 

@@ -127,12 +127,7 @@ async function getHarvestSummary(request: HarvestSummaryRequest): Promise<Harves
 }
 
 async function searchHarvests(request: HarvestSearchRequest): Promise<Harvest[]> {
-  const query = {
-    sql: queries.searchHarvests,
-    params: rowMapper.search.toParams(request),
-  };
-
-  const results = await db.execQuery<HarvestRow[]>(query);
+  const results = await db.execQuery<HarvestRow[]>(queries.searchHarvests(request));
 
   return results.map(rowMapper.fromRow);
 }

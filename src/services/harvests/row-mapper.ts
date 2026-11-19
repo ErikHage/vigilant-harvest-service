@@ -1,7 +1,6 @@
 import {
   Harvest,
   HarvestRow,
-  HarvestSearchRequest,
   HarvestSummary,
   HarvestSummaryRequest,
   HarvestSummaryRow, HarvestUpsertInstruction, HydratedHarvest, HydratedHarvestRow,
@@ -69,12 +68,6 @@ const summary = {
   }),
 };
 
-const search = {
-  toParams: (request: HarvestSearchRequest): Array<string | number> => ([
-    request.year,
-  ]),
-};
-
 const getByPlantingIdDateAndType = {
   toParams: (plantingId: string, harvestDate: string, harvestTypeId: number): Array<string | number> => ([
     plantingId,
@@ -87,7 +80,6 @@ export default {
   insert,
   getByPlantingIdDateAndType,
   summary,
-  search,
   fromRow,
   fromStoredRow,
   fromHydratedRow,

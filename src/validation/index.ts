@@ -132,6 +132,26 @@ export function optionalString(value: unknown, field: string, options: StringOpt
   return isMissing(value) ? undefined : toCheckedString(value, field, options);
 }
 
+/**
+ * A query param that names one or more ids: repeated (?plantId=a&plantId=b), which Express reads
+ * as a list, or separated by commas (?plantId=a,b), or both. Left out is undefined. Each id must
+ * have something in it, so a stray comma can't quietly widen a search.
+ */
+export function optionalIdList(value: unknown, field: string, options: StringOptions = {}): string[] | undefined {
+  if (isMissing(value)) {
+    return undefined;
+  }
+
+  const sent = Array.isArray(value) ? value : [ value, ];
+  if (!sent.every(each => typeof each === 'string')) {
+    throw new BadRequestError(`${field} must be a list of ids`);
+  }
+
+  return (sent as string[])
+    .flatMap(each => each.split(','))
+    .map((id, index) => requiredString(id, `${field}[${index}]`, options));
+}
+
 export interface NumberOptions {
   min?: number,
   /** Exclusive: a quantity must be more than nothing. */

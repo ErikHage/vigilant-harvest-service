@@ -133,7 +133,11 @@ export interface HarvestSummaryResponse {
 }
 
 export interface HarvestSearchRequest {
-  year: number, // int
+  year: number, // int, the year a harvest is filed under
+  plantIds?: string[], // never with plantingIds
+  plantingIds?: string[],
+  from?: string, // YYYY-MM-DD, inclusive
+  to?: string, // YYYY-MM-DD, inclusive
 }
 
 export interface HarvestStatsRequest {
